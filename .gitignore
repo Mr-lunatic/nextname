@@ -22,6 +22,7 @@ dist/
 .cache/
 .parcel-cache/
 .nyc_output/
+cache/
 
 # 运行时文件
 *.tsbuildinfo
