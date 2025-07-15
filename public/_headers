@@ -36,5 +36,5 @@
   X-XSS-Protection: 1; mode=block
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
-  X-CF-Compatibility-Date: 2024-07-01
+  X-CF-Compatibility-Date: 2025-07-15
   X-CF-Compatibility-Flags: nodejs_compat
