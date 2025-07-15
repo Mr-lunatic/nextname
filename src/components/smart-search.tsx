@@ -15,7 +15,7 @@ interface SmartSearchProps {
 }
 
 export function SmartSearch({ onSearch, placeholder }: SmartSearchProps) {
-  const t = useTranslations()
+  const { t } = useTranslations()
   const [query, setQuery] = useState('')
   const [detectedType, setDetectedType] = useState<SearchType>('auto')
 
