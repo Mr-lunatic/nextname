@@ -1,11 +1,7 @@
-import { createNavigation } from 'next-intl/navigation'
+// 简化的国际化配置，不依赖next-intl
 
 export const locales = ['en', 'zh-CN'] as const
 export type Locale = typeof locales[number]
-
-export const { Link, redirect, usePathname, useRouter } = createNavigation({
-  locales
-})
 
 export const currencies = {
   'en': 'USD',

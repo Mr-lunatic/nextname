@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // 移除可能导致问题的实验性功能
+  // 基础配置，移除所有实验性功能
   trailingSlash: true,
   
   // 图片优化
@@ -9,10 +9,7 @@ const nextConfig = {
     minimumCacheTTL: 60 * 60 * 24 * 7 // 7 days
   },
   
-  // 移除 optimizeCss 实验性功能以避免 critters 依赖问题
-  experimental: {
-    optimizePackageImports: ['lucide-react', 'framer-motion']
-  },
+  // 完全移除 experimental 字段
   
   // 编译优化
   compiler: {
@@ -67,24 +64,6 @@ const nextConfig = {
         ]
       }
     ]
-  },
-  
-  // Webpack 优化 - 简化配置
-  webpack: (config, { dev, isServer }) => {
-    if (!dev && !isServer) {
-      // 基础生产环境优化
-      config.optimization.splitChunks = {
-        chunks: 'all',
-        cacheGroups: {
-          vendor: {
-            test: /[\\/]node_modules[\\/]/,
-            name: 'vendors',
-            chunks: 'all'
-          }
-        }
-      }
-    }
-    return config
   }
 }
 
