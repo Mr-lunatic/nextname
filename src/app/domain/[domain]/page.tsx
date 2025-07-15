@@ -1,5 +1,8 @@
 "use client"
 
+// Configure Edge Runtime for Cloudflare Pages
+export const runtime = 'edge'
+
 import { useState, useEffect, Suspense } from 'react'
 import { useParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
