@@ -1,0 +1,312 @@
+{
+  "common": {
+    "search": "搜索",
+    "searchPlaceholder": "搜索你的完美域名...",
+    "loading": "加载中...",
+    "available": "可以注册",
+    "registered": "已被注册",
+    "register": "注册",
+    "registerNow": "立即注册",
+    "renewal": "续费",
+    "transfer": "转入",
+    "visit": "访问",
+    "back": "返回",
+    "backToHome": "返回首页",
+    "backToSearch": "返回搜索",
+    "reload": "重新加载",
+    "retry": "重试",
+    "confirm": "确认",
+    "cancel": "取消",
+    "close": "关闭",
+    "viewDetails": "查看详情",
+    "learnMore": "了解更多",
+    "contactUs": "联系我们",
+    "rating": "评分",
+    "features": "特色功能",
+    "actions": "操作",
+    "price": "价格",
+    "currency": "货币",
+    "language": "语言",
+    "autoDetect": "自动检测",
+    "fullDomain": "完整域名",
+    "domainPrefix": "域名前缀",
+    "domainSuffix": "域名后缀"
+  },
+  "header": {
+    "brandName": "NextName",
+    "tagline": "Find Your Perfect Domain",
+    "switchLanguage": "切换语言",
+    "switchTheme": "切换主题"
+  },
+  "hero": {
+    "badge": "快·全·准的域名查询工具",
+    "title": "找到你的完美域名",
+    "subtitle": "即时查询域名可用性，对比50+顶级注册商价格，发现隐藏的域名宝藏。",
+    "description": "让你以最快的速度获得最全面、最准确的域名信息。",
+    "searchFeatures": {
+      "realtime": "实时可用性检查",
+      "priceComparison": "50+注册商价格对比",
+      "whoisLookup": "WHOIS信息查询",
+      "marketInsights": "市场洞察分析"
+    },
+    "popularTlds": "热门域名后缀：",
+    "stats": {
+      "supportedTlds": "支持的域名后缀",
+      "registrarComparison": "注册商价格对比",
+      "domainQueries": "域名查询次数",
+      "realtimeUpdates": "实时数据更新"
+    }
+  },
+  "search": {
+    "searchingFor": "正在查询",
+    "availableForRegistration": "可以注册！",
+    "alreadyRegistered": "已被注册",
+    "lowestFirstYearPrice": "最低首年注册价格",
+    "compareAllPrices": "对比所有价格",
+    "browseOtherExtensions": "浏览其他后缀",
+    "viewSuggestedDomains": "查看建议域名",
+    "viewWhoisInfo": "查看WHOIS信息",
+    "bookmarkDomain": "收藏域名",
+    "suggestedDomains": "相关域名推荐",
+    "estimatedPrice": "预估价格",
+    "smartGrouping": "智能分组推荐",
+    "foundResults": "找到 {count} 个可用域名选项，按分类智能推荐",
+    "searchTypeDetected": "检测到搜索类型：",
+    "willCheckAvailability": "将检查域名可用性",
+    "willCheckTlds": "将查询可用后缀",
+    "willShowPriceComparison": "将显示价格对比",
+    "grouping": {
+      "popular": "🔥 热门后缀",
+      "tech": "⚡ 科技创新", 
+      "creative": "🎨 创意设计",
+      "business": "💼 商业企业",
+      "other": "🌟 其他选择"
+    },
+    "stats": {
+      "available": "可注册",
+      "popular": "热门后缀",
+      "tech": "科技类",
+      "lowestPrice": "最低价格"
+    },
+    "noResults": "未找到匹配的域名",
+    "tryDifferentFilters": "尝试调整筛选条件或搜索其他关键词",
+    "clearFilters": "清除筛选条件"
+  },
+  "priceComparison": {
+    "title": "注册商价格对比",
+    "registrar": "注册商",
+    "firstYear": "首年注册",
+    "renewalPrice": "续费价格",
+    "transferPrice": "转入价格",
+    "specialOffer": "首年特价",
+    "bestPrice": "最低价",
+    "features": {
+      "wholesalePricing": "批发价格",
+      "freeSSL": "免费SSL",
+      "freeWhoisPrivacy": "免费WHOIS隐私",
+      "support247": "24/7客服",
+      "domainForwarding": "域名转发",
+      "dnsManagement": "DNS管理",
+      "emailForwarding": "邮箱转发",
+      "googleIntegration": "Google集成",
+      "freePrivacyProtection": "免费隐私保护",
+      "cleanInterface": "简洁界面",
+      "apiAccess": "API访问",
+      "dnssec": "DNSSEC"
+    }
+  },
+  "whois": {
+    "title": "WHOIS信息",
+    "domainInfo": "域名信息",
+    "registrarInfo": "注册商信息",
+    "technicalInfo": "技术信息",
+    "contactInfo": "联系信息",
+    "domain": "域名",
+    "registrationDate": "注册日期",
+    "updatedDate": "更新日期",
+    "expiryDate": "到期日期",
+    "registryDomainId": "注册局域名ID",
+    "domainStatus": "域名状态",
+    "registrar": "注册商",
+    "registrarIanaId": "注册商IANA ID",
+    "registrarWebsite": "注册商网站",
+    "whoisServer": "WHOIS服务器",
+    "abuseContactEmail": "投诉邮箱",
+    "abuseContactPhone": "投诉电话",
+    "nameServers": "名称服务器",
+    "dnssec": "DNSSEC",
+    "enabled": "已启用",
+    "disabled": "未启用",
+    "registrant": "注册人",
+    "organization": "注册机构",
+    "registrantEmail": "注册人邮箱",
+    "country": "国家/地区",
+    "adminContact": "管理联系人",
+    "adminEmail": "管理邮箱",
+    "daysUntilExpiry": "天后到期",
+    "expired": "已过期",
+    "congratsAvailable": "恭喜！此域名可以注册。",
+    "viewPriceComparison": "查看注册商价格对比"
+  },
+  "features": {
+    "smartAssistant": {
+      "badge": "智能助手",
+      "title": "您的智能域名助手",
+      "subtitle": "快速 · 齐全 · 准确",
+      "description": "让域名查询变得简单高效",
+      "smartSearch": {
+        "title": "智能域名搜索",
+        "description": "无论您输入关键词、前缀还是完整域名，我们的AI引擎都能理解您的需求，快速提供最相关的搜索结果。",
+        "benefit": "节省搜索时间，精准匹配需求"
+      },
+      "priceComparison": {
+        "title": "全网价格对比",
+        "description": "实时对比50+顶级注册商价格，包括注册、续费、转移费用，确保您获得最优惠的价格方案。",
+        "benefit": "省钱省心，透明定价"
+      },
+      "domainInfo": {
+        "title": "域名信息查询",
+        "description": "提供详细的WHOIS信息、注册状态、到期时间等关键数据，帮助您做出明智的域名选择。",
+        "benefit": "信息透明，决策有据"
+      }
+    },
+    "simpleProcess": {
+      "badge": "简单流程",
+      "title": "三步找到理想域名",
+      "description": "简单三步，快速获得最佳域名选择。从搜索到注册，我们为您提供全程指导。",
+      "steps": {
+        "search": {
+          "title": "输入查询",
+          "description": "输入域名前缀、后缀或完整域名，支持智能识别查询类型。"
+        },
+        "analyze": {
+          "title": "获取信息",
+          "description": "查询注册状态、WHOIS信息，对比多个注册商的价格方案。"
+        },
+        "register": {
+          "title": "快速注册",
+          "description": "选择最优价格的注册商，一键跳转完成域名注册流程。"
+        }
+      }
+    },
+    "targetAudience": {
+      "badge": "目标用户",
+      "title": "为不同用户量身定制",
+      "description": "无论您是企业主、开发者还是创作者，NextName都能为您的特定需求提供专业的域名解决方案。",
+      "enterprise": {
+        "title": "企业用户",
+        "scenario": "公司品牌保护、官网域名选择",
+        "service": "批量域名查询、品牌域名监控、企业级价格方案"
+      },
+      "developer": {
+        "title": "开发者",
+        "scenario": "项目域名选择、API集成需求",
+        "service": "技术域名推荐、开发者友好的查询接口、快速部署方案"
+      },
+      "creator": {
+        "title": "设计师/创作者",
+        "scenario": "个人品牌建设、作品展示网站",
+        "service": "创意域名建议、个性化后缀推荐、美观简洁的查询体验"
+      },
+      "ecommerce": {
+        "title": "电商卖家",
+        "scenario": "店铺域名注册、多渠道品牌布局",
+        "service": "商业域名优化建议、多后缀保护方案、快速注册通道"
+      }
+    }
+  },
+  "testimonials": {
+    "badge": "用户评价",
+    "title": "用户怎么说",
+    "description": "听听真实用户的使用体验，了解NextName如何帮助他们解决域名相关问题。",
+    "reviews": [
+      {
+        "content": "NextName让我在几分钟内就找到了完美的域名，价格对比功能非常实用，为公司节省了不少成本。",
+        "author": "张明",
+        "title": "科技公司CEO"
+      },
+      {
+        "content": "作为开发者，我需要经常为项目注册域名。NextName的搜索功能很智能，能快速理解我的需求。",
+        "author": "李小雨",
+        "title": "全栈开发工程师"
+      },
+      {
+        "content": "界面简洁，功能强大，最重要的是完全免费。现在是我域名查询的首选工具。",
+        "author": "王设计",
+        "title": "UI/UX设计师"
+      }
+    ]
+  },
+  "faq": {
+    "badge": "常见问题",
+    "title": "常见问题解答",
+    "description": "快速了解NextName的功能特性和使用方法",
+    "questions": [
+      {
+        "question": "NextName是否完全免费使用？",
+        "answer": "是的，NextName的所有查询功能都完全免费。我们不收取任何查询费用，也不要求用户注册账号。我们通过与注册商的合作获得收入，为用户提供免费服务。"
+      },
+      {
+        "question": "价格对比的数据多久更新一次？",
+        "answer": "我们的价格数据每小时自动更新，确保您看到的都是最新的市场价格。对于热门域名后缀，我们甚至会更频繁地更新价格信息。"
+      }
+    ]
+  },
+  "cta": {
+    "title": "准备好找到完美域名了吗？",
+    "description": "立即开始您的域名搜索之旅，体验快·全·准的域名查询服务。",
+    "startSearch": "立即开始搜索",
+    "features": [
+      "完全免费使用",
+      "无需注册账号", 
+      "隐私受保护"
+    ]
+  },
+  "footer": {
+    "brandDescription": "快·全·准的域名查询工具，为您提供最佳的域名搜索体验。覆盖50+顶级注册商，数据实时更新，无偏见推荐。",
+    "productFeatures": "产品功能",
+    "features": [
+      "域名可用性查询",
+      "价格对比分析",
+      "WHOIS信息查询",
+      "智能域名推荐"
+    ],
+    "helpSupport": "帮助支持",
+    "links": [
+      "隐私政策",
+      "服务条款",
+      "联系我们"
+    ],
+    "copyright": "© 2024 NextName. 快·全·准的域名查询工具 - 为您提供最佳的域名搜索体验"
+  },
+  "privacy": {
+    "badge": "隐私保护",
+    "title": "隐私政策",
+    "description": "我们重视您的隐私权，本政策说明我们如何收集、使用和保护您的信息。",
+    "lastUpdated": "最后更新时间：2024年7月12日",
+    "contactTitle": "联系我们",
+    "contactDescription": "如果您对本隐私政策有任何疑问或需要行使您的权利，请随时联系我们：",
+    "contactPrivacyTeam": "联系隐私团队"
+  },
+  "terms": {
+    "badge": "法律条款",
+    "title": "服务条款", 
+    "description": "请仔细阅读以下条款，使用我们的服务即表示您同意这些条款和条件。",
+    "lastUpdated": "最后更新时间：2024年7月12日",
+    "agreementTitle": "同意条款",
+    "agreementDescription": "继续使用NextName服务即表示您已阅读、理解并同意遵守本服务条款。如果您不同意这些条款，请停止使用我们的服务。",
+    "iAgree": "我已阅读并同意",
+    "legalConsultation": "法律咨询"
+  },
+  "errors": {
+    "loadingFailed": "加载失败",
+    "pleaseTryAgain": "请稍后重试",
+    "domainNotFound": "域名未找到",
+    "networkError": "网络错误",
+    "unknownError": "未知错误"
+  },
+  "domain": {
+    "loadingDetails": "正在加载域名详情...",
+    "loadingFailed": "域名信息加载失败"
+  }
+}

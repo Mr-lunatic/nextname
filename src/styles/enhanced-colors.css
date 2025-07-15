@@ -1,0 +1,69 @@
+/* Enhanced Color System - Apple-inspired precision */
+:root {
+    /* Core Brand Colors */
+    --primary: 239 68% 68%;        /* Softer, more sophisticated */
+    --primary-50: 245 100% 97%;
+    --primary-100: 243 94% 94%;
+    --primary-200: 241 90% 88%;
+    --primary-300: 238 83% 80%;
+    --primary-400: 236 75% 70%;
+    --primary-500: 239 68% 68%;    /* Main brand */
+    --primary-600: 237 65% 63%;
+    --primary-700: 235 60% 56%;
+    --primary-800: 233 55% 48%;
+    --primary-900: 231 48% 38%;
+
+    /* Semantic Colors with Emotion */
+    --success: 142 76% 36%;         /* Confident green */
+    --success-bg: 143 85% 96%;
+    --warning: 38 92% 50%;          /* Warm amber */
+    --warning-bg: 48 100% 96%;
+    --error: 0 84% 60%;             /* Clear red */
+    --error-bg: 0 93% 94%;
+    --info: 217 91% 60%;            /* Trustworthy blue */
+    --info-bg: 214 100% 97%;
+
+    /* Refined Neutrals */
+    --slate-50: 210 40% 98%;
+    --slate-100: 210 40% 96%;
+    --slate-200: 214 32% 91%;
+    --slate-300: 213 27% 84%;
+    --slate-400: 215 20% 65%;
+    --slate-500: 215 16% 47%;
+    --slate-600: 215 19% 35%;
+    --slate-700: 215 25% 27%;
+    --slate-800: 217 33% 17%;
+    --slate-900: 222 84% 5%;
+
+    /* Surface System */
+    --surface-primary: 0 0% 100%;
+    --surface-secondary: 210 40% 98%;
+    --surface-tertiary: 210 40% 96%;
+    --surface-overlay: 0 0% 100% / 0.95;
+    --surface-glass: 255 255 255 / 0.1;
+    
+    /* Shadows with depth */
+    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+}
+
+.dark {
+    /* Dark mode with warmer tones */
+    --surface-primary: 222 84% 5%;
+    --surface-secondary: 217 33% 17%;
+    --surface-tertiary: 215 25% 27%;
+    --surface-overlay: 0 0% 0% / 0.95;
+    --surface-glass: 0 0 0 / 0.2;
+
+    /* Adjusted shadows for dark mode */
+    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.4);
+    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.6);
+}

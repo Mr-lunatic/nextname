@@ -1,0 +1,38 @@
+# Cloudflare Pages 缓存规则
+# 对静态资源进行长期缓存
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# 对字体文件进行长期缓存
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# 对图片进行中期缓存
+/images/*
+  Cache-Control: public, max-age=86400
+
+# 对API路径进行短期缓存
+/api/tlds
+  Cache-Control: public, max-age=3600, s-maxage=86400
+
+/api/domain/*
+  Cache-Control: public, max-age=300, s-maxage=1800
+
+/api/search*
+  Cache-Control: public, max-age=300, s-maxage=600
+
+# 对HTML文件进行较短缓存
+/*.html
+  Cache-Control: public, max-age=300, s-maxage=600
+
+# 对主页进行短期缓存
+/
+  Cache-Control: public, max-age=300, s-maxage=600
+
+# 安全头设置
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()

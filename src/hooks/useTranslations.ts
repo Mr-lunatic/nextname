@@ -1,0 +1,1 @@
+export { useTranslations, type LocaleType } from '@/contexts/TranslationContext'

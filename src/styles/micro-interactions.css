@@ -1,0 +1,185 @@
+/* Apple-inspired Micro-interactions */
+
+/* Enhanced Button States */
+.btn-primary {
+  @apply relative overflow-hidden;
+  @apply bg-gradient-to-r from-primary-500 to-primary-600;
+  @apply text-white font-medium;
+  @apply rounded-xl px-6 py-3;
+  @apply shadow-lg hover:shadow-xl;
+  @apply transition-all duration-300 ease-out;
+  @apply border border-primary-400/20;
+}
+
+.btn-primary:hover {
+  @apply scale-[1.02] -translate-y-0.5;
+  @apply shadow-primary-500/25;
+  box-shadow: 0 20px 25px -5px rgb(139 92 246 / 0.25), 0 8px 10px -6px rgb(139 92 246 / 0.1);
+}
+
+.btn-primary:active {
+  @apply scale-[0.98] translate-y-0;
+  @apply transition-all duration-150;
+}
+
+/* Ripple Effect */
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn-primary:active::after {
+  width: 300px;
+  height: 300px;
+}
+
+/* Enhanced Search Input */
+.search-input {
+  @apply relative;
+  @apply bg-surface-primary/80 backdrop-blur-xl;
+  @apply border border-slate-200/60;
+  @apply rounded-2xl;
+  @apply shadow-sm hover:shadow-md;
+  @apply transition-all duration-300 ease-out;
+}
+
+.search-input:focus-within {
+  @apply border-primary-400/60;
+  @apply shadow-lg;
+  box-shadow: 
+    0 10px 15px -3px rgb(139 92 246 / 0.1),
+    0 4px 6px -4px rgb(139 92 246 / 0.1),
+    0 0 0 4px rgb(139 92 246 / 0.1);
+}
+
+/* Card Hover States */
+.card-enhanced {
+  @apply relative overflow-hidden;
+  @apply bg-surface-primary/80 backdrop-blur-xl;
+  @apply border border-slate-200/60;
+  @apply rounded-xl;
+  @apply shadow-sm hover:shadow-lg;
+  @apply transition-all duration-500 ease-out;
+  @apply cursor-pointer;
+}
+
+.card-enhanced::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgb(139 92 246 / 0.4), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.card-enhanced:hover {
+  @apply -translate-y-1 scale-[1.01];
+  @apply border-primary-300/40;
+}
+
+.card-enhanced:hover::before {
+  opacity: 1;
+}
+
+/* Floating Animation Enhanced */
+.floating-enhanced {
+  animation: floating-enhanced 4s ease-in-out infinite;
+}
+
+@keyframes floating-enhanced {
+  0%, 100% { 
+    transform: translateY(0px) rotate(0deg);
+    filter: brightness(1);
+  }
+  25% { 
+    transform: translateY(-8px) rotate(0.5deg);
+    filter: brightness(1.1);
+  }
+  50% { 
+    transform: translateY(-12px) rotate(0deg);
+    filter: brightness(1.05);
+  }
+  75% { 
+    transform: translateY(-8px) rotate(-0.5deg);
+    filter: brightness(1.1);
+  }
+}
+
+/* Status Indicators */
+.status-available {
+  @apply relative;
+  @apply bg-gradient-to-r from-success to-emerald-500;
+  @apply text-white font-medium text-xs;
+  @apply px-3 py-1 rounded-full;
+  @apply shadow-sm;
+}
+
+.status-available::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 6px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  animation: pulse-success 2s ease-in-out infinite;
+}
+
+@keyframes pulse-success {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+.status-registered {
+  @apply bg-gradient-to-r from-slate-400 to-slate-500;
+  @apply text-white font-medium text-xs;
+  @apply px-3 py-1 rounded-full;
+  @apply shadow-sm opacity-75;
+}
+
+/* Loading States */
+.skeleton {
+  @apply bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200;
+  @apply animate-pulse;
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+}
+
+.dark .skeleton {
+  @apply from-slate-700 via-slate-600 to-slate-700;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Focus Indicators */
+.focus-ring {
+  @apply outline-none;
+  @apply ring-2 ring-primary-500/20 ring-offset-2 ring-offset-surface-primary;
+  @apply transition-all duration-200;
+}
+
+.focus-ring:focus-visible {
+  @apply ring-primary-500/40;
+}
+
+/* Smooth Transitions for All Interactive Elements */
+.interactive {
+  @apply transition-all duration-300 ease-out;
+  @apply hover:scale-[1.02] hover:-translate-y-0.5;
+  @apply active:scale-[0.98] active:translate-y-0;
+}
