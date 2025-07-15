@@ -20,11 +20,6 @@ const nextConfig = {
     return config
   },
   
-  // Cloudflare Pages specific configuration
-  experimental: {
-    runtime: 'edge',
-  },
-  
   // 图片优化
   images: {
     formats: ['image/webp', 'image/avif'],

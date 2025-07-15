@@ -29,10 +29,12 @@
 /
   Cache-Control: public, max-age=300, s-maxage=600
 
-# 安全头设置
+# 安全头设置和兼容性配置
 /*
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   X-XSS-Protection: 1; mode=block
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
+  X-CF-Compatibility-Date: 2024-07-01
+  X-CF-Compatibility-Flags: nodejs_compat
