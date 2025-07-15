@@ -3,6 +3,14 @@ const nextConfig = {
   // 基础配置，移除所有实验性功能
   trailingSlash: true,
   
+  // 禁用webpack缓存以避免Cloudflare Pages文件大小限制
+  webpack: (config, { dev }) => {
+    if (!dev) {
+      config.cache = false
+    }
+    return config
+  },
+  
   // 图片优化
   images: {
     formats: ['image/webp', 'image/avif'],
