@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { domainCache, CacheKeys } from '@/lib/cache'
 
+// Configure Edge Runtime for Cloudflare Pages
+export const runtime = 'edge'
+
 // IANA RDAP Bootstrap Service
 const IANA_RDAP_BOOTSTRAP_URL = 'https://data.iana.org/rdap/dns.json'
 

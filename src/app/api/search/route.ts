@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { searchCache, tldCache, CacheKeys } from '@/lib/cache'
 
+// Configure Edge Runtime for Cloudflare Pages
+export const runtime = 'edge'
+
 // Dynamic TLD support - fetch from IANA bootstrap
 let allRdapTLDs: any[] = []
 let tldCacheTime = 0

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// Configure Edge Runtime for Cloudflare Pages
+export const runtime = 'edge'
+
 // Nazhumi API base URL
 const NAZHUMI_API_BASE = 'https://www.nazhumi.com/api/v1'
 
