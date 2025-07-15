@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // 移除 output: export，改用 Cloudflare Pages Functions
+  // 移除可能导致问题的实验性功能
   trailingSlash: true,
   
   // 图片优化
@@ -9,9 +9,8 @@ const nextConfig = {
     minimumCacheTTL: 60 * 60 * 24 * 7 // 7 days
   },
   
-  // 性能优化
+  // 移除 optimizeCss 实验性功能以避免 critters 依赖问题
   experimental: {
-    optimizeCss: true,
     optimizePackageImports: ['lucide-react', 'framer-motion']
   },
   
@@ -70,10 +69,10 @@ const nextConfig = {
     ]
   },
   
-  // Webpack 优化
+  // Webpack 优化 - 简化配置
   webpack: (config, { dev, isServer }) => {
     if (!dev && !isServer) {
-      // 生产环境优化
+      // 基础生产环境优化
       config.optimization.splitChunks = {
         chunks: 'all',
         cacheGroups: {
@@ -81,12 +80,6 @@ const nextConfig = {
             test: /[\\/]node_modules[\\/]/,
             name: 'vendors',
             chunks: 'all'
-          },
-          common: {
-            name: 'common',
-            minChunks: 2,
-            chunks: 'all',
-            enforce: true
           }
         }
       }
