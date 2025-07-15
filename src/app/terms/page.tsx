@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageSwitcher } from '@/components/language-currency-switcher'
 import { CardSpotlight } from '@/components/ui/framer-spotlight'
+import { NextNameLogo } from '@/components/logo'
 
 export default function TermsPage() {
   const sections = [
@@ -100,17 +101,8 @@ export default function TermsPage() {
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center space-x-3"
           >
-            <div className="relative">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-600 rounded-xl flex items-center justify-center pulse-glow">
-                <Globe className="h-6 w-6 text-white" />
-              </div>
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-orange-400 to-pink-500 rounded-full flex items-center justify-center">
-                <Sparkles className="h-2 w-2 text-white" />
-              </div>
-            </div>
             <div>
-              <h1 className="text-2xl font-bold text-gradient-premium font-serif">Next Name</h1>
-              <p className="text-xs text-muted-foreground font-sans">Find Your Perfect Domain</p>
+              <NextNameLogo className="text-foreground" />
             </div>
           </motion.div>
           <div className="flex items-center space-x-4">
@@ -148,7 +140,7 @@ export default function TermsPage() {
             请仔细阅读以下条款，使用我们的服务即表示您同意这些条款和条件。
           </p>
           <div className="text-sm text-muted-foreground mt-4">
-            最后更新时间：2024年7月12日
+            最后更新时间：2025年7月15日
           </div>
         </motion.div>
 

@@ -120,10 +120,34 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
     const normalizedQuery = query.toLowerCase().trim()
     const allSuggestions: SearchSuggestion[] = []
 
+    // Add search type suggestions based on current query
+    const searchTypeSuggestions: SearchSuggestion[] = [
+      {
+        type: 'domain',
+        value: query.includes('.') ? query : `${query}.com`,
+        label: query.includes('.') ? query : `${query}.com`,
+        description: '完整域名查询 - 检查域名是否可注册'
+      },
+      {
+        type: 'keyword',
+        value: query.replace(/^\.+/, ''),
+        label: query.replace(/^\.+/, ''),
+        description: '域名前缀搜索 - 查找以此开头的域名'
+      },
+      {
+        type: 'tld',
+        value: query.startsWith('.') ? query : `.${query}`,
+        label: query.startsWith('.') ? query : `.${query}`,
+        description: '域名后缀搜索 - 查看此后缀的价格对比'
+      }
+    ]
+    
+    allSuggestions.push(...searchTypeSuggestions)
+
     // Add search history matches
     const historyMatches = history
       .filter(item => item.toLowerCase().includes(normalizedQuery))
-      .slice(0, 3)
+      .slice(0, 2)
       .map(item => ({
         type: 'recent' as const,
         value: item,
@@ -136,39 +160,18 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
     // Add TLD suggestions
     const tldMatches = popularTLDs
       .filter(tld => tld.value.toLowerCase().includes(normalizedQuery))
-      .slice(0, 3)
+      .slice(0, 2)
       .map(tld => ({
         type: 'tld' as const,
         value: tld.value,
         label: tld.label,
-        description: `Popular ${tld.value} domain extension`,
+        description: `热门 ${tld.value} 域名后缀`,
         popular: true
       }))
       
     allSuggestions.push(...tldMatches)
-    
-    // Add keyword suggestions
-    const keywordMatches = keywordSuggestions
-      .filter(keyword => keyword.toLowerCase().includes(normalizedQuery))
-      .slice(0, 2)
-      .map(keyword => ({
-        type: 'keyword' as const,
-        value: keyword,
-        label: keyword,
-        description: 'Popular domain keyword'
-      }))
-      
-    allSuggestions.push(...keywordMatches)
 
-    // Use Fuse.js for fuzzy search
-    const fuse = new Fuse(allSuggestions, {
-      keys: ['label', 'value', 'description'],
-      threshold: 0.3,
-      includeScore: true
-    })
-
-    const results = fuse.search(query).slice(0, 8)
-    return results.map(result => result.item)
+    return allSuggestions.slice(0, 8)
   }, [query, history]) // Updated dependency
 
   const handleInputChange = (value: string) => {
@@ -200,7 +203,18 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
 
   const handleSuggestionSelect = (suggestion: SearchSuggestion) => {
     setQuery(suggestion.value)
-    handleSearch(suggestion.value)
+    
+    // Determine search type based on suggestion type
+    let searchType: SearchType = 'auto'
+    if (suggestion.type === 'domain') {
+      searchType = 'domain'
+    } else if (suggestion.type === 'keyword') {
+      searchType = 'prefix'
+    } else if (suggestion.type === 'tld') {
+      searchType = 'suffix'
+    }
+    
+    handleSearch(suggestion.value, searchType)
   }
 
   const getIcon = () => {
