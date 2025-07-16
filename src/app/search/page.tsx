@@ -16,6 +16,8 @@ import { EnhancedSmartSearchV2 } from '@/components/enhanced-smart-search-v2'
 import { EnhancedWhoisResult } from '@/components/enhanced-whois-result'
 import { CardSpotlight, BestNameSpotlight } from '@/components/ui/framer-spotlight'
 import { NextNameLogo } from '@/components/logo'
+import { LanguageSwitcher } from '@/components/language-currency-switcher'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 interface SearchResult {
   query: string
