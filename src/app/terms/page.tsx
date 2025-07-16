@@ -1,6 +1,6 @@
-export const runtime = 'edge';
+"use client";
 
-"use client"
+export const runtime = 'edge';
 
 import { motion } from 'framer-motion'
 import { Globe, Sparkles, ArrowLeft, Scale, AlertTriangle, CheckCircle, XCircle, RefreshCw, Gavel } from 'lucide-react'

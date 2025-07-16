@@ -1,6 +1,6 @@
-export const runtime = 'edge';
+"use client";
 
-"use client"
+export const runtime = 'edge';
 
 import { useTranslations } from '@/hooks/useTranslations'
 import { motion } from 'framer-motion'
