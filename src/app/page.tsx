@@ -6,6 +6,13 @@ import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from '@/hooks/useTranslations'
 import { getAllSupportedTLDs } from '@/lib/tld-data'
+
+interface TLD {
+  tld: string;
+  marketShare: number;
+  category: string;
+  popularity: number;
+}
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Globe, 
@@ -44,7 +51,7 @@ import { LazySection, LazyPlaceholder } from '@/components/lazy-section'
 
 export default async function HomePage() {
   const allTlds = await getAllSupportedTLDs();
-  const popularTLDs = allTlds.map(item => ({ name: item.tld, price: '$12.99' })); // Mock price for now
+  const popularTLDs = allTlds.map((item: TLD) => ({ name: item.tld, price: '$12.99' })); // Mock price for now
 
   return <HomePageContent popularTLDs={popularTLDs} />;
 }
