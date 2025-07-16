@@ -290,7 +290,7 @@ export async function GET(request: NextRequest) {
         
         const domainData = await domainResponse.json()
         
-        const topRegistrars = getTopRegistrars(tld)
+        const topRegistrars = getTopRegistrars(tld.tld)
         
         return {
           domain,
@@ -308,7 +308,7 @@ export async function GET(request: NextRequest) {
       } catch (error) {
         console.error(`Failed to check ${domain}:`, error)
         // On error, return checking status instead of blocking
-        const topRegistrars = getTopRegistrars(tld)
+        const topRegistrars = getTopRegistrars(tld.tld)
         
         return {
           domain,
