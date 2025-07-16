@@ -91,7 +91,7 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <TranslationProvider>
+          <TranslationProvider initialLocale={locale}>
             {children}
           </TranslationProvider>
         </ThemeProvider>
