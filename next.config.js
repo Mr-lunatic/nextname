@@ -62,10 +62,6 @@ const nextConfig = {
             value: 'public, s-maxage=300, stale-while-revalidate=600'
           }
         ]
-      },
-      {
-        source: '/(.*)',
-        headers: []
       }
     ]
   }
