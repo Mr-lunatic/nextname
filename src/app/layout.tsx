@@ -2,6 +2,9 @@ import '../styles/globals.css'
 import { Inter, Playfair_Display, JetBrains_Mono } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
 import { TranslationProvider } from '@/contexts/TranslationContext'
+import { getLocale } from '@/lib/getLocale'
+import { StructuredData } from '@/components/structured-data'
+import type { Metadata } from 'next'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -21,21 +24,66 @@ const jetbrains = JetBrains_Mono({
   display: 'swap'
 })
 
-export const metadata = {
-  title: 'NextName - Find Your Perfect Domain',
+// Base URL for your production site
+const siteUrl = 'https://nextname.app';
+
+export const metadata: Metadata = {
+  // SEO and Metadata Configuration
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: 'NextName - Find Your Perfect Domain',
+    template: '%s | NextName',
+  },
   description: 'Fast, comprehensive, and accurate domain search tool. Compare 50+ registrar prices, get real-time WHOIS info, discover hidden domain treasures.',
+  
+  // Icons
   icons: {
     icon: '/favicon.svg',
+    apple: '/apple-touch-icon.png', // Recommended: Add an apple touch icon
+  },
+
+  // Open Graph (for social media previews)
+  openGraph: {
+    title: 'NextName - Find Your Perfect Domain',
+    description: 'The ultimate tool for domain discovery and price comparison.',
+    url: siteUrl,
+    siteName: 'NextName',
+    images: [
+      {
+        url: '/og-image.png', // Recommended: Create and add an Open Graph image (1200x630px)
+        width: 1200,
+        height: 630,
+        alt: 'NextName Logo and a search bar',
+      },
+    ],
+    locale: 'en_US', // Default locale
+    type: 'website',
+  },
+
+  // Twitter Card (for Twitter previews)
+  twitter: {
+    card: 'summary_large_image',
+    title: 'NextName - Find Your Perfect Domain',
+    description: 'Fast, comprehensive, and accurate domain search tool.',
+    images: ['/og-image.png'], // Recommended: Use the same OG image
+  },
+
+  // Canonical URL
+  alternates: {
+    canonical: '/',
   },
 }
 
 export default async function RootLayout({
-  children
+  children,
 }: {
   children: React.ReactNode
 }) {
+  // Dynamically get the locale for the html lang attribute
+  const locale = getLocale();
+
   return (
-    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${playfair.variable} ${jetbrains.variable}`}>
+    <html lang={locale} suppressHydrationWarning className={`${inter.variable} ${playfair.variable} ${jetbrains.variable}`}>
       <body className="font-sans antialiased">
         <ThemeProvider
           attribute="class"
@@ -47,6 +95,7 @@ export default async function RootLayout({
             {children}
           </TranslationProvider>
         </ThemeProvider>
+        <StructuredData />
       </body>
     </html>
   )

@@ -14,17 +14,16 @@ const messages: Record<LocaleType, Messages> = {
   'en': enMessages
 }
 
-// Detect if browser language is Chinese (including simplified and traditional)
-function detectChineseLanguage(): boolean {
-  if (typeof window === 'undefined') return true // SSR fallback to Chinese
-  
-  const lang = navigator.language || navigator.languages?.[0] || 'en'
-  return lang.startsWith('zh')
-}
+import { getLocale } from '@/lib/getLocale';
 
-// Get default locale based on browser language
+// Get default locale based on server-side detection or client-side fallback
 function getDefaultLocale(): LocaleType {
-  return detectChineseLanguage() ? 'zh-CN' : 'en'
+  if (typeof window !== 'undefined') {
+    const lang = navigator.language || navigator.languages?.[0] || 'en';
+    return lang.startsWith('zh') ? 'zh-CN' : 'en';
+  }
+  // This function will be more for client-side fallback now
+  return 'zh-CN';
 }
 
 interface TranslationContextType {
@@ -42,19 +41,21 @@ interface TranslationProviderProps {
 }
 
 export function TranslationProvider({ children }: TranslationProviderProps) {
-  const [locale, setLocale] = useState<LocaleType>('zh-CN') // 默认使用中文，避免水合错误
-  const [isClient, setIsClient] = useState(false)
+  const [locale, setLocale] = useState<LocaleType>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('NextName-locale') as LocaleType;
+      if (saved && (saved === 'zh-CN' || saved === 'en')) {
+        return saved;
+      }
+      return getDefaultLocale();
+    }
+    return 'zh-CN'; // Default for SSR
+  });
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    // 只在客户端运行时检查localStorage和浏览器语言
-    setIsClient(true)
-    const saved = localStorage.getItem('NextName-locale') as LocaleType
-    if (saved && (saved === 'zh-CN' || saved === 'en')) {
-      setLocale(saved)
-    } else {
-      setLocale(getDefaultLocale())
-    }
-  }, [])
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     // Save to localStorage when locale changes (only on client side)
@@ -128,4 +129,5 @@ export function useTranslations() {
   return context
 }
 
+export { getLocale };
 export type { LocaleType }

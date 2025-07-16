@@ -266,18 +266,29 @@ export async function GET(request: NextRequest) {
   if (!q) {
     return NextResponse.json({ error: 'Query parameter is required' }, { status: 400 })
   }
+
+  if (q.length > 64) {
+    return NextResponse.json({ error: 'Query is too long' }, { status: 400 })
+  }
+
+  const sanitizedQuery = q.replace(/[^a-zA-Z0-9.-]/g, '');
+
+  const allowedTypes = ['auto', 'domain', 'prefix', 'suffix'];
+  if (!allowedTypes.includes(type)) {
+    return NextResponse.json({ error: 'Invalid search type' }, { status: 400 });
+  }
   
   // Check cache first
-  const cacheKey = CacheKeys.search(q, type, page)
+  const cacheKey = CacheKeys.search(sanitizedQuery, type, page)
   const cachedResult = searchCache.get(cacheKey)
   
   if (cachedResult) {
-    console.log(`✅ Returning cached search result for ${q}`)
+    console.log(`✅ Returning cached search result for ${sanitizedQuery}`)
     return NextResponse.json(cachedResult)
   }
   
   // No artificial delay - process immediately
-  const query = q.toLowerCase()
+  const query = sanitizedQuery.toLowerCase()
   
   if (type === 'domain' || (type === 'auto' && query.includes('.'))) {
     // Domain availability check - forward to domain API

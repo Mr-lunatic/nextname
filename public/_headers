@@ -1,17 +1,55 @@
-# Cloudflare Pages 缓存规则
-# 对静态资源进行长期缓存
+# =================================================================
+# Security Headers
+#
+# These headers are applied to all pages and resources to enhance security.
+# =================================================================
+/*
+  # Content-Security-Policy (CSP) - Helps prevent XSS attacks
+  # This policy assumes all external API calls are proxied through your own backend.
+  # 'unsafe-eval' is often required for Next.js's dev mode, but try to remove it for production if possible.
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; object-src 'none'; frame-ancestors 'none'; connect-src 'self';
+  
+  # HTTP Strict-Transport-Security (HSTS) - Enforces HTTPS
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+
+  # Prevents clickjacking attacks
+  X-Frame-Options: DENY
+
+  # Prevents MIME-type sniffing
+  X-Content-Type-Options: nosniff
+
+  # An old XSS protection header, still good to have for older browsers
+  X-XSS-Protection: 1; mode=block
+
+  # Controls how much referrer information is sent with requests
+  Referrer-Policy: strict-origin-when-cross-origin
+
+  # Restricts browser features like camera, microphone, etc.
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+  # Cloudflare specific settings
+  X-CF-Compatibility-Date: 2025-07-15
+  X-CF-Compatibility-Flags: nodejs_compat
+
+# =================================================================
+# Caching Rules
+#
+# These rules define caching strategies for different types of content.
+# =================================================================
+
+# Cache static assets for a long time (immutable)
 /_next/static/*
   Cache-Control: public, max-age=31536000, immutable
 
-# 对字体文件进行长期缓存
+# Cache fonts for a long time (immutable)
 /fonts/*
   Cache-Control: public, max-age=31536000, immutable
 
-# 对图片进行中期缓存
+# Cache images for a medium duration
 /images/*
   Cache-Control: public, max-age=86400
 
-# 对API路径进行短期缓存
+# Cache API responses with appropriate durations
 /api/tlds
   Cache-Control: public, max-age=3600, s-maxage=86400
 
@@ -21,20 +59,10 @@
 /api/search*
   Cache-Control: public, max-age=300, s-maxage=600
 
-# 对HTML文件进行较短缓存
+# Cache HTML pages for a short duration
 /*.html
   Cache-Control: public, max-age=300, s-maxage=600
 
-# 对主页进行短期缓存
+# Cache the homepage for a short duration
 /
   Cache-Control: public, max-age=300, s-maxage=600
-
-# 安全头设置和兼容性配置
-/*
-  X-Frame-Options: DENY
-  X-Content-Type-Options: nosniff
-  X-XSS-Protection: 1; mode=block
-  Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: camera=(), microphone=(), geolocation=()
-  X-CF-Compatibility-Date: 2025-07-15
-  X-CF-Compatibility-Flags: nodejs_compat
