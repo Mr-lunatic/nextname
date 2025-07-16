@@ -26,7 +26,8 @@ export async function GET() {
         'Accept': 'application/json',
         'User-Agent': 'Domain-Search-Platform/1.0'
       },
-      signal: controller.signal
+      signal: controller.signal,
+      cache: 'force-cache' // Explicitly cache this external data
     })
     
     clearTimeout(timeoutId)

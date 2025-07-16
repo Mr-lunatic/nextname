@@ -5,7 +5,7 @@ export const runtime = 'edge';
 import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from '@/hooks/useTranslations'
-import { usePreFetch } from '@/hooks/usePreFetch'
+import { getAllSupportedTLDs } from '@/lib/tld-data'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Globe, 
@@ -33,34 +33,27 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { NextNameLogo } from '@/components/logo'
-import { HeroSpotlight, CardSpotlight, LightSpotlight } from '@/components/ui/framer-spotlight'
+import dynamic from 'next/dynamic'
+
+const CardSpotlight = dynamic(() => import('@/components/ui/framer-spotlight').then(mod => mod.CardSpotlight), { ssr: false });
+const HeroSpotlight = dynamic(() => import('@/components/ui/framer-spotlight').then(mod => mod.HeroSpotlight), { ssr: false });
+const LightSpotlight = dynamic(() => import('@/components/ui/framer-spotlight').then(mod => mod.LightSpotlight), { ssr: false });
 import { LazySection, LazyPlaceholder } from '@/components/lazy-section'
 
-const popularTLDs = [
-  { name: '.com', price: '$12.99' },
-  { name: '.net', price: '$14.99' },
-  { name: '.org', price: '$13.99' },
-  { name: '.io', price: '$64.99' },
-  { name: '.ai', price: '$99.99' },
-  { name: '.dev', price: '$17.99' },
-]
 
-export default function HomePage() {
+
+export default async function HomePage() {
+  const allTlds = await getAllSupportedTLDs();
+  const popularTLDs = allTlds.map(item => ({ name: item.tld, price: '$12.99' })); // Mock price for now
+
+  return <HomePageContent popularTLDs={popularTLDs} />;
+}
+
+function HomePageContent({ popularTLDs }: { popularTLDs: { name: string; price: string; }[] }) {
   const router = useRouter()
   const { t, locale, switchLocale } = useTranslations()
-  const { preFetchHotDomains, preFetchTldList } = usePreFetch()
   const [isSearchFocused, setIsSearchFocused] = useState(false)
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
-
-  // Initialize background prefetching
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      preFetchHotDomains()
-      preFetchTldList()
-    }, 2000) // Start after page loads
-
-    return () => clearTimeout(timer)
-  }, [])
 
   const handleSearch = (query: string, type: string) => {
     router.push(`/search?q=${encodeURIComponent(query)}&type=${type}`)

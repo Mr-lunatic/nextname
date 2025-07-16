@@ -18,6 +18,8 @@ import { EnhancedSmartSearchV2 } from '@/components/enhanced-smart-search-v2'
 import { EnhancedWhoisResult } from '@/components/enhanced-whois-result'
 import { CardSpotlight, BestNameSpotlight } from '@/components/ui/framer-spotlight'
 import { NextNameLogo } from '@/components/logo'
+import Image from 'next/image'
+import Image from 'next/image'
 import { LanguageSwitcher } from '@/components/language-currency-switcher'
 import { ThemeToggle } from '@/components/theme-toggle'
 
@@ -379,9 +381,13 @@ function SearchPageContent() {
                         >
                           <td className="py-4 px-4">
                             <div className="flex items-center space-x-3">
-                              <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center">
-                                <Globe className="h-4 w-4" />
-                              </div>
+                              <Image
+                                src={price.logo}
+                                alt={`${price.registrar} logo`}
+                                width={32}
+                                height={32}
+                                className="object-contain"
+                              />
                               <div>
                                 <div className="font-semibold">{price.registrar}</div>
                                 {price.specialOffer && (

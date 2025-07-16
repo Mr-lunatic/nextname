@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { searchCache, tldCache, CacheKeys } from '@/lib/cache'
+import { tldMetadata, getAllSupportedTLDs } from '@/lib/tld-data'
 
 // Configure Edge Runtime for Cloudflare Pages
 export const runtime = 'edge'
@@ -9,133 +10,9 @@ let allRdapTLDs: any[] = []
 let tldCacheTime = 0
 const TLD_CACHE_DURATION = 24 * 60 * 60 * 1000 // 24 hours
 
-// Enhanced TLD data with market share and metadata
-const tldMetadata: { [key: string]: any } = {
-  // Major gTLDs
-  'com': { marketShare: 47.1, category: 'generic', popularity: 100 },
-  'net': { marketShare: 4.2, category: 'generic', popularity: 85 },
-  'org': { marketShare: 3.8, category: 'generic', popularity: 80 },
-  'info': { marketShare: 1.8, category: 'generic', popularity: 65 },
-  'biz': { marketShare: 1.2, category: 'generic', popularity: 60 },
-  'name': { marketShare: 0.3, category: 'generic', popularity: 50 },
-  'pro': { marketShare: 0.1, category: 'generic', popularity: 40 },
-  
-  // Popular new gTLDs
-  'io': { marketShare: 0.8, category: 'tech', popularity: 90 },
-  'ai': { marketShare: 0.3, category: 'tech', popularity: 85 },
-  'dev': { marketShare: 0.2, category: 'tech', popularity: 80 },
-  'app': { marketShare: 0.15, category: 'tech', popularity: 75 },
-  'tech': { marketShare: 0.12, category: 'tech', popularity: 70 },
-  'online': { marketShare: 0.1, category: 'generic', popularity: 65 },
-  'site': { marketShare: 0.09, category: 'generic', popularity: 60 },
-  'website': { marketShare: 0.08, category: 'generic', popularity: 55 },
-  
-  // Business TLDs
-  'co': { marketShare: 0.9, category: 'business', popularity: 75 },
-  'shop': { marketShare: 0.15, category: 'business', popularity: 70 },
-  'store': { marketShare: 0.12, category: 'business', popularity: 65 },
-  'business': { marketShare: 0.04, category: 'business', popularity: 45 },
-  'company': { marketShare: 0.05, category: 'business', popularity: 50 },
-  'services': { marketShare: 0.03, category: 'business', popularity: 40 },
-  
-  // Creative TLDs
-  'design': { marketShare: 0.05, category: 'creative', popularity: 45 },
-  'art': { marketShare: 0.04, category: 'creative', popularity: 40 },
-  'studio': { marketShare: 0.06, category: 'creative', popularity: 50 },
-  'photography': { marketShare: 0.03, category: 'creative', popularity: 35 },
-  
-  // Media TLDs
-  'blog': { marketShare: 0.12, category: 'media', popularity: 65 },
-  'news': { marketShare: 0.1, category: 'media', popularity: 60 },
-  'media': { marketShare: 0.08, category: 'media', popularity: 55 },
-  'tv': { marketShare: 0.18, category: 'media', popularity: 60 },
-  
-  // Personal TLDs
-  'me': { marketShare: 0.25, category: 'personal', popularity: 70 },
-  'cc': { marketShare: 0.2, category: 'personal', popularity: 65 },
-  'ly': { marketShare: 0.05, category: 'personal', popularity: 50 },
-  'sh': { marketShare: 0.04, category: 'personal', popularity: 45 },
-  'gg': { marketShare: 0.03, category: 'gaming', popularity: 55 },
-  
-  // Country TLDs (major ones)
-  'uk': { marketShare: 2.1, category: 'country', popularity: 75 },
-  'de': { marketShare: 1.8, category: 'country', popularity: 70 },
-  'cn': { marketShare: 1.5, category: 'country', popularity: 65 },
-  'nl': { marketShare: 0.8, category: 'country', popularity: 60 },
-  'fr': { marketShare: 0.7, category: 'country', popularity: 55 },
-  'au': { marketShare: 0.6, category: 'country', popularity: 50 },
-  'ca': { marketShare: 0.5, category: 'country', popularity: 45 },
-  'jp': { marketShare: 0.4, category: 'country', popularity: 40 },
-  'br': { marketShare: 0.3, category: 'country', popularity: 35 },
-  'mx': { marketShare: 0.2, category: 'country', popularity: 30 },
-  'it': { marketShare: 0.4, category: 'country', popularity: 45 },
-  'es': { marketShare: 0.3, category: 'country', popularity: 40 },
-  'be': { marketShare: 0.1, category: 'country', popularity: 30 },
-  'eu': { marketShare: 0.2, category: 'country', popularity: 35 },
-  'kr': { marketShare: 0.15, category: 'country', popularity: 25 },
-  'in': { marketShare: 0.25, category: 'country', popularity: 30 },
-  'ru': { marketShare: 0.4, category: 'country', popularity: 35 },
-  
-  // Other popular TLDs
-  'xyz': { marketShare: 0.2, category: 'generic', popularity: 60 },
-  'top': { marketShare: 0.18, category: 'generic', popularity: 55 },
-  'club': { marketShare: 0.15, category: 'community', popularity: 50 },
-  'click': { marketShare: 0.02, category: 'generic', popularity: 30 },
-  'link': { marketShare: 0.02, category: 'generic', popularity: 25 }
-}
 
-// Function to get all supported TLDs from IANA bootstrap
-async function getAllSupportedTLDs() {
-  const now = Date.now()
-  
-  // Return cached data if still valid
-  if (allRdapTLDs.length > 0 && (now - tldCacheTime) < TLD_CACHE_DURATION) {
-    return allRdapTLDs
-  }
-  
-  try {
-    // Fetch from our TLD API endpoint
-    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/tlds`)
-    const data = await response.json()
-    
-    if (data.tlds && data.tlds.length > 0) {
-      // Create enhanced TLD objects
-      allRdapTLDs = data.tlds.map((tld: string) => {
-        const metadata = tldMetadata[tld] || {
-          marketShare: 0.01, // Default minimal market share
-          category: tld.length === 2 ? 'country' : 'generic',
-          popularity: 25 // Default popularity
-        }
-        
-        return {
-          tld: `.${tld}`,
-          ...metadata
-        }
-      })
-      
-      // Sort by market share
-      allRdapTLDs.sort((a, b) => b.marketShare - a.marketShare)
-      
-      tldCacheTime = now
-      console.log(`✅ Loaded ${allRdapTLDs.length} TLDs from IANA bootstrap`)
-      
-      return allRdapTLDs
-    }
-  } catch (error) {
-    console.error('Failed to fetch TLD data:', error)
-  }
-  
-  // Fallback to predefined list
-  const fallbackTlds = Object.keys(tldMetadata).map(tld => ({
-    tld: `.${tld}`,
-    ...tldMetadata[tld]
-  }))
-  
-  allRdapTLDs = fallbackTlds.sort((a, b) => b.marketShare - a.marketShare)
-  tldCacheTime = now
-  
-  return allRdapTLDs
-}
+
+
 
 // Get popularTLDs from the enhanced list
 async function getPopularTLDs() {
@@ -407,7 +284,8 @@ export async function GET(request: NextRequest) {
         const timeoutId = setTimeout(() => controller.abort(), 2500) // Reduced to 2.5 second timeout
         
         const domainResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/domain/${domain}`, {
-          signal: controller.signal
+          signal: controller.signal,
+          cache: 'no-store' // Do not cache domain availability checks
         })
         
         clearTimeout(timeoutId)
