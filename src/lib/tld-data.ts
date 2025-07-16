@@ -85,7 +85,7 @@ export async function getAllSupportedTLDs() {
   // Return cached data if still valid
   const cachedAllTlds = tldCache.get(CacheKeys.tldList());
   if (cachedAllTlds && (now - cachedAllTlds.timestamp) < TLD_CACHE_DURATION) {
-    return cachedAllTlds.tlds;
+    return cachedAllTlds.tlds; // This returns the correct structure if cached
   }
   
   try {
@@ -121,24 +121,34 @@ export async function getAllSupportedTLDs() {
       }
     }
     
-    // Convert to sorted array
-    const sortedTlds = Array.from(tlds).sort();
+    // Create enhanced TLD objects here
+    const enhancedTlds = Array.from(tlds).map(tld => {
+      const metadata = tldMetadata[tld] || {
+        marketShare: 0.01, // Default minimal market share
+        category: tld.length === 2 ? 'country' : 'generic',
+        popularity: 25 // Default popularity
+      };
+      return {
+        tld: `.${tld}`,
+        ...metadata
+      };
+    });
     
-    // Categorize TLDs with better performance
-    const categorized = categorizeRTlds(sortedTlds);
+    // Sort by market share
+    enhancedTlds.sort((a, b) => b.marketShare - a.marketShare);
     
-    // Cache the results with timestamp
+    // Store enhanced objects in cache
     const responseData = {
-      total: sortedTlds.length,
-      tlds: sortedTlds,
-      categorized: categorized,
+      total: enhancedTlds.length,
+      tlds: enhancedTlds,
+      categorized: categorizeRTlds(enhancedTlds.map(item => item.tld.substring(1))), // Pass raw TLDs to categorization
       last_updated: new Date().toISOString(),
       timestamp: Date.now()
     };
     
     tldCache.set(CacheKeys.tldList(), responseData, TLD_CACHE_DURATION); // 24 hours
     
-    return sortedTlds;
+    return enhancedTlds; // Return enhanced objects
   } catch (error) {
     console.error('Failed to get supported TLDs:', error);
     
@@ -146,13 +156,20 @@ export async function getAllSupportedTLDs() {
     const expiredCache = tldCache.get(CacheKeys.tldList());
     if (expiredCache) {
       console.log('⚠️ Using expired cache due to fetch error');
-      return expiredCache.tlds;
+      return expiredCache.tlds; // This should also be enhanced objects
     }
     
     // Return fallback data
-    const fallbackTlds = Object.keys(tldMetadata);
+    const fallbackTlds = Object.keys(tldMetadata).map(tld => {
+      const metadata = tldMetadata[tld];
+      return {
+        tld: `.${tld}`,
+        ...metadata
+      };
+    });
+    fallbackTlds.sort((a, b) => b.marketShare - a.marketShare);
     
-    return fallbackTlds;
+    return fallbackTlds; // Return enhanced objects
   }
 }
 

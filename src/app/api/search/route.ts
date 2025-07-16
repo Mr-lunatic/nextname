@@ -5,20 +5,14 @@ import { tldMetadata, getAllSupportedTLDs } from '@/lib/tld-data'
 // Configure Edge Runtime for Cloudflare Pages
 export const runtime = 'edge'
 
-// Dynamic TLD support - fetch from IANA bootstrap
-let allRdapTLDs: any[] = []
-let tldCacheTime = 0
-const TLD_CACHE_DURATION = 24 * 60 * 60 * 1000 // 24 hours
 
 
 
 
 
-// Get popularTLDs from the enhanced list
-async function getPopularTLDs() {
-  const allTlds = await getAllSupportedTLDs()
-  return allTlds.map(item => item.tld)
-}
+
+
+
 
 // Mock registrar pricing data (integrated from pricing API)
 const registrarPricing = {
@@ -241,7 +235,7 @@ export async function GET(request: NextRequest) {
   
   // Get all supported TLDs dynamically
   const allTlds = await getAllSupportedTLDs()
-  const popularTLDs = allTlds.map(item => item.tld)
+  const popularTLDs = allTlds
   
   // Calculate pagination
   const startIndex = (page - 1) * limit
