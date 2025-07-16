@@ -268,7 +268,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Check each domain in the batch concurrently
-    const batchPromises = batch.map(async (tld) => {
+    const batchPromises = batch.map(async (tld: { tld: string; marketShare: number; category: string; popularity: number; }) => {
       const domain = `${prefix}${tld}`
       const tldInfo = allTlds.find(item => item.tld === tld)
       
