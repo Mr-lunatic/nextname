@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from '@/hooks/useTranslations'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ExternalLink, Star, Shield, TrendingUp, Globe, Crown, Loader2 } from 'lucide-react'
@@ -42,12 +42,7 @@ export function SuffixResult({ suffix, registrarPrices = [], description, catego
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Fetch pricing data on component mount
-  useEffect(() => {
-    fetchPricingData()
-  }, [suffix])
-
-  const fetchPricingData = async () => {
+  const fetchPricingData = useCallback(async () => {
     setLoading(true)
     setError(null)
     
@@ -122,7 +117,12 @@ export function SuffixResult({ suffix, registrarPrices = [], description, catego
     } finally {
       setLoading(false)
     }
-  }
+  }, [suffix])
+
+  // Fetch pricing data on component mount
+  useEffect(() => {
+    fetchPricingData()
+  }, [fetchPricingData])
 
   const getSortedPrices = (priceType: 'registration' | 'renewal' | 'transfer') => {
     const prices = [...pricing]

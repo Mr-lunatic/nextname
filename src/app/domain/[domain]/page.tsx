@@ -3,7 +3,7 @@
 // Configure Edge Runtime for Cloudflare Pages
 export const runtime = 'edge'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
@@ -61,13 +61,7 @@ function DomainDetailContent() {
   const [copied, setCopied] = useState(false)
   const { t } = useTranslations()
 
-  useEffect(() => {
-    if (domain) {
-      fetchDomainDetail()
-    }
-  }, [domain])
-
-  const fetchDomainDetail = async () => {
+  const fetchDomainDetail = useCallback(async () => {
     setLoading(true)
     try {
       // Mock data - in real implementation, this would be an API call
@@ -174,7 +168,13 @@ function DomainDetailContent() {
       console.error('Failed to fetch domain detail:', error)
       setLoading(false)
     }
-  }
+  }, [domain])
+
+  useEffect(() => {
+    if (domain) {
+      fetchDomainDetail()
+    }
+  }, [domain, fetchDomainDetail])
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)

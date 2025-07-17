@@ -1,0 +1,1 @@
+var t={},s=(r,o,_)=>(t.__chunk_7939=(a,l,e)=>{e.d(l,{Z:()=>c});let c=(0,e(8622).Z)("XCircle",[["circle",{cx:"12",cy:"12",r:"10",key:"1mglay"}],["path",{d:"m15 9-6 6",key:"1uzhvr"}],["path",{d:"m9 9 6 6",key:"z0biqf"}]])},t);export{s as __getNamedExports};

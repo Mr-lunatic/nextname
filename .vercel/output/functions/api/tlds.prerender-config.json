@@ -1,0 +1,29 @@
+{
+  "type": "Prerender",
+  "expiration": false,
+  "group": 3,
+  "bypassToken": "fd8f07aadb3884081a4810c2c33779e3",
+  "experimentalBypassFor": [
+    {
+      "type": "header",
+      "key": "Next-Action"
+    },
+    {
+      "type": "header",
+      "key": "content-type",
+      "value": "multipart/form-data;.*"
+    }
+  ],
+  "fallback": {
+    "type": "FileFsRef",
+    "mode": 33188,
+    "contentType": "application/json",
+    "fsPath": "tlds.prerender-fallback.body"
+  },
+  "initialHeaders": {
+    "content-type": "application/json",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/api/layout,_N_T_/api/tlds/layout,_N_T_/api/tlds/route,_N_T_/api/tlds/",
+    "vary": "RSC, Next-Router-State-Tree, Next-Router-Prefetch"
+  },
+  "allowQuery": []
+}

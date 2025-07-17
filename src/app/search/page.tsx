@@ -2,7 +2,7 @@
 
 export const runtime = 'edge';
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations } from '@/hooks/useTranslations'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -88,13 +88,7 @@ function SearchPageContent() {
     }
   }
 
-  useEffect(() => {
-    if (query) {
-      fetchSearchResults(currentPage)
-    }
-  }, [query, type])
-
-  const fetchSearchResults = async (page: number = 1) => {
+  const fetchSearchResults = useCallback(async (page: number = 1) => {
     setLoading(true)
     
     // Check cache first
@@ -146,7 +140,9 @@ function SearchPageContent() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [query, type, searchCache])
+
+  
 
   // Preload next page for faster pagination
   const preloadNextPage = async (query: string, type: string, page: number) => {
@@ -521,7 +517,7 @@ function SearchPageContent() {
           <div className="flex flex-col lg:flex-row gap-6 justify-between items-start">
             <div className="space-y-2">
               <h2 className="text-3xl font-bold text-gradient-premium">
-                "{prefix}" 域名建议
+                &quot;{prefix}&quot; 域名建议
               </h2>
               <p className="text-muted-foreground">
                 找到 {sortedResults.length} 个域名选项
@@ -840,7 +836,7 @@ function SearchPageContent() {
               <div className="text-center space-y-4">
                 <SpinnerLoader size="lg" />
                 <p className="text-lg font-medium">正在搜索中...</p>
-                <p className="text-sm text-slate-500 dark:text-slate-400">正在查询: "{query}"</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">正在查询: &quot;{query}&quot;</p>
               </div>
             </div>
             

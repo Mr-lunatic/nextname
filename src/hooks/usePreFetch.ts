@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 interface PreFetchCacheEntry {
   data: any
@@ -179,7 +179,7 @@ export function useLocalStorage() {
     setIsSupported(typeof window !== 'undefined' && !!window.localStorage)
   }, [])
 
-  const setItem = (key: string, value: any) => {
+  const setItem = useCallback((key: string, value: any) => {
     if (!isSupported) return
 
     try {
@@ -191,9 +191,9 @@ export function useLocalStorage() {
     } catch (error) {
       console.warn('localStorage setItem failed:', error)
     }
-  }
+  }, [isSupported])
 
-  const getItem = (key: string, maxAge: number = 24 * 60 * 60 * 1000) => {
+  const getItem = useCallback((key: string, maxAge: number = 24 * 60 * 60 * 1000) => {
     if (!isSupported) return null
 
     try {
@@ -213,14 +213,14 @@ export function useLocalStorage() {
       console.warn('localStorage getItem failed:', error)
       return null
     }
-  }
+  }, [isSupported])
 
-  const removeItem = (key: string) => {
+  const removeItem = useCallback((key: string) => {
     if (!isSupported) return
     localStorage.removeItem(`nextname_${key}`)
-  }
+  }, [isSupported])
 
-  const clear = () => {
+  const clear = useCallback(() => {
     if (!isSupported) return
     
     const keys = Object.keys(localStorage)
@@ -229,7 +229,7 @@ export function useLocalStorage() {
         localStorage.removeItem(key)
       }
     })
-  }
+  }, [isSupported])
 
   return {
     setItem,
@@ -248,7 +248,7 @@ export function useSearchHistory() {
   useEffect(() => {
     const savedHistory = getItem('search_history') || []
     setHistory(savedHistory.slice(0, 10)) // Keep only last 10 searches
-  }, [])
+  }, [getItem])
 
   const addToHistory = (query: string) => {
     if (!query.trim()) return

@@ -64,7 +64,7 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
     }, 1000)
 
     return () => clearTimeout(timer)
-  }, [])
+  }, [preFetchHotDomains, preFetchTldList])
 
   // Load recent searches from localStorage (now using the hook)
   useEffect(() => {

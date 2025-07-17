@@ -1,0 +1,1 @@
+var t={},_=(o,c,n)=>(t.__chunk_9068=(r,s,e)=>{"use strict";e.d(s,{Z:()=>l});let l=(0,e(8622).Z)("CheckCircle",[["path",{d:"M22 11.08V12a10 10 0 1 1-5.93-9.14",key:"g774vq"}],["polyline",{points:"22 4 12 14.01 9 11.01",key:"6xbx8j"}]])},t);export{_ as __getNamedExports};

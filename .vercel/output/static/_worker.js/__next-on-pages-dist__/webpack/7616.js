@@ -1,0 +1,1 @@
+var t={},a=(s,l,o)=>(t.__chunk_7616=(_,c,e)=>{"use strict";e.d(c,{Z:()=>r});let r=(0,e(8622).Z)("Eye",[["path",{d:"M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z",key:"rwhkz3"}],["circle",{cx:"12",cy:"12",r:"3",key:"1v7zrd"}]])},t);export{a as __getNamedExports};

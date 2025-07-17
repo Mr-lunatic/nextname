@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { ExternalLink, TrendingUp, TrendingDown, Star, Award } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -28,11 +28,7 @@ export function PriceComparison({ domain, onClose }: PriceComparisonProps) {
   const [sortBy, setSortBy] = useState('new')
   const [currency, setCurrency] = useState('USD')
 
-  useEffect(() => {
-    fetchPricing()
-  }, [domain, sortBy, currency])
-
-  const fetchPricing = async () => {
+  const fetchPricing = useCallback(async () => {
     setLoading(true)
     try {
       const response = await fetch(`/api/pricing?domain=${encodeURIComponent(domain)}&order=${sortBy}&currency=${currency}`)
@@ -43,7 +39,11 @@ export function PriceComparison({ domain, onClose }: PriceComparisonProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [domain, sortBy, currency])
+
+  useEffect(() => {
+    fetchPricing()
+  }, [fetchPricing])
 
   const getLowestPrice = (type: 'new_price' | 'renew_price' | 'transfer_price') => {
     if (pricing.length === 0) return null
@@ -135,7 +135,7 @@ export function PriceComparison({ domain, onClose }: PriceComparisonProps) {
             const isLowestNew = price.new_price === getLowestPrice('new_price')
             const isLowestRenew = price.renew_price === getLowestPrice('renew_price')
             const isLowestTransfer = price.transfer_price === getLowestPrice('transfer_price')
-            const savings = getSavings(price[`${sortBy}_price` as keyof PriceInfo] as number, `${sortBy}_price` as any)
+            const savings = getSavings(price[sortBy === 'new' ? 'new_price' : sortBy === 'renew' ? 'renew_price' : 'transfer_price'], sortBy === 'new' ? 'new_price' : sortBy === 'renew' ? 'renew_price' : 'transfer_price')
             
             return (
               <motion.div
