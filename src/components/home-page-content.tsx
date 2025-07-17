@@ -335,10 +335,10 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
                   transition={{ delay: 0.6, duration: 0.8 }}
                   className="space-y-4"
                 >
-                  <p className="text-sm font-medium text-muted-foreground">{t('hero.popularTlds')}</p>
+                  
                   <div className="flex flex-wrap gap-3 justify-center">
                     {popularTLDs
-                      .filter(tld => ['.com', '.net', '.org', '.ai', '.io', '.cn', '.xyz'].includes(tld.name))
+                      .filter(tld => ['.com', '.net', '.org', '.ai', '.io', '.cn'].includes(tld.name))
                       .map((tld, index) => (
                       <motion.button
                         key={tld.name}
