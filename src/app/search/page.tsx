@@ -94,27 +94,6 @@ function SearchPageContent() {
     }
   }
 
-  const preloadNextPage = useCallback(async (query: string, type: string, page: number) => {
-    const cacheKey = `${query}-${type}-${page}`
-    const cachedResult = searchCache.get(cacheKey)
-    
-    // Only preload if not already cached
-    if (!cachedResult) {
-      try {
-        console.log(`🔄 Preloading page ${page}`)
-        const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&type=${type}&lang=zh&page=${page}&limit=10`)
-        const data = await response.json()
-        
-        // Cache the preloaded result
-        searchCache.set(cacheKey, data)
-        searchCache.set(`${cacheKey}-time`, Date.now())
-        console.log(`✅ Preloaded page ${page}`)
-      } catch (error) {
-        console.log(`❌ Failed to preload page ${page}:`, error)
-      }
-    }
-  }, [query, type, searchCache])
-
   const fetchSearchResults = useCallback(async (page: number = 1) => {
     setLoading(true)
     
@@ -168,6 +147,27 @@ function SearchPageContent() {
       setLoading(false)
     }
   }, [query, type, searchCache, preloadNextPage])
+
+  const preloadNextPage = useCallback(async (query: string, type: string, page: number) => {
+    const cacheKey = `${query}-${type}-${page}`
+    const cachedResult = searchCache.get(cacheKey)
+    
+    // Only preload if not already cached
+    if (!cachedResult) {
+      try {
+        console.log(`🔄 Preloading page ${page}`)
+        const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&type=${type}&lang=zh&page=${page}&limit=10`)
+        const data = await response.json()
+        
+        // Cache the preloaded result
+        searchCache.set(cacheKey, data)
+        searchCache.set(`${cacheKey}-time`, Date.now())
+        console.log(`✅ Preloaded page ${page}`)
+      } catch (error) {
+        console.log(`❌ Failed to preload page ${page}:`, error)
+      }
+    }
+  }, [query, type, searchCache])
 
   const renderDomainResult = () => {
     if (!result?.result) return null
