@@ -229,7 +229,7 @@ export async function GET(request: NextRequest, context: any) {
   const order = searchParams.get('order') || 'new';
 
   // Access KV binding from context.env
-  const PRICING_CACHE_KV = context.env.PRICING_CACHE as KVNamespace;
+  const PRICING_CACHE_KV = context.env.PRICING_CACHE as any;
 
   // Parameterized cache configuration from environment variables
   const CACHE_TTL_SECONDS = parseInt(context.env.CACHE_TTL || '3600'); // Default 1 hour
