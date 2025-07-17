@@ -5,7 +5,7 @@ export const runtime = 'edge';
 
 // Declare KV Namespace binding for TypeScript
 // This is a type declaration; the actual binding is done in wrangler.toml
-declare const PRICING_CACHE: KVNamespace;
+declare const PRICING_CACHE: any;
 
 // Map to store pending requests for deduplication
 const pendingRequests = new Map<string, Promise<any>>();
