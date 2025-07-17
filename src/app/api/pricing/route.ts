@@ -223,7 +223,7 @@ const basicFallback = [
 ];
 
 // Main GET function for the API route
-export async function GET(request: NextRequest, context: EventContext<any, any, any>) {
+export async function GET(request: NextRequest, context: any) {
   const { searchParams } = new URL(request.url);
   const domain = searchParams.get('domain');
   const order = searchParams.get('order') || 'new';
