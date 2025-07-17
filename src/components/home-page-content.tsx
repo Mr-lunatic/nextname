@@ -324,10 +324,7 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
                       <CheckCircle className="h-4 w-4 text-green-500" />
                       <span>{t('hero.searchFeatures.whoisLookup')}</span>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                      <span>{t('hero.searchFeatures.marketInsights')}</span>
-                    </div>
+                    
                   </div>
                 </motion.div>
 
@@ -340,7 +337,9 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
                 >
                   <p className="text-sm font-medium text-muted-foreground">{t('hero.popularTlds')}</p>
                   <div className="flex flex-wrap gap-3 justify-center">
-                    {popularTLDs.map((tld, index) => (
+                    {popularTLDs
+                      .filter(tld => ['.com', '.net', '.org', '.ai', '.io', '.cn', '.xyz'].includes(tld.name))
+                      .map((tld, index) => (
                       <motion.button
                         key={tld.name}
                         initial={{ opacity: 0, scale: 0.9 }}
