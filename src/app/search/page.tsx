@@ -44,6 +44,12 @@ function SearchPageContent() {
   const query = searchParams.get('q') || ''
   const type = searchParams.get('type') || 'auto'
 
+  useEffect(() => {
+    if (query) {
+      fetchSearchResults()
+    }
+  }, [query, type, fetchSearchResults])
+
   const handleSearch = (newQuery: string, newType: string) => {
     window.location.href = `/search?q=${encodeURIComponent(newQuery)}&type=${newType}`
   }
