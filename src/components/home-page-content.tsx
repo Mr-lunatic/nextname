@@ -610,7 +610,7 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
                       <Card className="h-full p-6 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
                         <div className="space-y-4">
                           <blockquote className="text-sm leading-relaxed">
-                            "{testimonial.content}"
+                            {testimonial.content}
                           </blockquote>
                           
                           <div className="flex items-center space-x-3 pt-2 border-t border-border/50">
@@ -789,7 +789,7 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
           <div className="border-t border-border/50 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
               <p className="text-sm text-muted-foreground">
-                © 2025 Next Name. 快·全·准的域名查询工具 - 为您提供最佳的域名搜索体验
+                © 2025 Next Name. 快&ldquo;全&rdquo;准的域名查询工具 - 为您提供最佳的域名搜索体验
               </p>
               <div className="flex items-center space-x-6 text-sm text-muted-foreground">
                 <a href="/privacy" className="hover:text-primary transition-colors">隐私政策</a>

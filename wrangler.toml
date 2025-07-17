@@ -7,7 +7,7 @@ command = "npm run pages:build"
 cwd = ""
 
 [build.environment_variables]
-NODE_VERSION = "18"
+NODE_VERSION = "20"
 
 [[pages]]
 compatibility_date = "2025-07-15"
