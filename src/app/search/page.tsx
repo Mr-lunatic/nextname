@@ -88,15 +88,36 @@ function SearchPageContent() {
     }
   }
 
+  const preloadNextPage = useCallback(async (query: string, type: string, page: number) => {
+    const cacheKey = `${query}-${type}-${page}`
+    const cachedResult = searchCache.get(cacheKey)
+
+    // Only preload if not already cached
+    if (!cachedResult) {
+      try {
+        console.log(`🔄 Preloading page ${page}`)
+        const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&type=${type}&lang=zh&page=${page}&limit=10`)
+        const data = await response.json()
+
+        // Cache the preloaded result
+        searchCache.set(cacheKey, data)
+        searchCache.set(`${cacheKey}-time`, Date.now())
+        console.log(`✅ Preloaded page ${page}`)
+      } catch (error) {
+        console.log(`❌ Failed to preload page ${page}:`, error)
+      }
+    }
+  }, [searchCache])
+
   const fetchSearchResults = useCallback(async (page: number = 1) => {
     setLoading(true)
-    
+
     // Check cache first
     const cacheKey = `${query}-${type}-${page}`
     const cachedResult = searchCache.get(cacheKey)
     const cacheTime = searchCache.get(`${cacheKey}-time`)
     const cacheAge = Date.now() - (cacheTime || 0)
-    
+
     if (cachedResult && cacheAge < 10 * 60 * 1000) { // Extended to 10 minutes cache for better pagination performance
       console.log('✅ Using cached search result')
       setResult(cachedResult)
@@ -108,27 +129,27 @@ function SearchPageContent() {
       setLoading(false)
       return
     }
-    
+
     try {
       const startTime = Date.now()
       const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&type=${type}&lang=zh&page=${page}&limit=10`)
       const data = await response.json()
       const responseTime = Date.now() - startTime
-      
+
       console.log(`🚀 Search completed in ${responseTime}ms`)
-      
+
       setResult(data)
-      
+
       // Cache the result
       searchCache.set(cacheKey, data)
       searchCache.set(`${cacheKey}-time`, Date.now())
-      
+
       // Update pagination info if this is a prefix search
       if (data.type === 'prefix' && data.result.pagination) {
         setPaginationInfo(data.result.pagination)
         setTotalPages(data.result.pagination.total_pages)
         setCurrentPage(data.result.pagination.current_page)
-        
+
         // Preload next page for faster navigation
         const nextPage = data.result.pagination.current_page + 1
         if (nextPage <= data.result.pagination.total_pages) {
@@ -141,27 +162,6 @@ function SearchPageContent() {
       setLoading(false)
     }
   }, [query, type, searchCache, preloadNextPage])
-
-  const preloadNextPage = useCallback(async (query: string, type: string, page: number) => {
-    const cacheKey = `${query}-${type}-${page}`
-    const cachedResult = searchCache.get(cacheKey)
-    
-    // Only preload if not already cached
-    if (!cachedResult) {
-      try {
-        console.log(`🔄 Preloading page ${page}`)
-        const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&type=${type}&lang=zh&page=${page}&limit=10`)
-        const data = await response.json()
-        
-        // Cache the preloaded result
-        searchCache.set(cacheKey, data)
-        searchCache.set(`${cacheKey}-time`, Date.now())
-        console.log(`✅ Preloaded page ${page}`)
-      } catch (error) {
-        console.log(`❌ Failed to preload page ${page}:`, error)
-      }
-    }
-  }, [query, type, searchCache])
 
   useEffect(() => {
     if (query) {
