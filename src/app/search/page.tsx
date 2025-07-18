@@ -21,6 +21,7 @@ import { NextNameLogo } from '@/components/logo'
 import Image from 'next/image'
 import { LanguageSwitcher } from '@/components/language-currency-switcher'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { Footer } from '@/components/footer'
 
 interface SearchResult {
   query: string
@@ -537,12 +538,7 @@ function SearchPageContent() {
               <h2 className="text-3xl font-bold text-gradient-premium">
                 &quot;{prefix}&quot; 域名建议
               </h2>
-              <p className="text-muted-foreground">
-                找到 {sortedResults.length} 个域名选项
-                {pagination && (
-                  <span>，从 {pagination.total_items} 个RDAP支持的TLD中筛选</span>
-                )}
-              </p>
+
               {pagination?.tld_stats && (
                 <p className="text-xs text-muted-foreground">
                   系统支持 {pagination.tld_stats.total_supported} 个TLD，数据更新于 {new Date(pagination.tld_stats.last_updated).toLocaleDateString()}
@@ -576,33 +572,7 @@ function SearchPageContent() {
             </div>
           </div>
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-            <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <div className="text-2xl font-bold text-green-600">
-                {sortedResults.filter(item => item.is_available).length}
-              </div>
-              <div className="text-sm text-green-700 dark:text-green-300">可注册</div>
-            </div>
-            <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">
-                {sortedResults.filter(item => item.market_share > 1).length}
-              </div>
-              <div className="text-sm text-blue-700 dark:text-blue-300">热门后缀</div>
-            </div>
-            <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-              <div className="text-2xl font-bold text-purple-600">
-                {sortedResults.filter(item => item.category === 'tech').length}
-              </div>
-              <div className="text-sm text-purple-700 dark:text-purple-300">科技类</div>
-            </div>
-            <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-              <div className="text-2xl font-bold text-orange-600">
-                ${Math.min(...sortedResults.filter(item => item.estimated_price).map(item => item.estimated_price)) || 0}
-              </div>
-              <div className="text-sm text-orange-700 dark:text-orange-300">最低价格</div>
-            </div>
-          </div>
+
 
           {/* Pagination Info */}
           {pagination && (
@@ -617,8 +587,8 @@ function SearchPageContent() {
           )}
         </div>
         
-        {/* List-style Layout */}
-        <div className="space-y-4">
+        {/* Compact List Layout */}
+        <div className="space-y-2">
           <AnimatePresence>
             {sortedResults.map((item: any, index: number) => (
               <motion.div
@@ -629,104 +599,53 @@ function SearchPageContent() {
                 transition={{ delay: index * 0.05 }}
                 className="group"
               >
-                <CardSpotlight>
-                  <Card className={`transition-all duration-300 border-2 ${
-                    item.is_available 
-                      ? 'border-green-200 hover:border-green-400 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20' 
-                      : 'border-slate-200 hover:border-slate-400 bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-800/20 dark:to-gray-800/20'
-                  }`}>
-                    <CardContent className="p-6">
-                      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                        {/* Left side - Domain info */}
-                        <div className="flex-1 space-y-2">
-                          <div className="flex items-center gap-3">
-                            <span className="font-mono text-2xl font-bold text-primary group-hover:text-primary/80">
-                              {item.domain}
-                            </span>
-                            <Badge 
-                              variant={item.is_available ? "default" : "secondary"} 
-                              className={item.is_available ? "bg-green-100 text-green-800 border-green-200" : ""}
-                            >
-                              {item.is_available ? '可注册' : '已注册'}
-                            </Badge>
-                            {item.market_share > 0 && (
-                              <Badge variant="outline" className="text-xs">
-                                {item.market_share.toFixed(1)}% 市场份额
-                              </Badge>
-                            )}
-                          </div>
-                          
-                          {item.is_available && item.estimated_price && (
-                            <div className="text-sm text-muted-foreground">
-                              预估注册价格: <span className="font-semibold text-primary">${item.estimated_price}</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Right side - Top 3 Registrars */}
-                        {item.is_available && item.top_registrars && item.top_registrars.length > 0 && (
-                          <div className="flex-shrink-0 lg:w-2/3">
-                            <div className="text-sm font-medium text-muted-foreground mb-3">
-                              最低价格的三家注册商
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                              {item.top_registrars.map((registrar: any, regIndex: number) => (
-                                <div
-                                  key={registrar.registrar}
-                                  className={`p-3 rounded-lg border transition-all hover:shadow-md ${
-                                    regIndex === 0 
-                                      ? 'border-green-300 bg-green-50 dark:bg-green-900/30' 
-                                      : 'border-slate-200 bg-white dark:bg-slate-800/50'
-                                  }`}
-                                >
-                                  <div className="space-y-2">
-                                    <div className="flex items-center justify-between">
-                                      <span className="font-medium text-sm">{registrar.registrar}</span>
-                                      {regIndex === 0 && (
-                                        <Badge className="text-xs bg-green-100 text-green-700">
-                                          最低价
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    <div className="space-y-1">
-                                      <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">注册:</span>
-                                        <span className="font-semibold">${registrar.registrationPrice}</span>
-                                      </div>
-                                      <div className="flex justify-between text-xs text-muted-foreground">
-                                        <span>续费:</span>
-                                        <span>${registrar.renewalPrice}</span>
-                                      </div>
-                                    </div>
-                                    {registrar.discountPercent && (
-                                      <Badge variant="secondary" className="text-xs">
-                                        优惠 {registrar.discountPercent}%
-                                      </Badge>
-                                    )}
-                                    <Button size="sm" className="w-full text-xs">
-                                      <ShoppingCart className="mr-1 h-3 w-3" />
-                                      注册
-                                    </Button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* For unavailable domains */}
-                        {!item.is_available && (
-                          <div className="flex-shrink-0">
-                            <Button size="sm" variant="outline">
-                              <Eye className="mr-2 h-4 w-4" />
-                              查看详情
-                            </Button>
-                          </div>
+                <Card className="transition-all duration-300 border hover:border-primary/30 hover:shadow-md">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      {/* Left side - Domain info */}
+                      <div className="flex items-center gap-3 flex-1">
+                        <span className="font-mono text-lg font-bold text-primary group-hover:text-primary/80">
+                          {item.domain}
+                        </span>
+                        <Badge
+                          variant={item.is_available ? "default" : "secondary"}
+                          className={item.is_available
+                            ? "bg-green-100 text-green-800 border-green-200"
+                            : "bg-gray-100 text-gray-800 border-gray-200"
+                          }
+                        >
+                          {item.is_available ? '未注册' : '已注册'}
+                        </Badge>
+                        {item.market_share > 0 && (
+                          <Badge variant="outline" className="text-xs">
+                            {item.market_share.toFixed(1)}% 市场份额
+                          </Badge>
                         )}
                       </div>
-                    </CardContent>
-                  </Card>
-                </CardSpotlight>
+
+                      {/* Right side - Price and Action */}
+                      <div className="flex items-center gap-3">
+                        {item.is_available && item.estimated_price && (
+                          <div className="text-right">
+                            <div className="text-sm text-muted-foreground">预估价格</div>
+                            <div className="font-semibold text-primary">${item.estimated_price}</div>
+                          </div>
+                        )}
+                        {item.is_available ? (
+                          <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                            <ShoppingCart className="mr-1 h-3 w-3" />
+                            注册
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="outline">
+                            <Eye className="mr-1 h-3 w-3" />
+                            详情
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </motion.div>
             ))}
           </AnimatePresence>
@@ -923,6 +842,8 @@ function SearchPageContent() {
           </div>
         )}
       </div>
+
+      <Footer />
     </div>
   )
 }

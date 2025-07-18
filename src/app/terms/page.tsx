@@ -11,6 +11,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageSwitcher } from '@/components/language-currency-switcher'
 import { CardSpotlight } from '@/components/ui/framer-spotlight'
 import { NextNameLogo } from '@/components/logo'
+import { Footer } from '@/components/footer'
 
 export default function TermsPage() {
   const sections = [
@@ -210,6 +211,8 @@ export default function TermsPage() {
           </CardSpotlight>
         </motion.div>
       </div>
+
+      <Footer />
     </div>
   )
 }

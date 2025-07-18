@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageSwitcher } from '@/components/language-currency-switcher'
 import { CardSpotlight } from '@/components/ui/framer-spotlight'
+import { Footer } from '@/components/footer'
 
 export default function PrivacyPage() {
   const sections = [
@@ -362,6 +363,8 @@ export default function PrivacyPage() {
           </CardSpotlight>
         </motion.div>
       </div>
+
+      <Footer />
     </div>
   )
 }

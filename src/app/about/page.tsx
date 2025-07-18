@@ -27,6 +27,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageSwitcher } from '@/components/language-currency-switcher'
+import { Footer } from '@/components/footer'
 
 export default function AboutPage() {
   const { t } = useTranslations()
@@ -413,12 +414,7 @@ export default function AboutPage() {
         </motion.div>
       </section>
 
-      {/* Footer */}
-      <footer className="container-magazine py-8 border-t">
-        <div className="text-center text-muted-foreground">
-          <p>&copy; 2025 Next Name. 保留所有权利。</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }

@@ -31,6 +31,7 @@ import { SpinnerLoader } from '@/components/ui/loading-skeleton'
 import { EnhancedWhoisResult } from '@/components/enhanced-whois-result'
 import { BestNameSpotlight, CardSpotlight } from '@/components/ui/framer-spotlight'
 import { useTranslations } from '@/hooks/useTranslations'
+import { Footer } from '@/components/footer'
 
 interface RegistrarPrice {
   registrar: string
@@ -478,6 +479,8 @@ function DomainDetailContent() {
           </motion.div>
         )}
       </div>
+
+      <Footer />
     </div>
   )
 }
