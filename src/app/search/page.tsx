@@ -79,6 +79,19 @@ function SearchPageContent() {
     window.location.href = `/domain/${encodeURIComponent(domain)}`
   }
 
+  const handleDetailsClick = (item: any) => {
+    if (item.is_available) {
+      // 未注册域名：跳转到后缀价格对比页
+      const tld = getTldString(item)
+      if (tld) {
+        handleSearch(tld, 'suffix')
+      }
+    } else {
+      // 已注册域名：跳转到WHOIS查询页
+      handleSearch(item.domain, 'domain')
+    }
+  }
+
   // Handle pagination
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -601,48 +614,66 @@ function SearchPageContent() {
               >
                 <Card className="transition-all duration-300 border hover:border-primary/30 hover:shadow-md">
                   <CardContent className="p-4">
-                    <div className="flex items-center justify-between gap-4">
-                      {/* Left side - Domain info */}
-                      <div className="flex items-center gap-3 flex-1">
-                        <span className="font-mono text-lg font-bold text-primary group-hover:text-primary/80">
-                          {item.domain}
-                        </span>
-                        <Badge
-                          variant={item.is_available ? "default" : "secondary"}
-                          className={item.is_available
-                            ? "bg-green-100 text-green-800 border-green-200"
-                            : "bg-gray-100 text-gray-800 border-gray-200"
-                          }
-                        >
-                          {item.is_available ? '未注册' : '已注册'}
-                        </Badge>
-                        {item.market_share > 0 && (
-                          <Badge variant="outline" className="text-xs">
-                            {item.market_share.toFixed(1)}% 市场份额
+                    <div className="space-y-3">
+                      {/* Top row - Domain info and action */}
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 flex-1">
+                          <span className="font-mono text-lg font-bold text-primary group-hover:text-primary/80">
+                            {item.domain}
+                          </span>
+                          <Badge
+                            variant={item.is_available ? "default" : "secondary"}
+                            className={item.is_available
+                              ? "bg-green-100 text-green-800 border-green-200"
+                              : "bg-gray-100 text-gray-800 border-gray-200"
+                            }
+                          >
+                            {item.is_available ? '未注册' : '已注册'}
                           </Badge>
-                        )}
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          {item.is_available ? (
+                            <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                              <ShoppingCart className="mr-1 h-3 w-3" />
+                              注册
+                            </Button>
+                          ) : (
+                            <Button size="sm" variant="outline" onClick={() => handleDetailsClick(item)}>
+                              <Eye className="mr-1 h-3 w-3" />
+                              详情
+                            </Button>
+                          )}
+                        </div>
                       </div>
 
-                      {/* Right side - Price and Action */}
-                      <div className="flex items-center gap-3">
-                        {item.is_available && item.estimated_price && (
-                          <div className="text-right">
-                            <div className="text-sm text-muted-foreground">预估价格</div>
-                            <div className="font-semibold text-primary">${item.estimated_price}</div>
+                      {/* Bottom row - Registrar pricing (only for available domains) */}
+                      {item.is_available && item.top_registrars && item.top_registrars.length > 0 && (
+                        <div className="border-t pt-3">
+                          <div className="text-xs text-muted-foreground mb-2">注册商价格对比（按注册价格排序）</div>
+                          <div className="grid grid-cols-3 gap-2">
+                            {item.top_registrars.map((registrar: any, index: number) => (
+                              <div
+                                key={registrar.registrar}
+                                className={`p-2 rounded border text-center ${
+                                  index === 0
+                                    ? 'border-green-300 bg-green-50 dark:bg-green-900/20'
+                                    : 'border-gray-200 bg-gray-50 dark:bg-gray-800/20'
+                                }`}
+                              >
+                                <div className="text-xs font-medium">{registrar.registrar}</div>
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  <div>注册: <span className="font-semibold text-primary">${registrar.registrationPrice}</span></div>
+                                  <div>续费: <span className="text-muted-foreground">${registrar.renewalPrice}</span></div>
+                                </div>
+                                {index === 0 && (
+                                  <div className="text-xs text-green-600 font-medium mt-1">最低价</div>
+                                )}
+                              </div>
+                            ))}
                           </div>
-                        )}
-                        {item.is_available ? (
-                          <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                            <ShoppingCart className="mr-1 h-3 w-3" />
-                            注册
-                          </Button>
-                        ) : (
-                          <Button size="sm" variant="outline">
-                            <Eye className="mr-1 h-3 w-3" />
-                            详情
-                          </Button>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
