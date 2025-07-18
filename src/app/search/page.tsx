@@ -494,9 +494,11 @@ function SearchPageContent() {
     if (!result?.result?.checked_tlds) return null
     
     const { prefix, checked_tlds, pagination } = result.result
-    const filteredResults = checked_tlds.filter((item: any) => 
-      item.tld.toLowerCase().includes(filter.toLowerCase())
-    )
+    const filteredResults = checked_tlds.filter((item: any) => {
+      // 确保 item.tld 存在且是字符串
+      const tld = item.tld || item.domain || ''
+      return typeof tld === 'string' && tld.toLowerCase().includes(filter.toLowerCase())
+    })
     
     const sortedResults = [...filteredResults].sort((a: any, b: any) => {
       if (sortBy === 'price') {

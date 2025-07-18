@@ -205,21 +205,27 @@ const enhancedPricing = {
   ],
   'net': [
     { registrar: 'Cloudflare', registrarCode: 'cloudflare', registrationPrice: 9.68, renewalPrice: 9.68, transferPrice: 9.68, currency: 'USD' },
+    { registrar: 'Porkbun', registrarCode: 'porkbun', registrationPrice: 10.45, renewalPrice: 11.98, transferPrice: 10.45, currency: 'USD' },
     { registrar: 'Namecheap', registrarCode: 'namecheap', registrationPrice: 12.98, renewalPrice: 14.98, transferPrice: 12.98, currency: 'USD' },
+    { registrar: 'DreamHost', registrarCode: 'dreamhost', registrationPrice: 13.99, renewalPrice: 19.99, transferPrice: 13.99, currency: 'USD' },
     { registrar: 'GoDaddy', registrarCode: 'godaddy', registrationPrice: 14.99, renewalPrice: 19.99, transferPrice: 10.99, currency: 'USD' }
   ],
   'org': [
     { registrar: 'Porkbun', registrarCode: 'porkbun', registrationPrice: 8.67, renewalPrice: 10.12, transferPrice: 8.67, currency: 'USD' },
+    { registrar: 'Cloudflare', registrarCode: 'cloudflare', registrationPrice: 10.44, renewalPrice: 10.44, transferPrice: 10.44, currency: 'USD' },
     { registrar: 'Namecheap', registrarCode: 'namecheap', registrationPrice: 12.98, renewalPrice: 14.98, transferPrice: 12.98, currency: 'USD' },
+    { registrar: 'DreamHost', registrarCode: 'dreamhost', registrationPrice: 13.99, renewalPrice: 19.99, transferPrice: 13.99, currency: 'USD' },
     { registrar: 'GoDaddy', registrarCode: 'godaddy', registrationPrice: 13.99, renewalPrice: 18.99, transferPrice: 9.99, currency: 'USD' }
   ]
 };
 
 // Basic fallback data
 const basicFallback = [
+  { registrar: 'Cloudflare', registrarCode: 'cloudflare', registrationPrice: 8.57, renewalPrice: 8.57, transferPrice: 8.57, currency: 'USD' },
   { registrar: 'Namecheap', registrarCode: 'namecheap', registrationPrice: 8.88, renewalPrice: 13.98, transferPrice: 8.98, currency: 'USD' },
-  { registrar: 'GoDaddy', registrarCode: 'godaddy', registrationPrice: 12.99, renewalPrice: 17.99, transferPrice: 8.99, currency: 'USD' },
-  { registrar: 'Cloudflare', registrarCode: 'cloudflare', registrationPrice: 8.57, renewalPrice: 8.57, transferPrice: 8.57, currency: 'USD' }
+  { registrar: 'Porkbun', registrarCode: 'porkbun', registrationPrice: 9.13, renewalPrice: 11.98, transferPrice: 9.13, currency: 'USD' },
+  { registrar: 'DreamHost', registrarCode: 'dreamhost', registrationPrice: 10.99, renewalPrice: 19.99, transferPrice: 10.99, currency: 'USD' },
+  { registrar: 'GoDaddy', registrarCode: 'godaddy', registrationPrice: 12.99, renewalPrice: 17.99, transferPrice: 8.99, currency: 'USD' }
 ];
 
 // Main GET function for the API route

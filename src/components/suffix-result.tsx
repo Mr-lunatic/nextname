@@ -84,6 +84,16 @@ export function SuffixResult({ suffix, registrarPrices = [], description, catego
       // Use fallback mock data
       setPricing([
         {
+          registrar: "Cloudflare",
+          registrationPrice: 8.57,
+          renewalPrice: 8.57,
+          transferPrice: 8.57,
+          currency: "USD",
+          features: ["无加价定价", "免费隐私保护", "安全防护", "全球CDN"],
+          rating: 4.8,
+          isPopular: true
+        },
+        {
           registrar: "Namecheap",
           registrationPrice: 8.88,
           renewalPrice: 13.98,
@@ -94,7 +104,27 @@ export function SuffixResult({ suffix, registrarPrices = [], description, catego
           isPopular: true
         },
         {
-          registrar: "GoDaddy", 
+          registrar: "Porkbun",
+          registrationPrice: 9.13,
+          renewalPrice: 11.98,
+          transferPrice: 9.13,
+          currency: "USD",
+          features: ["免费WHOIS隐私", "免费SSL", "API访问", "现代界面"],
+          rating: 4.6,
+          isPopular: true
+        },
+        {
+          registrar: "DreamHost",
+          registrationPrice: 10.99,
+          renewalPrice: 19.99,
+          transferPrice: 10.99,
+          currency: "USD",
+          features: ["免费隐私保护", "网站建设工具", "邮箱服务", "绿色主机"],
+          rating: 4.3,
+          isPopular: false
+        },
+        {
+          registrar: "GoDaddy",
           registrationPrice: 12.99,
           renewalPrice: 17.99,
           transferPrice: 8.99,
@@ -102,16 +132,6 @@ export function SuffixResult({ suffix, registrarPrices = [], description, catego
           features: ["24/7客服", "网站建设工具", "邮箱服务", "全球化服务"],
           rating: 4.2,
           isPremium: true
-        },
-        {
-          registrar: "Cloudflare",
-          registrationPrice: 8.57,
-          renewalPrice: 8.57,
-          transferPrice: 8.57,
-          currency: "USD",
-          features: ["无加价定价", "免费隐私保护", "安全防护", "全球CDN"],
-          rating: 4.8,
-          isPopular: true
         }
       ])
     } finally {

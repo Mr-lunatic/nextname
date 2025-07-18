@@ -287,12 +287,6 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
             </div>
           </div>
           <div className="absolute right-2 flex items-center space-x-2">
-            <Card className="px-3 py-1 bg-secondary">
-              <CardContent className="p-0 flex items-center space-x-1 text-xs">
-                {getIcon()}
-                <span>{getTypeText()}</span>
-              </CardContent>
-            </Card>
             <Button
               onClick={() => handleSearch()}
               className="h-10 rounded-full"
