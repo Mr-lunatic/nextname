@@ -490,14 +490,27 @@ function SearchPageContent() {
     )
   }
 
+  // 辅助函数：从item中获取TLD字符串
+  const getTldString = (item: any): string => {
+    if (typeof item.tld === 'string') {
+      return item.tld
+    } else if (item.tld && typeof item.tld.tld === 'string') {
+      return item.tld.tld
+    } else if (typeof item.domain === 'string') {
+      // 从完整域名中提取TLD
+      const parts = item.domain.split('.')
+      return parts.length > 1 ? '.' + parts.slice(1).join('.') : ''
+    }
+    return ''
+  }
+
   const renderPrefixResults = () => {
     if (!result?.result?.checked_tlds) return null
-    
+
     const { prefix, checked_tlds, pagination } = result.result
     const filteredResults = checked_tlds.filter((item: any) => {
-      // 确保 item.tld 存在且是字符串
-      const tld = item.tld || item.domain || ''
-      return typeof tld === 'string' && tld.toLowerCase().includes(filter.toLowerCase())
+      const tldString = getTldString(item)
+      return tldString && tldString.toLowerCase().includes(filter.toLowerCase())
     })
     
     const sortedResults = [...filteredResults].sort((a: any, b: any) => {
@@ -609,7 +622,7 @@ function SearchPageContent() {
           <AnimatePresence>
             {sortedResults.map((item: any, index: number) => (
               <motion.div
-                key={item.tld}
+                key={getTldString(item) || item.domain || index}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
