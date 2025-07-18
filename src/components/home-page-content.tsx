@@ -766,10 +766,11 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
             <div>
               <h4 className="font-semibold mb-4">产品功能</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>域名可用性查询</li>
-                <li>价格对比分析</li>
-                <li>WHOIS信息查询</li>
-                <li>智能域名推荐</li>
+                <li><a href="/search" className="hover:text-primary transition-colors">域名可用性查询</a></li>
+                <li><a href="/search" className="hover:text-primary transition-colors">价格对比分析</a></li>
+                <li><a href="/search" className="hover:text-primary transition-colors">WHOIS信息查询</a></li>
+                <li><a href="/tlds" className="hover:text-primary transition-colors">顶级域名大全</a></li>
+                <li><a href="/search" className="hover:text-primary transition-colors">智能域名推荐</a></li>
               </ul>
             </div>
             

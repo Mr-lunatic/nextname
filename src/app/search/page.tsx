@@ -768,9 +768,9 @@ function SearchPageContent() {
               animate={{ opacity: 1, x: 0 }}
               className="flex items-center space-x-3"
             >
-              <div>
-                <NextNameLogo className="text-foreground" />
-              </div>
+              <Link href="/" className="cursor-pointer">
+                <NextNameLogo className="text-foreground hover:opacity-80 transition-opacity" />
+              </Link>
             </motion.div>
             <div className="flex items-center space-x-4">
               <LanguageSwitcher 
@@ -782,15 +782,6 @@ function SearchPageContent() {
         </header>
 
         <div className="container mx-auto px-4 py-8">
-          <div className="mb-8">
-            <Link href="/">
-              <Button variant="ghost" size="sm" className="interactive">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                返回首页
-              </Button>
-            </Link>
-          </div>
-          
           {/* Enhanced Search Bar */}
           <div className="mb-8">
             <EnhancedSmartSearchV2 
@@ -842,14 +833,7 @@ function SearchPageContent() {
       </header>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <Link href="/">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              返回首页
-            </Button>
-          </Link>
-        </div>
+
 
         {/* Enhanced Search Bar */}
         <div className="mb-8">
