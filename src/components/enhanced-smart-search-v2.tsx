@@ -11,7 +11,7 @@ import { Card, CardContent } from '@/components/ui/card'
 type SearchType = 'auto' | 'domain' | 'prefix' | 'suffix'
 
 interface SearchSuggestion {
-  type: 'domain' | 'tld' | 'keyword' | 'recent'
+  type: 'domain' | 'tld' | 'keyword' | 'recent' | 'prefix' | 'suffix'
   value: string
   label: string
   description?: string
@@ -215,17 +215,19 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
 
   const handleSuggestionSelect = (suggestion: SearchSuggestion) => {
     setQuery(suggestion.value)
-    
+
     // Determine search type based on suggestion type
     let searchType: SearchType = 'auto'
     if (suggestion.type === 'domain') {
       searchType = 'domain'
+    } else if (suggestion.type === 'prefix') {
+      searchType = 'prefix'
+    } else if (suggestion.type === 'suffix' || suggestion.type === 'tld') {
+      searchType = 'suffix'
     } else if (suggestion.type === 'keyword') {
       searchType = 'prefix'
-    } else if (suggestion.type === 'tld') {
-      searchType = 'suffix'
     }
-    
+
     handleSearch(suggestion.value, searchType)
   }
 
@@ -258,9 +260,12 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
   const getSuggestionIcon = (suggestion: SearchSuggestion) => {
     switch (suggestion.type) {
       case 'tld':
+      case 'suffix':
         return <DollarSign className="h-4 w-4" />
       case 'domain':
         return <Globe className="h-4 w-4" />
+      case 'prefix':
+        return <Search className="h-4 w-4" />
       case 'recent':
         return <Clock className="h-4 w-4" />
       default:

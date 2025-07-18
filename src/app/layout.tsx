@@ -4,6 +4,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { TranslationProvider } from '@/contexts/TranslationContext'
 import { getLocale } from '@/lib/getLocale'
 import { StructuredData } from '@/components/structured-data'
+import Script from 'next/script'
 import type { Metadata } from 'next'
 
 const inter = Inter({ 
@@ -84,21 +85,20 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} suppressHydrationWarning className={`${inter.variable} ${playfair.variable} ${jetbrains.variable}`}>
-      <head>
-        {/* Google Analytics */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-52VT5YSYFV"></script>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-52VT5YSYFV');
-            `,
-          }}
-        />
-      </head>
       <body className="font-sans antialiased">
+        {/* Google Analytics */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-52VT5YSYFV"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-52VT5YSYFV');
+          `}
+        </Script>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
