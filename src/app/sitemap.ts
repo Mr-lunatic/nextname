@@ -1,6 +1,8 @@
 import { MetadataRoute } from 'next'
 import { tldManager } from '@/lib/tld-manager'
 
+export const runtime = 'edge'
+
 const siteUrl = 'https://nextname.app';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

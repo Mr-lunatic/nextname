@@ -2,6 +2,8 @@ import { Metadata } from 'next'
 import { tldManager } from '@/lib/tld-manager'
 import TLDPageClient from './client'
 
+export const runtime = 'edge'
+
 interface TLDPageProps {
   params: {
     tld: string
