@@ -95,38 +95,54 @@ export default function TermsPage() {
   ]
 
   return (
-    <div className="min-h-screen gradient-bg-premium hero-bg-pattern">
+    <div className="min-h-screen gradient-bg-premium">
       {/* Header */}
-      <header className="container-magazine py-4">
-        <div className="flex justify-between items-center backdrop-blur-sm">
+      <header className="container-magazine py-4 relative z-[10000]">
+        <div className="flex justify-between items-center">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center space-x-3"
           >
+            <div className="relative">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-600 rounded-xl flex items-center justify-center">
+                <Globe className="h-6 w-6 text-white" />
+              </div>
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-orange-400 to-pink-500 rounded-full flex items-center justify-center">
+                <Sparkles className="h-2 w-2 text-white" />
+              </div>
+            </div>
             <div>
-              <NextNameLogo className="text-foreground" />
+              <h1 className="text-2xl font-bold text-gradient-premium font-serif">Next Name</h1>
+              <p className="text-xs text-muted-foreground font-sans">Find Your Perfect Domain</p>
             </div>
           </motion.div>
           <div className="flex items-center space-x-4">
-            <LanguageSwitcher 
-              currentLocale="zh-CN"
-            />
+            <LanguageSwitcher currentLocale="zh-CN" />
             <ThemeToggle />
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Back Button */}
-        <div className="mb-8">
-          <Link href="/">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              返回首页
-            </Button>
-          </Link>
-        </div>
+      <div className="container-magazine py-8">
+        {/* Page Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-12"
+        >
+          <div className="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 rounded-full mb-6">
+            <Scale className="h-4 w-4 text-green-600" />
+            <span className="text-sm font-medium text-green-700 dark:text-green-300">服务条款</span>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-gradient-premium">服务条款</h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            欢迎使用Next Name服务，请仔细阅读以下条款，使用我们的服务即表示您同意这些条款。
+          </p>
+          <div className="text-sm text-muted-foreground mt-4">
+            最后更新时间：2025年1月15日
+          </div>
+        </motion.div>
 
         {/* Page Header */}
         <motion.div

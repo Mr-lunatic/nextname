@@ -226,15 +226,6 @@ function DomainDetailContent() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <Link href="/search">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              返回搜索
-            </Button>
-          </Link>
-        </div>
 
         {/* Domain Header */}
         <BestNameSpotlight>

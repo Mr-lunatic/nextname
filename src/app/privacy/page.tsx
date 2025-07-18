@@ -258,15 +258,6 @@ export default function PrivacyPage() {
       </header>
 
       <div className="container-magazine py-8">
-        {/* Back Button */}
-        <div className="mb-8">
-          <Link href="/">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              返回首页
-            </Button>
-          </Link>
-        </div>
 
         {/* Page Header */}
         <motion.div

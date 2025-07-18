@@ -22,6 +22,7 @@ import Image from 'next/image'
 import { LanguageSwitcher } from '@/components/language-currency-switcher'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Footer } from '@/components/footer'
+import { trackDomainSearch, trackWhoisQuery } from '@/lib/analytics'
 
 interface SearchResult {
   query: string
@@ -145,6 +146,9 @@ function SearchPageContent() {
     }
 
     try {
+      // Track search event
+      trackDomainSearch(query, type)
+
       const startTime = Date.now()
       const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&type=${type}&lang=zh&page=${page}&limit=10`)
       const data = await response.json()

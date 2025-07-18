@@ -87,18 +87,25 @@ export default async function RootLayout({
     <html lang={locale} suppressHydrationWarning className={`${inter.variable} ${playfair.variable} ${jetbrains.variable}`}>
       <body className="font-sans antialiased">
         {/* Google Analytics */}
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-52VT5YSYFV"
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-52VT5YSYFV');
-          `}
-        </Script>
+        {process.env.NEXT_PUBLIC_GA_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}', {
+                  page_title: document.title,
+                  page_location: window.location.href
+                });
+              `}
+            </Script>
+          </>
+        )}
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
