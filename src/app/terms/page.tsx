@@ -195,7 +195,6 @@ export default function TermsPage() {
                 </p>
                 <div className="space-y-2 text-sm">
                   <p><strong>客服邮箱：</strong> <a href="mailto:support@nextname.app" className="text-primary hover:underline">support@nextname.app</a></p>
-                  <p><strong>法务邮箱：</strong> <a href="mailto:legal@nextname.app" className="text-primary hover:underline">legal@nextname.app</a></p>
                 </div>
               </CardContent>
             </Card>

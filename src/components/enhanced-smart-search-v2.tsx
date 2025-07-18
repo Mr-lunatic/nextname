@@ -109,19 +109,19 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
           type: 'domain',
           value: 'nextname.app',
           label: 'nextname.app',
-          description: '输入完整域名 - 检查WHOIS信息'
+          description: '输入完整域名 - 检查WHOIS信息和注册状态'
         },
         {
           type: 'prefix',
           value: 'nextname',
           label: 'nextname',
-          description: '输入域名前缀 - 批量检索是否可注册'
+          description: '输入域名前缀 - 批量检索多个后缀的可注册性'
         },
         {
           type: 'suffix',
           value: '.app',
           label: '.app',
-          description: '输入域名后缀 - 批量对比注册商价格'
+          description: '输入域名后缀 - 批量对比各注册商的价格信息'
         }
       ]
 
@@ -341,9 +341,9 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
                 <div
                   key={suggestion.value}
                   onClick={() => handleSuggestionSelect(suggestion)}
-                  className="flex items-start gap-3 px-4 py-3 hover:bg-secondary cursor-pointer transition-colors"
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-secondary cursor-pointer transition-colors"
                 >
-                  <div className="flex-shrink-0 mt-0.5">
+                  <div className="flex-shrink-0">
                     {getSuggestionIcon(suggestion)}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -352,7 +352,7 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
                       {suggestion.popular && <Star className="h-3 w-3 text-yellow-500" />}
                     </div>
                     {suggestion.description && (
-                      <div className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      <div className="text-sm text-muted-foreground mt-1 leading-relaxed">
                         {suggestion.description}
                       </div>
                     )}

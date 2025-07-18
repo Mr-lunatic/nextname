@@ -264,7 +264,41 @@ export async function GET(request: NextRequest, context: any) {
 
   const fetchAndCache = async () => {
     try {
-      // First, try to use our enhanced pricing data (20 registrars)
+      // First, try to fetch from Nazhumi API for real-time pricing
+      console.log(`🔍 Attempting to fetch real-time pricing from Nazhumi API for ${cleanDomain}`);
+      const nazhumiData = await fetchNazhumiPricing(cleanDomain, order);
+
+      if (nazhumiData && Array.isArray(nazhumiData) && nazhumiData.length > 0) {
+        console.log(`✅ Got ${nazhumiData.length} results from Nazhumi API (real-time)`);
+
+        const transformedData = transformNazhumiData(nazhumiData, cleanDomain);
+
+        // Add features to each registrar
+        const enrichedData = transformedData.map(item => ({
+          ...item,
+          features: addRegistrarFeatures(item.registrarCode || ''),
+          registrarUrl: item.registrarUrl || getRegistrarUrl(item.registrarCode || ''),
+          isPopular: ['cosmotown', 'spaceship', 'cloudflare', 'namecheap', 'porkbun', 'dreamhost'].includes(item.registrarCode || ''),
+          isPremium: ['huawei', 'baidu', 'volcengine', 'ovh'].includes(item.registrarCode || '')
+        }));
+
+        const responseData = {
+          domain: cleanDomain,
+          order,
+          source: 'nazhumi',
+          count: enrichedData.length,
+          pricing: enrichedData
+        };
+        await PRICING_CACHE_KV.put(
+          cacheKey,
+          JSON.stringify({ data: responseData, timestamp: Date.now() }),
+          { expirationTtl: CACHE_TTL_SECONDS + STALE_WHILE_REVALIDATE_SECONDS }
+        );
+        return responseData;
+      }
+
+      // Fallback 1: Try to use our enhanced pricing data if Nazhumi API fails
+      console.log(`⚠️  Nazhumi API failed, trying enhanced pricing data for ${cleanDomain}`);
       const baseEnhancedData = enhancedPricing[cleanDomain as keyof typeof enhancedPricing];
 
       if (baseEnhancedData && baseEnhancedData.length > 0) {
@@ -286,40 +320,7 @@ export async function GET(request: NextRequest, context: any) {
         const responseData = {
           domain: cleanDomain,
           order,
-          source: 'enhanced',
-          count: enrichedData.length,
-          pricing: enrichedData
-        };
-        // Cache this enhanced data as well
-        await PRICING_CACHE_KV.put(
-          cacheKey,
-          JSON.stringify({ data: responseData, timestamp: Date.now() }),
-          { expirationTtl: CACHE_TTL_SECONDS + STALE_WHILE_REVALIDATE_SECONDS }
-        );
-        return responseData;
-      }
-
-      // Fallback: Try to fetch from Nazhumi API if enhanced data not available
-      const nazhumiData = await fetchNazhumiPricing(cleanDomain, order);
-
-      if (nazhumiData && Array.isArray(nazhumiData) && nazhumiData.length > 0) {
-        console.log(`✅ Got ${nazhumiData.length} results from Nazhumi API (fallback)`);
-
-        const transformedData = transformNazhumiData(nazhumiData, cleanDomain);
-
-        // Add features to each registrar
-        const enrichedData = transformedData.map(item => ({
-          ...item,
-          features: addRegistrarFeatures(item.registrarCode || ''),
-          registrarUrl: item.registrarUrl || `https://${item.registrarCode || 'example'}.com`,
-          isPopular: ['cosmotown', 'spaceship', 'cloudflare', 'namecheap', 'porkbun', 'dreamhost'].includes(item.registrarCode || ''),
-          isPremium: ['huawei', 'baidu', 'volcengine', 'ovh'].includes(item.registrarCode || '')
-        }));
-
-        const responseData = {
-          domain: cleanDomain,
-          order,
-          source: 'nazhumi',
+          source: 'enhanced-fallback',
           count: enrichedData.length,
           pricing: enrichedData
         };
@@ -331,8 +332,8 @@ export async function GET(request: NextRequest, context: any) {
         return responseData;
       }
 
-      // Last resort: use basic fallback data
-      console.log(`⚠️  No pricing data available, using basic fallback for ${cleanDomain}`);
+      // Fallback 2: Last resort - use basic fallback data
+      console.log(`⚠️  All pricing sources failed, using basic fallback for ${cleanDomain}`);
 
       const enrichedBasicData = basicFallback.map(item => ({
         ...item,
