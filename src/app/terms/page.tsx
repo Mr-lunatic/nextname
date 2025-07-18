@@ -102,18 +102,10 @@ export default function TermsPage() {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex items-center space-x-3"
+            className="flex items-center"
           >
-            <div className="relative">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-600 rounded-xl flex items-center justify-center">
-                <Globe className="h-6 w-6 text-white" />
-              </div>
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-orange-400 to-pink-500 rounded-full flex items-center justify-center">
-                <Sparkles className="h-2 w-2 text-white" />
-              </div>
-            </div>
             <div>
-              <h1 className="text-2xl font-bold text-gradient-premium font-serif">Next Name</h1>
+              <NextNameLogo className="text-foreground" />
               <p className="text-xs text-muted-foreground font-sans">Find Your Perfect Domain</p>
             </div>
           </motion.div>

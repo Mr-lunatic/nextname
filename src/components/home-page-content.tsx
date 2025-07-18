@@ -33,9 +33,7 @@ import { Badge } from '@/components/ui/badge'
 import { NextNameLogo } from '@/components/logo'
 import dynamic from 'next/dynamic'
 
-const CardSpotlight = dynamic(() => import('@/components/ui/framer-spotlight').then(mod => mod.CardSpotlight), { ssr: false });
-const HeroSpotlight = dynamic(() => import('@/components/ui/framer-spotlight').then(mod => mod.HeroSpotlight), { ssr: false });
-const LightSpotlight = dynamic(() => import('@/components/ui/framer-spotlight').then(mod => mod.LightSpotlight), { ssr: false });
+import { CardSpotlight, HeroSpotlight, LightSpotlight } from '@/components/ui/framer-spotlight';
 import { LazySection, LazyPlaceholder } from '@/components/lazy-section'
 
 

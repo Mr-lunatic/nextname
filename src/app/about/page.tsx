@@ -4,12 +4,12 @@ export const runtime = 'edge';
 
 import { useTranslations } from '@/hooks/useTranslations'
 import { motion } from 'framer-motion'
-import { 
-  Globe, 
-  Users, 
-  Award, 
-  Target, 
-  Heart, 
+import {
+  Globe,
+  Users,
+  Award,
+  Target,
+  Heart,
   Sparkles,
   ArrowRight,
   Shield,
@@ -27,6 +27,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageSwitcher } from '@/components/language-currency-switcher'
+import { NextNameLogo } from '@/components/logo'
 import { Footer } from '@/components/footer'
 
 export default function AboutPage() {
@@ -119,17 +120,9 @@ export default function AboutPage() {
       {/* Header */}
       <header className="container-magazine py-4 relative z-[10000]">
         <div className="flex justify-between items-center">
-          <Link href="/" className="flex items-center space-x-3">
-            <div className="relative">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-600 rounded-xl flex items-center justify-center">
-                <Globe className="h-6 w-6 text-white" />
-              </div>
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-orange-400 to-pink-500 rounded-full flex items-center justify-center">
-                <Sparkles className="h-2 w-2 text-white" />
-              </div>
-            </div>
+          <Link href="/" className="flex items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gradient-premium font-serif">Next Name</h1>
+              <NextNameLogo className="text-foreground" />
               <p className="text-xs text-muted-foreground font-sans">Find Your Perfect Domain</p>
             </div>
           </Link>

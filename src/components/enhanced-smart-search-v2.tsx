@@ -261,15 +261,15 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
     switch (suggestion.type) {
       case 'tld':
       case 'suffix':
-        return <DollarSign className="h-4 w-4" />
+        return <DollarSign className="h-4 w-4 text-muted-foreground" />
       case 'domain':
-        return <Globe className="h-4 w-4" />
+        return <Globe className="h-4 w-4 text-muted-foreground" />
       case 'prefix':
-        return <Search className="h-4 w-4" />
+        return <Search className="h-4 w-4 text-muted-foreground" />
       case 'recent':
-        return <Clock className="h-4 w-4" />
+        return <Clock className="h-4 w-4 text-muted-foreground" />
       default:
-        return <Hash className="h-4 w-4" />
+        return <Hash className="h-4 w-4 text-muted-foreground" />
     }
   }
 
@@ -341,20 +341,18 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
                 <div
                   key={suggestion.value}
                   onClick={() => handleSuggestionSelect(suggestion)}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-secondary cursor-pointer transition-colors"
+                  className="flex items-center gap-4 px-4 py-3 hover:bg-secondary cursor-pointer transition-colors"
                 >
                   <div className="flex-shrink-0">
                     {getSuggestionIcon(suggestion)}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">{suggestion.label}</span>
-                      {suggestion.popular && <Star className="h-3 w-3 text-yellow-500" />}
-                    </div>
+                  <div className="flex-1 min-w-0 flex items-center gap-3">
+                    <span className="font-medium text-sm text-foreground">{suggestion.label}</span>
+                    {suggestion.popular && <Star className="h-3 w-3 text-yellow-500" />}
                     {suggestion.description && (
-                      <div className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                        {suggestion.description}
-                      </div>
+                      <span className="text-sm text-muted-foreground ml-1">
+                        · {suggestion.description}
+                      </span>
                     )}
                   </div>
                 </div>

@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageSwitcher } from '@/components/language-currency-switcher'
 import { CardSpotlight } from '@/components/ui/framer-spotlight'
+import { NextNameLogo } from '@/components/logo'
 import { Footer } from '@/components/footer'
 
 export default function PrivacyPage() {
@@ -235,18 +236,10 @@ export default function PrivacyPage() {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex items-center space-x-3"
+            className="flex items-center"
           >
-            <div className="relative">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-600 rounded-xl flex items-center justify-center">
-                <Globe className="h-6 w-6 text-white" />
-              </div>
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-orange-400 to-pink-500 rounded-full flex items-center justify-center">
-                <Sparkles className="h-2 w-2 text-white" />
-              </div>
-            </div>
             <div>
-              <h1 className="text-2xl font-bold text-gradient-premium font-serif">Next Name</h1>
+              <NextNameLogo className="text-foreground" />
               <p className="text-xs text-muted-foreground font-sans">Find Your Perfect Domain</p>
             </div>
           </motion.div>
@@ -343,11 +336,10 @@ export default function PrivacyPage() {
                   如果您对本隐私政策有任何疑问或需要行使您的权利，请随时联系我们：
                 </p>
                 <div className="space-y-2 text-sm">
-                  <p><strong>邮箱：</strong> <a href="mailto:privacy@nextname.app" className="text-primary hover:underline">privacy@nextname.app</a></p>
                   <p><strong>客服：</strong> <a href="mailto:support@nextname.app" className="text-primary hover:underline">support@nextname.app</a></p>
                 </div>
                 <Button className="mt-6" asChild>
-                  <a href="mailto:privacy@nextname.app">联系隐私团队</a>
+                  <a href="mailto:support@nextname.app">联系客服团队</a>
                 </Button>
               </CardContent>
             </Card>
