@@ -399,15 +399,34 @@ function parseRdapResponse(rdapData: any, domain: string) {
   const status = rdapData.status || []
   const nameservers = rdapData.nameservers || []
 
+  // Debug: Log all available events to help diagnose date issues
+  console.log(`📅 RDAP events for ${domain}:`, events.map((e: any) => ({
+    action: e.eventAction,
+    date: e.eventDate
+  })))
+
   // Find registrar entity
   const registrarEntity = entities.find((entity: any) => 
     entity.roles && entity.roles.includes('registrar')
   )
 
-  // Extract dates from events
-  const createdEvent = events.find((event: any) => event.eventAction === 'registration')
-  const updatedEvent = events.find((event: any) => event.eventAction === 'last changed')
-  const expiryEvent = events.find((event: any) => event.eventAction === 'expiration')
+  // Extract dates from events - try multiple event action names
+  const createdEvent = events.find((event: any) =>
+    ['registration', 'registered', 'created', 'creation'].includes(event.eventAction?.toLowerCase())
+  )
+  const updatedEvent = events.find((event: any) =>
+    ['last changed', 'last updated', 'updated', 'changed', 'modification'].includes(event.eventAction?.toLowerCase())
+  )
+  const expiryEvent = events.find((event: any) =>
+    ['expiration', 'expires', 'expiry', 'registry expiry date'].includes(event.eventAction?.toLowerCase())
+  )
+
+  // Debug: Log which events were found
+  console.log(`📅 Found events for ${domain}:`, {
+    created: createdEvent ? { action: createdEvent.eventAction, date: createdEvent.eventDate } : null,
+    updated: updatedEvent ? { action: updatedEvent.eventAction, date: updatedEvent.eventDate } : null,
+    expiry: expiryEvent ? { action: expiryEvent.eventAction, date: expiryEvent.eventDate } : null
+  })
 
   // Extract nameserver names
   const nameServerNames = nameservers.map((ns: any) => ns.ldhName || ns.unicodeName).filter(Boolean)
