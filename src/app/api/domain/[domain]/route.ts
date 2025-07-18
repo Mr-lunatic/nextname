@@ -420,12 +420,16 @@ function parseRdapResponse(rdapData: any, domain: string) {
   const expiryEvent = events.find((event: any) =>
     ['expiration', 'expires', 'expiry', 'registry expiry date'].includes(event.eventAction?.toLowerCase())
   )
+  const transferEvent = events.find((event: any) =>
+    ['transfer', 'transferred'].includes(event.eventAction?.toLowerCase())
+  )
 
   // Debug: Log which events were found
   console.log(`📅 Found events for ${domain}:`, {
     created: createdEvent ? { action: createdEvent.eventAction, date: createdEvent.eventDate } : null,
     updated: updatedEvent ? { action: updatedEvent.eventAction, date: updatedEvent.eventDate } : null,
-    expiry: expiryEvent ? { action: expiryEvent.eventAction, date: expiryEvent.eventDate } : null
+    expiry: expiryEvent ? { action: expiryEvent.eventAction, date: expiryEvent.eventDate } : null,
+    transfer: transferEvent ? { action: transferEvent.eventAction, date: transferEvent.eventDate } : null
   })
 
   // Extract nameserver names
@@ -474,9 +478,11 @@ function parseRdapResponse(rdapData: any, domain: string) {
     created_date: createdEvent?.eventDate || null,
     updated_date: updatedEvent?.eventDate || null,
     expiry_date: expiryEvent?.eventDate || null,
+    transfer_date: transferEvent?.eventDate || null,
     status: status,
     name_servers: nameServerNames,
     dnssec: rdapData.secureDNS?.delegationSigned ? 'signedDelegation' : 'unsigned',
+    dnssec_details: rdapData.secureDNS || null,
     registrar_abuse_contact_email: registrarEmail,
     registrar_abuse_contact_phone: registrarPhone,
     registry_domain_id: rdapData.handle || null,

@@ -3,15 +3,15 @@
 import { useState } from 'react'
 import { useTranslations } from '@/hooks/useTranslations'
 import { motion } from 'framer-motion'
-import { 
-  Calendar, 
-  Globe, 
-  Shield, 
-  Clock, 
-  ExternalLink, 
-  Copy, 
-  CheckCircle, 
-  XCircle, 
+import {
+  Calendar,
+  Globe,
+  Shield,
+  Clock,
+  ExternalLink,
+  Copy,
+  CheckCircle,
+  XCircle,
   AlertCircle,
   Server,
   Mail,
@@ -19,7 +19,8 @@ import {
   Building,
   Info,
   User,
-  MapPin
+  MapPin,
+  ArrowRightLeft
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -33,6 +34,7 @@ interface WhoisInfo {
   updatedDate?: string
   creationDate?: string
   registryExpiryDate?: string
+  transferDate?: string
   registrar?: string
   registrarIanaId?: string
   registrarAbuseContactEmail?: string
@@ -40,6 +42,15 @@ interface WhoisInfo {
   domainStatus?: string[]
   nameServers?: string[]
   dnssec?: string
+  dnssecDetails?: {
+    delegationSigned?: boolean
+    dsData?: Array<{
+      keyTag?: number
+      algorithm?: number
+      digest?: string
+      digestType?: number
+    }>
+  }
   registrant?: {
     name?: string
     organization?: string
@@ -116,7 +127,46 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false }: 
     }
   }
 
+  const getDomainAge = (creationDate?: string) => {
+    if (!creationDate) return null
+    try {
+      const created = new Date(creationDate)
+      const now = new Date()
+      const diffTime = now.getTime() - created.getTime()
+      const diffYears = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 365.25))
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+
+      if (diffYears > 0) {
+        return `${diffYears}年`
+      } else {
+        return `${diffDays}天`
+      }
+    } catch {
+      return null
+    }
+  }
+
+  const getStatusDisplayName = (status: string) => {
+    const statusMap: { [key: string]: string } = {
+      'clientDeleteProhibited': '禁止删除',
+      'clientTransferProhibited': '禁止转移',
+      'clientUpdateProhibited': '禁止更新',
+      'serverDeleteProhibited': '服务器禁止删除',
+      'serverTransferProhibited': '服务器禁止转移',
+      'serverUpdateProhibited': '服务器禁止更新',
+      'clientHold': '客户端暂停',
+      'serverHold': '服务器暂停',
+      'pendingDelete': '待删除',
+      'pendingTransfer': '待转移',
+      'ok': '正常'
+    }
+
+    const statusCode = status.split(' ')[0]
+    return statusMap[statusCode] || statusCode
+  }
+
   const daysUntilExpiry = getDaysUntilExpiry(whoisInfo.registryExpiryDate)
+  const domainAge = getDomainAge(whoisInfo.creationDate)
 
   const InfoRow = ({ icon: Icon, label, value, copyable = false }: { 
     icon: any; 
@@ -224,7 +274,13 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false }: 
           <CardContent className="space-y-0">
             <InfoRow icon={Globe} label="域名" value={whoisInfo.domainName} copyable />
             <InfoRow icon={Calendar} label="注册日期" value={formatDate(whoisInfo.creationDate)} />
+            {domainAge && (
+              <InfoRow icon={Clock} label="域名年龄" value={domainAge} />
+            )}
             <InfoRow icon={Clock} label="更新日期" value={formatDate(whoisInfo.updatedDate)} />
+            {whoisInfo.transferDate && (
+              <InfoRow icon={ArrowRightLeft} label="转移日期" value={formatDate(whoisInfo.transferDate)} />
+            )}
             <InfoRow icon={AlertCircle} label="到期日期" value={formatDate(whoisInfo.registryExpiryDate)} />
             <InfoRow icon={Info} label="注册局域名ID" value={whoisInfo.registryDomainId} copyable />
             
@@ -235,88 +291,87 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false }: 
                   <div className="text-sm font-medium">域名状态</div>
                 </div>
                 <div className="flex flex-wrap gap-1 ml-7">
-                  {whoisInfo.domainStatus.slice(0, 2).map((status, index) => (
-                    <Badge key={index} variant="outline" className="text-xs">
-                      {status.split(' ')[0]}
-                    </Badge>
-                  ))}
-                  {whoisInfo.domainStatus.length > 2 && (
-                    <Badge variant="outline" className="text-xs">
-                      +{whoisInfo.domainStatus.length - 2} more
-                    </Badge>
-                  )}
+                  {whoisInfo.domainStatus.map((status, index) => {
+                    const statusCode = status.split(' ')[0]
+                    const displayName = getStatusDisplayName(status)
+                    const isProtective = statusCode.includes('Prohibited') || statusCode.includes('Hold')
+
+                    return (
+                      <Badge
+                        key={index}
+                        variant={isProtective ? "default" : "outline"}
+                        className={`text-xs ${isProtective ? 'bg-green-100 text-green-800 border-green-300' : ''}`}
+                        title={status}
+                      >
+                        {displayName}
+                      </Badge>
+                    )
+                  })}
                 </div>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* 注册商信息 */}
+        {/* 注册商与技术信息 */}
         <Card>
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center space-x-2 text-lg">
               <Building className="w-5 h-5" />
-              <span>注册商信息</span>
+              <span>注册商与技术信息</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-0">
-            <InfoRow icon={Building} label="注册商" value={whoisInfo.registrar} copyable />
-            <InfoRow icon={Info} label="注册商IANA ID" value={whoisInfo.registrarIanaId} />
-            <InfoRow icon={Globe} label="注册商网站" value={whoisInfo.registrarUrl} copyable />
-            <InfoRow icon={Server} label="WHOIS服务器" value={whoisInfo.registrarWhoisServer} copyable />
-            <InfoRow icon={Mail} label="投诉邮箱" value={whoisInfo.registrarAbuseContactEmail} copyable />
-            <InfoRow icon={Phone} label="投诉电话" value={whoisInfo.registrarAbuseContactPhone} copyable />
-          </CardContent>
-        </Card>
+            {/* 注册商信息部分 */}
+            <div className="space-y-0">
+              <InfoRow icon={Building} label="注册商" value={whoisInfo.registrar} copyable />
+              <InfoRow icon={Info} label="注册商IANA ID" value={whoisInfo.registrarIanaId} />
+              <InfoRow icon={Globe} label="注册商网站" value={whoisInfo.registrarUrl} copyable />
+              <InfoRow icon={Server} label="WHOIS服务器" value={whoisInfo.registrarWhoisServer} copyable />
+              <InfoRow icon={Mail} label="投诉邮箱" value={whoisInfo.registrarAbuseContactEmail} copyable />
+              <InfoRow icon={Phone} label="投诉电话" value={whoisInfo.registrarAbuseContactPhone} copyable />
+            </div>
 
-        {/* 技术信息 */}
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center space-x-2 text-lg">
-              <Server className="w-5 h-5" />
-              <span>技术信息</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-0">
-            <InfoRow icon={Shield} label="DNSSEC" value={whoisInfo.dnssec === 'signedDelegation' ? '已启用' : '未启用'} />
-            
-            {whoisInfo.nameServers && whoisInfo.nameServers.length > 0 && (
-              <div className="py-2">
-                <div className="flex items-center space-x-3 mb-2">
-                  <Server className="w-4 h-4 text-muted-foreground" />
-                  <div className="text-sm font-medium">名称服务器</div>
+            {/* 分隔线 */}
+            <div className="border-t border-border/50 my-4"></div>
+
+            {/* 技术信息部分 */}
+            <div className="space-y-0">
+              <InfoRow icon={Shield} label="DNSSEC" value={whoisInfo.dnssec === 'signedDelegation' ? '已启用' : '未启用'} />
+
+              {whoisInfo.nameServers && whoisInfo.nameServers.length > 0 && (
+                <div className="py-2">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <Server className="w-4 h-4 text-muted-foreground" />
+                    <div className="text-sm font-medium">名称服务器 ({whoisInfo.nameServers.length})</div>
+                  </div>
+                  <div className="ml-7 space-y-1">
+                    {whoisInfo.nameServers.map((ns, index) => (
+                      <div key={index} className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground font-mono truncate pr-2">{ns.toLowerCase()}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copyToClipboard(ns, `ns-${index}`)}
+                          className="flex-shrink-0 h-6 w-6 p-0"
+                        >
+                          {copiedField === `ns-${index}` ? (
+                            <CheckCircle className="h-3 w-3 text-green-500" />
+                          ) : (
+                            <Copy className="h-3 w-3" />
+                          )}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="ml-7 space-y-1">
-                  {whoisInfo.nameServers.slice(0, 3).map((ns, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground font-mono truncate pr-2">{ns}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(ns, `ns-${index}`)}
-                        className="flex-shrink-0 h-6 w-6 p-0"
-                      >
-                        {copiedField === `ns-${index}` ? (
-                          <CheckCircle className="h-3 w-3 text-green-500" />
-                        ) : (
-                          <Copy className="h-3 w-3" />
-                        )}
-                      </Button>
-                    </div>
-                  ))}
-                  {whoisInfo.nameServers.length > 3 && (
-                    <div className="text-xs text-muted-foreground">
-                      +{whoisInfo.nameServers.length - 3} 个更多服务器
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </CardContent>
         </Card>
 
         {/* 联系信息 */}
-        {(whoisInfo.registrant || whoisInfo.admin) && (
+        {(whoisInfo.registrant || whoisInfo.admin || whoisInfo.tech) && (
           <Card>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center space-x-2 text-lg">
@@ -330,13 +385,24 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false }: 
                   <InfoRow icon={User} label="注册人" value={whoisInfo.registrant.name} />
                   <InfoRow icon={Building} label="注册机构" value={whoisInfo.registrant.organization} />
                   <InfoRow icon={Mail} label="注册人邮箱" value={whoisInfo.registrant.email} copyable />
+                  <InfoRow icon={Phone} label="注册人电话" value={whoisInfo.registrant.phone} copyable />
                   <InfoRow icon={MapPin} label="国家/地区" value={whoisInfo.registrant.country} />
                 </>
               )}
               {whoisInfo.admin && (
                 <>
                   <InfoRow icon={User} label="管理联系人" value={whoisInfo.admin.name} />
+                  <InfoRow icon={Building} label="管理机构" value={whoisInfo.admin.organization} />
                   <InfoRow icon={Mail} label="管理邮箱" value={whoisInfo.admin.email} copyable />
+                  <InfoRow icon={Phone} label="管理电话" value={whoisInfo.admin.phone} copyable />
+                </>
+              )}
+              {whoisInfo.tech && (
+                <>
+                  <InfoRow icon={User} label="技术联系人" value={whoisInfo.tech.name} />
+                  <InfoRow icon={Building} label="技术机构" value={whoisInfo.tech.organization} />
+                  <InfoRow icon={Mail} label="技术邮箱" value={whoisInfo.tech.email} copyable />
+                  <InfoRow icon={Phone} label="技术电话" value={whoisInfo.tech.phone} copyable />
                 </>
               )}
             </CardContent>
@@ -347,17 +413,44 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false }: 
       {/* Footer Information */}
       <Card className="bg-muted/30">
         <CardContent className="pt-6">
-          <div className="space-y-2 text-sm text-muted-foreground">
+          <div className="space-y-3 text-sm text-muted-foreground">
             <p className="flex items-center">
               <Clock className="w-4 h-4 mr-2" />
               WHOIS数据库最后更新时间: {formatDate(whoisInfo.lastUpdateOfWhoisDatabase)}
             </p>
-            <p className="text-xs">
-              有关域名状态代码的更多信息，请访问{' '}
-              <a href="https://icann.org/epp" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
-                https://icann.org/epp
-              </a>
-            </p>
+
+            {/* RDAP 标准信息 */}
+            <div className="border-t border-border/50 pt-3 space-y-2">
+              <p className="text-xs font-medium text-foreground/80">
+                此响应符合 RDAP gTLD 注册局和注册商操作规范 1.0 版本
+              </p>
+
+              <div className="flex flex-col sm:flex-row sm:justify-between gap-2 text-xs">
+                <div className="flex flex-wrap items-center">
+                  <span className="font-medium mr-1">状态码说明：</span>
+                  <a
+                    href="https://icann.org/epp"
+                    className="text-primary hover:underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    https://icann.org/epp
+                  </a>
+                </div>
+
+                <div className="flex flex-wrap items-center">
+                  <span className="font-medium mr-1">数据准确性投诉：</span>
+                  <a
+                    href="https://icann.org/wicf"
+                    className="text-primary hover:underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    ICANN 投诉表单
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

@@ -472,29 +472,25 @@ function SearchPageContent() {
               domain={domain}
               whoisInfo={{
                 domainName: domain,
-                registryDomainId: whois_info?.registry_domain_id || 'D123456789-LROR',
-                registrarWhoisServer: whois_info?.registrar_whois_server || 'whois.markmonitor.com',
-                registrarUrl: whois_info?.registrar_url || 'http://www.markmonitor.com',
-                updatedDate: whois_info?.updated_date || '2019-09-09T15:39:04Z',
-                creationDate: whois_info?.creation_date || '1997-09-15T04:00:00Z',
-                registryExpiryDate: whois_info?.registry_expiry_date || '2028-09-14T04:00:00Z',
-                registrar: whois_info?.registrar || 'MarkMonitor Inc.',
-                registrarIanaId: whois_info?.registrar_iana_id || '292',
-                registrarAbuseContactEmail: whois_info?.registrar_abuse_contact_email || 'abusecomplaints@markmonitor.com',
-                registrarAbuseContactPhone: whois_info?.registrar_abuse_contact_phone || '+1.2086851750',
-                domainStatus: whois_info?.domain_status || [
+                registryDomainId: whois_info?.registry_domain_id || null,
+                registrarWhoisServer: whois_info?.registrar_whois_server || null,
+                registrarUrl: whois_info?.registrar_url || null,
+                updatedDate: whois_info?.updated_date || null,
+                creationDate: whois_info?.created_date || null,
+                registryExpiryDate: whois_info?.expiry_date || null,
+                transferDate: whois_info?.transfer_date || null,
+                registrar: whois_info?.registrar || null,
+                registrarIanaId: whois_info?.registrar_iana_id || null,
+                registrarAbuseContactEmail: whois_info?.registrar_abuse_contact_email || null,
+                registrarAbuseContactPhone: whois_info?.registrar_abuse_contact_phone || null,
+                domainStatus: whois_info?.status || [
                   'clientDeleteProhibited https://icann.org/epp#clientDeleteProhibited',
                   'clientTransferProhibited https://icann.org/epp#clientTransferProhibited',
                   'clientUpdateProhibited https://icann.org/epp#clientUpdateProhibited'
                 ],
-                nameServers: whois_info?.name_servers || [
-                  'NS1.GOOGLE.COM',
-                  'NS2.GOOGLE.COM',
-                  'NS3.GOOGLE.COM',
-                  'NS4.GOOGLE.COM'
-                ],
+                nameServers: whois_info?.name_servers || [],
                 dnssec: whois_info?.dnssec || 'unsigned',
-                lastUpdateOfWhoisDatabase: whois_info?.last_update_of_whois_database || '2025-07-10T09:52:50Z'
+                lastUpdateOfWhoisDatabase: whois_info?.last_update_of_whois_database || new Date().toISOString()
               }}
               isAvailable={is_available}
             />

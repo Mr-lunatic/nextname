@@ -65,106 +65,104 @@ function DomainDetailContent() {
   const fetchDomainDetail = useCallback(async () => {
     setLoading(true)
     try {
-      // Mock data - in real implementation, this would be an API call
-      setTimeout(() => {
-        const mockDetail: DomainDetail = {
-          domain: decodeURIComponent(domain),
-          isAvailable: Math.random() > 0.5,
-          whoisInfo: {
-            domainName: decodeURIComponent(domain),
-            registryDomainId: 'D123456789-LROR',
-            registrarWhoisServer: 'whois.markmonitor.com',
-            registrarUrl: 'http://www.markmonitor.com',
-            updatedDate: '2019-09-09T15:39:04Z',
-            creationDate: '1997-09-15T04:00:00Z',
-            registryExpiryDate: '2028-09-14T04:00:00Z',
-            registrar: 'MarkMonitor Inc.',
-            registrarIanaId: '292',
-            registrarAbuseContactEmail: 'abusecomplaints@markmonitor.com',
-            registrarAbuseContactPhone: '+1.2086851750',
-            domainStatus: [
-              'clientDeleteProhibited https://icann.org/epp#clientDeleteProhibited',
-              'clientTransferProhibited https://icann.org/epp#clientTransferProhibited',
-              'clientUpdateProhibited https://icann.org/epp#clientUpdateProhibited'
-            ],
-            nameServers: [
-              'NS1.GOOGLE.COM',
-              'NS2.GOOGLE.COM',
-              'NS3.GOOGLE.COM',
-              'NS4.GOOGLE.COM'
-            ],
-            dnssec: 'unsigned',
-            lastUpdateOfWhoisDatabase: '2025-07-10T09:52:50Z'
+      // Real API call to get domain information
+      const response = await fetch(`/api/domain/${encodeURIComponent(domain)}`)
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch domain data')
+      }
+
+      const domainDetail: DomainDetail = {
+        domain: data.domain,
+        isAvailable: data.is_available,
+        whoisInfo: data.is_available ? undefined : {
+          domainName: data.domain,
+          registryDomainId: data.registry_domain_id || null,
+          registrarWhoisServer: data.registrar_whois_server || null,
+          registrarUrl: data.registrar_url || null,
+          updatedDate: data.updated_date || null,
+          creationDate: data.created_date || null,
+          registryExpiryDate: data.expiry_date || null,
+          transferDate: data.transfer_date || null,
+          registrar: data.registrar || null,
+          registrarIanaId: data.registrar_iana_id || null,
+          registrarAbuseContactEmail: data.registrar_abuse_contact_email || null,
+          registrarAbuseContactPhone: data.registrar_abuse_contact_phone || null,
+          domainStatus: data.status || [],
+          nameServers: data.name_servers || [],
+          dnssec: data.dnssec || 'unsigned',
+          lastUpdateOfWhoisDatabase: data.last_update_of_whois_database || new Date().toISOString()
+        },
+        prices: [
+          {
+            registrar: 'GoDaddy',
+            logo: '/logos/godaddy.svg',
+            registrationPrice: 12.99,
+            renewalPrice: 17.99,
+            transferPrice: 12.99,
+            currency: 'USD',
+            specialOffer: '首年特价',
+            rating: 4.2,
+            features: ['免费WHOIS隐私', '24/7客服', '域名转发'],
+            affiliateLink: 'https://godaddy.com'
           },
-          prices: [
-            {
-              registrar: 'GoDaddy',
-              logo: '/logos/godaddy.svg',
-              registrationPrice: 12.99,
-              renewalPrice: 17.99,
-              transferPrice: 12.99,
-              currency: 'USD',
-              specialOffer: '首年特价',
-              rating: 4.2,
-              features: ['免费WHOIS隐私', '24/7客服', '域名转发'],
-              affiliateLink: 'https://godaddy.com'
-            },
-            {
-              registrar: 'Namecheap',
-              logo: '/logos/namecheap.svg',
-              registrationPrice: 10.69,
-              renewalPrice: 13.99,
-              transferPrice: 10.69,
-              currency: 'USD',
-              rating: 4.5,
-              features: ['免费WHOIS隐私', 'DNS管理', '邮箱转发'],
-              affiliateLink: 'https://namecheap.com'
-            },
-            {
-              registrar: 'Cloudflare',
-              logo: '/logos/cloudflare.svg',
-              registrationPrice: 8.57,
-              renewalPrice: 8.57,
-              transferPrice: 8.57,
-              currency: 'USD',
-              rating: 4.8,
-              features: ['批发价格', '免费SSL', 'DNSSEC'],
-              affiliateLink: 'https://cloudflare.com'
-            },
-            {
-              registrar: 'Porkbun',
-              logo: '/logos/porkbun.svg',
-              registrationPrice: 9.13,
-              renewalPrice: 11.98,
-              transferPrice: 9.13,
-              currency: 'USD',
-              rating: 4.6,
-              features: ['免费WHOIS隐私', '免费SSL', 'API访问'],
-              affiliateLink: 'https://porkbun.com'
-            },
-            {
-              registrar: 'Google Domains',
-              logo: '/logos/google.svg',
-              registrationPrice: 12.00,
-              renewalPrice: 12.00,
-              transferPrice: 12.00,
-              currency: 'USD',
-              rating: 4.3,
-              features: ['Google集成', '免费隐私保护', '简洁界面'],
-              affiliateLink: 'https://domains.google'
-            }
-          ],
-          recommendations: [
-            `${decodeURIComponent(domain).split('.')[0]}.net`,
-            `${decodeURIComponent(domain).split('.')[0]}.org`,
-            `${decodeURIComponent(domain).split('.')[0]}.io`,
-            `get${decodeURIComponent(domain).split('.')[0]}.com`,
-            `${decodeURIComponent(domain).split('.')[0]}app.com`
-          ]
-        }
-        setDetail(mockDetail)
-        setLoading(false)
-      }, 1000)
+          {
+            registrar: 'Namecheap',
+            logo: '/logos/namecheap.svg',
+            registrationPrice: 10.69,
+            renewalPrice: 13.99,
+            transferPrice: 10.69,
+            currency: 'USD',
+            rating: 4.5,
+            features: ['免费WHOIS隐私', 'DNS管理', '邮箱转发'],
+            affiliateLink: 'https://namecheap.com'
+          },
+          {
+            registrar: 'Cloudflare',
+            logo: '/logos/cloudflare.svg',
+            registrationPrice: 8.57,
+            renewalPrice: 8.57,
+            transferPrice: 8.57,
+            currency: 'USD',
+            rating: 4.8,
+            features: ['批发价格', '免费SSL', 'DNSSEC'],
+            affiliateLink: 'https://cloudflare.com'
+          },
+          {
+            registrar: 'Porkbun',
+            logo: '/logos/porkbun.svg',
+            registrationPrice: 9.13,
+            renewalPrice: 11.98,
+            transferPrice: 9.13,
+            currency: 'USD',
+            rating: 4.6,
+            features: ['免费WHOIS隐私', '免费SSL', 'API访问'],
+            affiliateLink: 'https://porkbun.com'
+          },
+          {
+            registrar: 'Google Domains',
+            logo: '/logos/google.svg',
+            registrationPrice: 12.00,
+            renewalPrice: 12.00,
+            transferPrice: 12.00,
+            currency: 'USD',
+            rating: 4.3,
+            features: ['Google集成', '免费隐私保护', '简洁界面'],
+            affiliateLink: 'https://domains.google'
+          }
+        ],
+        recommendations: [
+          `${data.domain.split('.')[0]}.net`,
+          `${data.domain.split('.')[0]}.org`,
+          `${data.domain.split('.')[0]}.io`,
+          `get${data.domain.split('.')[0]}.com`,
+          `${data.domain.split('.')[0]}app.com`
+        ]
+      }
+
+      setDetail(domainDetail)
+      setLoading(false)
     } catch (error) {
       console.error('Failed to fetch domain detail:', error)
       setLoading(false)
