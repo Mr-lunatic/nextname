@@ -45,11 +45,11 @@ export class TLDManager {
     if (this.initialized) return
 
     const supportedTLDs = await getAllSupportedTLDs()
-    
+
     // 增强TLD数据
-    for (const tld of supportedTLDs) {
-      const enhancedData = this.enhanceTLDData(tld.tld)
-      this.tldData.set(tld.tld, enhancedData)
+    for (const tldData of supportedTLDs) {
+      const enhancedData = this.enhanceTLDData(tldData.tld)
+      this.tldData.set(tldData.tld, enhancedData)
     }
 
     this.initialized = true
@@ -57,24 +57,24 @@ export class TLDManager {
 
   private enhanceTLDData(tld: string): TLDDetails {
     const tldInfo = this.getTLDInfo(tld)
-    
+
     return {
       tld,
-      type: tldInfo.type,
-      registry: tldInfo.registry,
+      type: tldInfo.type || 'generic',
+      registry: tldInfo.registry || 'Unknown',
       launchedDate: tldInfo.launchedDate,
-      registrationPolicy: tldInfo.registrationPolicy,
+      registrationPolicy: tldInfo.registrationPolicy || '通用顶级域名',
       restrictions: tldInfo.restrictions,
-      dnssecSupport: tldInfo.dnssecSupport,
-      idnSupport: tldInfo.idnSupport,
+      dnssecSupport: tldInfo.dnssecSupport || false,
+      idnSupport: tldInfo.idnSupport || false,
       status: 'active',
-      popularityScore: tldInfo.popularityScore,
+      popularityScore: tldInfo.popularityScore || 50,
       averagePrice: tldInfo.averagePrice,
-      description: tldInfo.description,
-      usageExamples: tldInfo.usageExamples,
-      targetAudience: tldInfo.targetAudience,
-      pros: tldInfo.pros,
-      cons: tldInfo.cons
+      description: tldInfo.description || `${tld}域名的详细信息`,
+      usageExamples: tldInfo.usageExamples || ['通用网站', '个人项目'],
+      targetAudience: tldInfo.targetAudience || ['个人用户', '小型企业'],
+      pros: tldInfo.pros || ['价格合理'],
+      cons: tldInfo.cons || ['知名度较低']
     }
   }
 
