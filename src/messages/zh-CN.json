@@ -1,7 +1,7 @@
 {
   "common": {
     "search": "搜索",
-    "searchPlaceholder": "搜索你的完美域名...",
+    "searchPlaceholder": "输入域名、前缀、后缀开始",
     "loading": "加载中...",
     "available": "可以注册",
     "registered": "已被注册",

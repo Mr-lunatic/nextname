@@ -80,60 +80,7 @@ export function SuffixResult({ suffix, registrarPrices = [], description, catego
     } catch (err) {
       console.error('Error fetching pricing:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch pricing data')
-      
-      // Use fallback mock data
-      setPricing([
-        {
-          registrar: "Cloudflare",
-          registrationPrice: 8.57,
-          renewalPrice: 8.57,
-          transferPrice: 8.57,
-          currency: "USD",
-          features: ["无加价定价", "免费隐私保护", "安全防护", "全球CDN"],
-          rating: 4.8,
-          isPopular: true
-        },
-        {
-          registrar: "Namecheap",
-          registrationPrice: 8.88,
-          renewalPrice: 13.98,
-          transferPrice: 8.98,
-          currency: "USD",
-          features: ["免费隐私保护", "邮件转发", "DNS管理", "性价比高"],
-          rating: 4.5,
-          isPopular: true
-        },
-        {
-          registrar: "Porkbun",
-          registrationPrice: 9.13,
-          renewalPrice: 11.98,
-          transferPrice: 9.13,
-          currency: "USD",
-          features: ["免费WHOIS隐私", "免费SSL", "API访问", "现代界面"],
-          rating: 4.6,
-          isPopular: true
-        },
-        {
-          registrar: "DreamHost",
-          registrationPrice: 10.99,
-          renewalPrice: 19.99,
-          transferPrice: 10.99,
-          currency: "USD",
-          features: ["免费隐私保护", "网站建设工具", "邮箱服务", "绿色主机"],
-          rating: 4.3,
-          isPopular: false
-        },
-        {
-          registrar: "GoDaddy",
-          registrationPrice: 12.99,
-          renewalPrice: 17.99,
-          transferPrice: 8.99,
-          currency: "USD",
-          features: ["24/7客服", "网站建设工具", "邮箱服务", "全球化服务"],
-          rating: 4.2,
-          isPremium: true
-        }
-      ])
+      setPricing([]) // No fallback data - show error state
     } finally {
       setLoading(false)
     }
@@ -331,7 +278,7 @@ export function SuffixResult({ suffix, registrarPrices = [], description, catego
                 )}
                 {error && (
                   <Badge variant="destructive">
-                    ⚠️ 使用备用数据
+                    ⚠️ 价格数据暂时不可用
                   </Badge>
                 )}
               </div>
@@ -353,6 +300,28 @@ export function SuffixResult({ suffix, registrarPrices = [], description, catego
           </CardContent>
         )}
       </Card>
+
+      {error && pricing.length === 0 && (
+        <Card>
+          <CardContent className="text-center py-12">
+            <div className="space-y-4">
+              <div className="text-6xl">⚠️</div>
+              <h3 className="text-xl font-semibold">价格数据暂时不可用</h3>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                无法从 nazhumi.com 获取最新的价格数据。这可能是由于网络问题或API暂时不可用。
+              </p>
+              <div className="space-y-2">
+                <Button onClick={() => window.location.reload()} variant="outline">
+                  重新加载
+                </Button>
+                <p className="text-sm text-muted-foreground">
+                  或者您可以直接访问各大注册商网站查看最新价格
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {pricing.length > 0 && (
         <>

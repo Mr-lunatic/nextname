@@ -1,7 +1,7 @@
 {
   "common": {
     "search": "Search",
-    "searchPlaceholder": "Search for your perfect domain...",
+    "searchPlaceholder": "Enter domain, prefix, or suffix to start",
     "loading": "Loading...",
     "available": "Available",
     "registered": "Registered",

@@ -3,9 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 // Configure Edge Runtime for Cloudflare Pages
 export const runtime = 'edge';
 
-// Declare KV Namespace binding for TypeScript
-// This is a type declaration; the actual binding is done in wrangler.toml
+// Declare KV Namespace and D1 Database bindings for TypeScript
+// These are type declarations; the actual bindings are done in wrangler.toml
 declare const PRICING_CACHE: any;
+declare const PRICING_DB: any;
 
 // Map to store pending requests for deduplication
 const pendingRequests = new Map<string, Promise<any>>();
@@ -71,9 +72,9 @@ async function fetchNazhumiPricing(domain: string, order: string = 'new'): Promi
       throw new Error('Invalid JSON response from Nazhumi API.');
     }
 
-    // Nazhumi API often returns { code: 100, data: [...] } or just [...]
-    if (data.code === 100 && data.data && validatePricingData(data.data)) {
-      return data.data;
+    // Nazhumi API returns { code: 100, data: { domain, order, count, price: [...] } }
+    if (data.code === 100 && data.data && data.data.price && validatePricingData(data.data.price)) {
+      return data.data.price;
     } else if (validatePricingData(data)) {
       return data;
     } else {
@@ -88,6 +89,95 @@ async function fetchNazhumiPricing(domain: string, order: string = 'new'): Promi
     }
     throw new Error(`Failed to fetch from Nazhumi API: ${error.message}`);
   }
+}
+
+// Helper function to get registrar URL if not available
+function getRegistrarUrl(registrarCode: string): string {
+  const registrarUrls: { [key: string]: string } = {
+    'cloudflare': 'https://www.cloudflare.com/',
+    'namecheap': 'https://www.namecheap.com/',
+    'porkbun': 'https://porkbun.com/',
+    'godaddy': 'https://www.godaddy.com/',
+    'dreamhost': 'https://www.dreamhost.com/',
+    'dynadot': 'https://www.dynadot.com/',
+    'gandi': 'https://www.gandi.net/',
+    'hover': 'https://www.hover.com/',
+    'namesilo': 'https://www.namesilo.com/',
+    'enom': 'https://www.enom.com/',
+    // Add more as needed
+  };
+
+  return registrarUrls[registrarCode] || `https://www.${registrarCode}.com/`;
+}
+
+// Function to fetch pricing data from D1 database (Ubuntu sync data)
+async function fetchD1Pricing(domain: string, order: string, PRICING_DB: any): Promise<any[] | null> {
+  if (!PRICING_DB) {
+    console.log('D1 database not available');
+    return null;
+  }
+
+  try {
+    console.log(`🗄️ Querying D1 database for ${domain}`);
+
+    const query = `
+      SELECT
+        tld, registrar, registrar_name, registrar_url,
+        registration_price, renewal_price, transfer_price,
+        currency, currency_name, currency_type,
+        has_promo, promo_code, updated_time, crawled_at
+      FROM pricing_data
+      WHERE tld = ? AND is_active = 1
+      ORDER BY
+        CASE
+          WHEN ? = 'new' THEN registration_price
+          WHEN ? = 'renew' THEN renewal_price
+          WHEN ? = 'transfer' THEN transfer_price
+          ELSE registration_price
+        END ASC
+    `;
+
+    const result = await PRICING_DB.prepare(query)
+      .bind(domain, order, order, order)
+      .all();
+
+    if (result.results && result.results.length > 0) {
+      console.log(`✅ Found ${result.results.length} records in D1 for ${domain}`);
+      return result.results;
+    } else {
+      console.log(`📭 No D1 data found for ${domain}`);
+      return null;
+    }
+  } catch (error: any) {
+    console.error(`❌ D1 query error for ${domain}:`, error.message);
+    return null;
+  }
+}
+
+// Transform D1 data to our format
+function transformD1Data(d1Data: any[], domain: string) {
+  if (!Array.isArray(d1Data) || d1Data.length === 0) {
+    return [];
+  }
+
+  return d1Data.map((item: any) => ({
+    registrar: item.registrar_name || item.registrar || 'Unknown',
+    registrarCode: item.registrar,
+    registrarUrl: item.registrar_url || getRegistrarUrl(item.registrar || ''),
+    registrationPrice: typeof item.registration_price === 'number' ? item.registration_price : null,
+    renewalPrice: typeof item.renewal_price === 'number' ? item.renewal_price : null,
+    transferPrice: typeof item.transfer_price === 'number' ? item.transfer_price : null,
+    currency: item.currency?.toUpperCase() || 'USD',
+    currencyName: item.currency_name,
+    currencyType: item.currency_type,
+    hasPromo: Boolean(item.has_promo),
+    promoCode: item.promo_code,
+    updatedTime: item.updated_time,
+    crawledAt: item.crawled_at,
+    features: [], // Will be added later
+    rating: 4.0,
+    source: 'ubuntu_sync' // Mark as synced data
+  }));
 }
 
 // Transform Nazhumi data to our format
@@ -109,7 +199,8 @@ function transformNazhumiData(nazhumiData: any[], suffix: string) {
     hasPromo: item.promocode && (item.promocode.new || item.promocode.renew || item.promocode.transfer),
     updatedTime: item.updatedtime,
     features: [], // Nazhumi doesn't provide features, we'll add generic ones
-    rating: 4.0 // Default rating since Nazhumi doesn't provide this
+    rating: 4.0, // Default rating since Nazhumi doesn't provide this
+    source: 'nazhumi_realtime' // Mark as real-time data
   }));
 }
 
@@ -234,12 +325,13 @@ export async function GET(request: NextRequest, context: any) {
   const domain = searchParams.get('domain');
   const order = searchParams.get('order') || 'new';
 
-  // Access KV binding from context.env
-  const PRICING_CACHE_KV = context.env.PRICING_CACHE as any;
+  // Access KV and D1 bindings from context.env (may be undefined in development)
+  const PRICING_CACHE_KV = context?.env?.PRICING_CACHE as any;
+  const PRICING_DB = context?.env?.PRICING_DB as any;
 
   // Parameterized cache configuration from environment variables
-  const CACHE_TTL_SECONDS = parseInt(context.env.CACHE_TTL || '3600'); // Default 1 hour
-  const STALE_WHILE_REVALIDATE_SECONDS = parseInt(context.env.SWR_WINDOW || '300'); // Default 5 minutes
+  const CACHE_TTL_SECONDS = parseInt(context?.env?.CACHE_TTL || '3600'); // Default 1 hour
+  const STALE_WHILE_REVALIDATE_SECONDS = parseInt(context?.env?.SWR_WINDOW || '300'); // Default 5 minutes
 
   if (!domain) {
     return NextResponse.json({ error: 'Domain parameter is required' }, { status: 400 });
@@ -264,12 +356,12 @@ export async function GET(request: NextRequest, context: any) {
 
   const fetchAndCache = async () => {
     try {
-      // First, try to fetch from Nazhumi API for real-time pricing
-      console.log(`🔍 Attempting to fetch real-time pricing from Nazhumi API for ${cleanDomain}`);
+      // Only try to fetch from Nazhumi API - no fallbacks
+      console.log(`🔍 Fetching real-time pricing from Nazhumi API for ${cleanDomain}`);
       const nazhumiData = await fetchNazhumiPricing(cleanDomain, order);
 
       if (nazhumiData && Array.isArray(nazhumiData) && nazhumiData.length > 0) {
-        console.log(`✅ Got ${nazhumiData.length} results from Nazhumi API (real-time)`);
+        console.log(`✅ Got ${nazhumiData.length} results from Nazhumi API`);
 
         const transformedData = transformNazhumiData(nazhumiData, cleanDomain);
 
@@ -282,6 +374,15 @@ export async function GET(request: NextRequest, context: any) {
           isPremium: ['huawei', 'baidu', 'volcengine', 'ovh'].includes(item.registrarCode || '')
         }));
 
+        // Sort by the requested order
+        enrichedData.sort((a, b) => {
+          const aPrice = order === 'new' ? a.registrationPrice :
+                        order === 'renew' ? a.renewalPrice : a.transferPrice;
+          const bPrice = order === 'new' ? b.registrationPrice :
+                        order === 'renew' ? b.renewalPrice : b.transferPrice;
+          return (aPrice || Infinity) - (bPrice || Infinity);
+        });
+
         const responseData = {
           domain: cleanDomain,
           order,
@@ -289,122 +390,100 @@ export async function GET(request: NextRequest, context: any) {
           count: enrichedData.length,
           pricing: enrichedData
         };
-        await PRICING_CACHE_KV.put(
-          cacheKey,
-          JSON.stringify({ data: responseData, timestamp: Date.now() }),
-          { expirationTtl: CACHE_TTL_SECONDS + STALE_WHILE_REVALIDATE_SECONDS }
-        );
+
+        // Cache the successful result
+        if (PRICING_CACHE_KV) {
+          await PRICING_CACHE_KV.put(
+            cacheKey,
+            JSON.stringify({ data: responseData, timestamp: Date.now() }),
+            { expirationTtl: CACHE_TTL_SECONDS + STALE_WHILE_REVALIDATE_SECONDS }
+          );
+        }
+
         return responseData;
       }
 
-      // Fallback 1: Try to use our enhanced pricing data if Nazhumi API fails
-      console.log(`⚠️  Nazhumi API failed, trying enhanced pricing data for ${cleanDomain}`);
-      const baseEnhancedData = enhancedPricing[cleanDomain as keyof typeof enhancedPricing];
-
-      if (baseEnhancedData && baseEnhancedData.length > 0) {
-        console.log(`✅ Using enhanced pricing data for ${cleanDomain}: ${baseEnhancedData.length} registrars`);
-
-        const enrichedData = baseEnhancedData.map(item => ({
-          ...item,
-          features: addRegistrarFeatures(item.registrarCode),
-          registrarUrl: getRegistrarUrl(item.registrarCode),
-          hasPromo: false,
-          updatedTime: new Date().toISOString(),
-          currencyName: getCurrencyName(item.currency),
-          currencyType: 'fiat',
-          isPopular: ['cosmotown', 'spaceship', 'cloudflare', 'namecheap', 'porkbun', 'dreamhost'].includes(item.registrarCode || ''),
-          isPremium: ['huawei', 'baidu', 'volcengine', 'ovh'].includes(item.registrarCode || ''),
-          rating: 4.0 + Math.random() * 1.0 // Random rating between 4.0-5.0
-        }));
-
-        const responseData = {
-          domain: cleanDomain,
-          order,
-          source: 'enhanced-fallback',
-          count: enrichedData.length,
-          pricing: enrichedData
-        };
-        await PRICING_CACHE_KV.put(
-          cacheKey,
-          JSON.stringify({ data: responseData, timestamp: Date.now() }),
-          { expirationTtl: CACHE_TTL_SECONDS + STALE_WHILE_REVALIDATE_SECONDS }
-        );
-        return responseData;
-      }
-
-      // Fallback 2: Last resort - use basic fallback data
-      console.log(`⚠️  All pricing sources failed, using basic fallback for ${cleanDomain}`);
-
-      const enrichedBasicData = basicFallback.map(item => ({
-        ...item,
-        features: addRegistrarFeatures(item.registrarCode),
-        registrarUrl: getRegistrarUrl(item.registrarCode),
-        hasPromo: false,
-        updatedTime: new Date().toISOString(),
-        currencyName: getCurrencyName(item.currency),
-        currencyType: 'fiat',
-        isPopular: ['namecheap', 'cloudflare'].includes(item.registrarCode),
-        isPremium: false,
-        rating: 4.0 + Math.random() * 1.0
-      }));
-
-      const responseData = {
-        domain: cleanDomain,
-        order,
-        source: 'basic-fallback',
-        count: enrichedBasicData.length,
-        pricing: enrichedBasicData
-      };
-      await PRICING_CACHE_KV.put(
-        cacheKey,
-        JSON.stringify({ data: responseData, timestamp: Date.now() }),
-        { expirationTtl: CACHE_TTL_SECONDS + STALE_WHILE_REVALIDATE_SECONDS }
-      );
-      return responseData;
+      // If Nazhumi API fails or returns no data, throw error
+      throw new Error('Nazhumi API returned no data or invalid data format');
 
     } catch (error: any) {
-      console.error(`❌ Error in fetchAndCache for ${cleanDomain}:`, error.message);
+      console.error(`❌ Error fetching from Nazhumi API for ${cleanDomain}:`, error.message);
       throw error; // Re-throw to be caught by the main try-catch
     }
   };
 
   try {
-    // 1. Try to get cached data
-    const cachedEntry = await PRICING_CACHE_KV.get(cacheKey, { type: 'json' });
-    const now = Date.now();
+    // 1. Try to get cached data (only if KV is available)
+    if (PRICING_CACHE_KV) {
+      const cachedEntry = await PRICING_CACHE_KV.get(cacheKey, { type: 'json' });
+      const now = Date.now();
 
-    if (cachedEntry) {
-      const cachedTimestamp = cachedEntry.timestamp || 0;
-      const data = cachedEntry.data;
+      if (cachedEntry) {
+        const cachedTimestamp = cachedEntry.timestamp || 0;
+        const data = cachedEntry.data;
 
-      // Check if cache is fresh
-      if (now - cachedTimestamp < CACHE_TTL_SECONDS * 1000) {
-        console.log(`⚡️ Cache hit (fresh) for ${cleanDomain}`);
-        return NextResponse.json(data);
-      }
+        // Check if cache is fresh
+        if (now - cachedTimestamp < CACHE_TTL_SECONDS * 1000) {
+          console.log(`⚡️ Cache hit (fresh) for ${cleanDomain}`);
+          return NextResponse.json(data);
+        }
 
-      // Cache is stale, but within SWR window
-      if (now - cachedTimestamp < (CACHE_TTL_SECONDS + STALE_WHILE_REVALIDATE_SECONDS) * 1000) {
-        console.log(`⚡️ Cache hit (stale, revalidating) for ${cleanDomain}`);
-        // Trigger background revalidation
-        context.waitUntil(
-          (async () => {
-            try {
-              const freshData = await fetchAndCache(); // This will also update the cache
-              console.log(`✅ Background revalidation successful for ${cleanDomain}`);
-            } catch (revalidationError) {
-              console.error(`Background revalidation failed for ${cleanDomain}:`, revalidationError);
-            } finally {
-              pendingRequests.delete(cacheKey); // Clear pending request after revalidation
-            }
-          })()
-        );
-        return NextResponse.json(data); // Return stale data immediately
+        // Cache is stale, but within SWR window
+        if (now - cachedTimestamp < (CACHE_TTL_SECONDS + STALE_WHILE_REVALIDATE_SECONDS) * 1000) {
+          console.log(`⚡️ Cache hit (stale, revalidating) for ${cleanDomain}`);
+          // Trigger background revalidation
+          if (context?.waitUntil) {
+            context.waitUntil(
+              (async () => {
+                try {
+                  const freshData = await fetchAndCache(); // This will also update the cache
+                  console.log(`✅ Background revalidation successful for ${cleanDomain}`);
+                } catch (revalidationError) {
+                  console.error(`Background revalidation failed for ${cleanDomain}:`, revalidationError);
+                } finally {
+                  pendingRequests.delete(cacheKey); // Clear pending request after revalidation
+                }
+              })()
+            );
+          }
+          return NextResponse.json(data); // Return stale data immediately
+        }
       }
     }
 
-    // No cache or cache fully expired, fetch and cache new data
-    console.log(`🔄 No cache or cache fully expired for ${cleanDomain}. Fetching new data.`);
+    // No cache or cache fully expired, try D1 database first
+    console.log(`🔄 No cache or cache fully expired for ${cleanDomain}. Checking D1 database.`);
+
+    // 2. Try to get data from D1 database (Ubuntu sync data)
+    const d1Data = await fetchD1Pricing(cleanDomain, order, PRICING_DB);
+    if (d1Data && d1Data.length > 0) {
+      console.log(`✅ Using D1 data for ${cleanDomain}`);
+      const transformedD1Data = transformD1Data(d1Data, cleanDomain);
+
+      const responseData = {
+        domain: cleanDomain,
+        order,
+        source: 'ubuntu_sync',
+        count: transformedD1Data.length,
+        pricing: transformedD1Data,
+        lastUpdated: d1Data[0]?.crawled_at || new Date().toISOString(),
+        note: 'Data from Ubuntu crawler (updated daily)'
+      };
+
+      // Cache the D1 data in KV for faster future access
+      if (PRICING_CACHE_KV) {
+        await PRICING_CACHE_KV.put(
+          cacheKey,
+          JSON.stringify({ data: responseData, timestamp: Date.now() }),
+          { expirationTtl: CACHE_TTL_SECONDS + STALE_WHILE_REVALIDATE_SECONDS }
+        );
+      }
+
+      return NextResponse.json(responseData);
+    }
+
+    // 3. No D1 data available, fetch from Nazhumi API
+    console.log(`🔄 No D1 data for ${cleanDomain}. Fetching from Nazhumi API.`);
     const promise = fetchAndCache();
     pendingRequests.set(cacheKey, promise); // Store the promise for deduplication
     const freshData = await promise;
@@ -412,42 +491,31 @@ export async function GET(request: NextRequest, context: any) {
     return NextResponse.json(freshData);
 
   } catch (error: any) {
-    console.error(`❌ Main pricing API error for ${cleanDomain}:`, error.message);
+    console.error(`❌ Pricing API error for ${cleanDomain}:`, error.message);
 
-    // Fallback: Try to return expired cached data if fetching new data failed
-    try {
-      const expiredCachedData = await PRICING_CACHE_KV.get(cacheKey, { type: 'json' });
-      if (expiredCachedData && expiredCachedData.data) {
-        console.log(`⚠️ Using expired cache for ${cleanDomain} due to fetch error`);
-        return NextResponse.json(expiredCachedData.data);
+    // Try to return expired cached data if available
+    if (PRICING_CACHE_KV) {
+      try {
+        const expiredCachedData = await PRICING_CACHE_KV.get(cacheKey, { type: 'json' });
+        if (expiredCachedData && expiredCachedData.data) {
+          console.log(`⚠️ Using expired cache for ${cleanDomain} due to API error`);
+          return NextResponse.json({
+            ...expiredCachedData.data,
+            warning: 'Using cached data due to API unavailability'
+          });
+        }
+      } catch (cacheError: any) {
+        console.error(`Failed to retrieve expired cache for ${cleanDomain}:`, cacheError.message);
       }
-    } catch (cacheError: any) {
-      console.error(`Failed to retrieve expired cache for ${cleanDomain}:`, cacheError.message);
     }
 
-    // Final fallback: use basic hardcoded data if all else fails
-    console.log(`🚨 All fetch and cache attempts failed for ${cleanDomain}. Using basic hardcoded fallback.`);
-    const enrichedBasicData = basicFallback.map(item => ({
-      ...item,
-      features: addRegistrarFeatures(item.registrarCode),
-      registrarUrl: getRegistrarUrl(item.registrarCode),
-      hasPromo: false,
-      updatedTime: new Date().toISOString(),
-      currencyName: getCurrencyName(item.currency),
-      currencyType: 'fiat',
-      isPopular: ['namecheap', 'cloudflare'].includes(item.registrarCode),
-      isPremium: false,
-      rating: 4.0 + Math.random() * 1.0
-    }));
-
+    // Return error response instead of fallback data
     return NextResponse.json({
+      error: 'Price data temporarily unavailable',
+      message: 'Unable to fetch current pricing data from nazhumi.com. Please try again later.',
       domain: cleanDomain,
-      order,
-      source: 'final-fallback',
-      count: enrichedBasicData.length,
-      pricing: enrichedBasicData,
-      error: 'Failed to retrieve live pricing data.'
-    }, { status: 200 }); // Return 200 even with fallback data
+      order
+    }, { status: 503 }); // Service Unavailable
   } finally {
     // Ensure pending request is cleared even if an unexpected error occurs
     pendingRequests.delete(cacheKey);
