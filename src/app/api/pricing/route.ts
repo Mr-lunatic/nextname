@@ -91,24 +91,7 @@ async function fetchNazhumiPricing(domain: string, order: string = 'new'): Promi
   }
 }
 
-// Helper function to get registrar URL if not available
-function getRegistrarUrl(registrarCode: string): string {
-  const registrarUrls: { [key: string]: string } = {
-    'cloudflare': 'https://www.cloudflare.com/',
-    'namecheap': 'https://www.namecheap.com/',
-    'porkbun': 'https://porkbun.com/',
-    'godaddy': 'https://www.godaddy.com/',
-    'dreamhost': 'https://www.dreamhost.com/',
-    'dynadot': 'https://www.dynadot.com/',
-    'gandi': 'https://www.gandi.net/',
-    'hover': 'https://www.hover.com/',
-    'namesilo': 'https://www.namesilo.com/',
-    'enom': 'https://www.enom.com/',
-    // Add more as needed
-  };
 
-  return registrarUrls[registrarCode] || `https://www.${registrarCode}.com/`;
-}
 
 // Function to fetch pricing data from D1 database (Ubuntu sync data)
 async function fetchD1Pricing(domain: string, order: string, PRICING_DB: any): Promise<any[] | null> {
