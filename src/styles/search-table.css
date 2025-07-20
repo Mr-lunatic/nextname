@@ -1,0 +1,175 @@
+/* 搜索结果表格优化样式 */
+
+/* 表格行悬停效果 */
+.search-table-row {
+  transition: all 0.2s ease-in-out;
+}
+
+.search-table-row:hover {
+  background-color: rgba(var(--primary), 0.05);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 注册商价格卡片 */
+.registrar-price-card {
+  transition: all 0.2s ease-in-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.registrar-price-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.registrar-price-card:hover::before {
+  left: 100%;
+}
+
+.registrar-price-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* 最低价格高亮 */
+.best-price-card {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 2px solid #22c55e;
+  position: relative;
+}
+
+.best-price-card::after {
+  content: '最优';
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  background: #22c55e;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 0 6px 0 6px;
+}
+
+/* 状态徽章动画 */
+.status-badge {
+  animation: pulse-subtle 2s infinite;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* 价格数字强调 */
+.price-highlight {
+  font-weight: 700;
+  background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 表格头部渐变 */
+.table-header {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+  backdrop-filter: blur(10px);
+}
+
+/* 移动端卡片优化 */
+.mobile-domain-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.mobile-domain-card:hover {
+  background: rgba(255, 255, 255, 0.95);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* 加载动画 */
+.loading-shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* 响应式表格 */
+@media (max-width: 1024px) {
+  .search-table {
+    font-size: 14px;
+  }
+  
+  .registrar-price-card {
+    min-height: 70px;
+  }
+}
+
+@media (max-width: 768px) {
+  .mobile-domain-card {
+    margin-bottom: 12px;
+  }
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .best-price-card {
+    background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
+    border-color: #10b981;
+  }
+  
+  .mobile-domain-card {
+    background: rgba(30, 30, 30, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .mobile-domain-card:hover {
+    background: rgba(30, 30, 30, 0.95);
+  }
+  
+  .loading-shimmer {
+    background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
+    background-size: 200% 100%;
+  }
+}
+
+/* 打印样式 */
+@media print {
+  .search-table-row:hover {
+    background-color: transparent !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+  
+  .registrar-price-card {
+    break-inside: avoid;
+  }
+  
+  .mobile-domain-card {
+    break-inside: avoid;
+    margin-bottom: 8px;
+  }
+}

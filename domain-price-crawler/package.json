@@ -1,0 +1,29 @@
+{
+  "name": "domain-price-crawler",
+  "version": "1.0.0",
+  "description": "Domain price crawler for nazhumi.com API",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "setup": "node src/setup/database.js",
+    "test": "node src/test/test-crawler.js",
+    "sync": "node src/sync/cloudflare-sync.js"
+  },
+  "keywords": ["domain", "price", "crawler", "nazhumi"],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "pg": "^8.11.3",
+    "node-cron": "^3.0.3",
+    "axios": "^1.6.2",
+    "dotenv": "^16.3.1",
+    "compression": "^1.7.4",
+    "winston": "^3.11.0",
+    "bull": "^4.12.2",
+    "ioredis": "^5.3.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

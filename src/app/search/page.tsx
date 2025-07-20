@@ -23,6 +23,7 @@ import { LanguageSwitcher } from '@/components/language-currency-switcher'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Footer } from '@/components/footer'
 import { trackDomainSearch, trackWhoisQuery } from '@/lib/analytics'
+import '@/styles/search-table.css'
 
 interface SearchResult {
   query: string
@@ -37,6 +38,7 @@ function SearchPageContent() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('')
   const [sortBy, setSortBy] = useState('price')
+  const [availabilityFilter, setAvailabilityFilter] = useState<'all' | 'available' | 'registered'>('all')
   const [currentLocale, setCurrentLocale] = useState('zh-CN')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -522,9 +524,22 @@ function SearchPageContent() {
     if (!result?.result?.checked_tlds) return null
 
     const { prefix, checked_tlds, pagination } = result.result
+
+
+
     const filteredResults = checked_tlds.filter((item: any) => {
       const tldString = getTldString(item)
-      return tldString && tldString.toLowerCase().includes(filter.toLowerCase())
+      const matchesTextFilter = tldString && tldString.toLowerCase().includes(filter.toLowerCase())
+
+      // 可用性筛选
+      let matchesAvailabilityFilter = true
+      if (availabilityFilter === 'available') {
+        matchesAvailabilityFilter = item.is_available
+      } else if (availabilityFilter === 'registered') {
+        matchesAvailabilityFilter = !item.is_available
+      }
+
+      return matchesTextFilter && matchesAvailabilityFilter
     })
     
     const sortedResults = [...filteredResults].sort((a: any, b: any) => {
@@ -578,10 +593,36 @@ function SearchPageContent() {
                 <SortAsc className="w-4 h-4" />
                 {sortBy === 'price' ? '按价格排序' : sortBy === 'popularity' ? '按人气排序' : '按市场份额排序'}
               </Button>
-              <Button variant="outline" className="flex items-center gap-2">
-                <Filter className="w-4 h-4" />
-                筛选选项
-              </Button>
+
+              {/* 可用性筛选按钮组 */}
+              <div className="flex items-center gap-1 border rounded-lg p-1">
+                <Button
+                  size="sm"
+                  variant={availabilityFilter === 'all' ? 'default' : 'ghost'}
+                  onClick={() => setAvailabilityFilter('all')}
+                  className="text-xs h-8"
+                >
+                  全部
+                </Button>
+                <Button
+                  size="sm"
+                  variant={availabilityFilter === 'available' ? 'default' : 'ghost'}
+                  onClick={() => setAvailabilityFilter('available')}
+                  className="text-xs h-8 text-green-600 hover:text-green-700"
+                >
+                  <Check className="w-3 h-3 mr-1" />
+                  可注册
+                </Button>
+                <Button
+                  size="sm"
+                  variant={availabilityFilter === 'registered' ? 'default' : 'ghost'}
+                  onClick={() => setAvailabilityFilter('registered')}
+                  className="text-xs h-8 text-red-600 hover:text-red-700"
+                >
+                  <X className="w-3 h-3 mr-1" />
+                  已注册
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -600,80 +641,310 @@ function SearchPageContent() {
           )}
         </div>
         
-        {/* Compact List Layout */}
-        <div className="space-y-2">
+        {/* 桌面端表格布局 */}
+        <div className="hidden lg:block">
+          <Card className="overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                {/* 表头 */}
+                <thead className="table-header border-b">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">域名</th>
+                    <th className="px-4 py-4 text-center text-sm font-semibold text-foreground">注册商</th>
+                    <th className="px-4 py-4 text-center text-sm font-semibold text-foreground">注册商</th>
+                    <th className="px-4 py-4 text-center text-sm font-semibold text-foreground">注册商</th>
+                    <th className="px-4 py-4 text-center text-sm font-semibold text-foreground">状态</th>
+                    <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">操作</th>
+                  </tr>
+                </thead>
+
+              {/* 表体 */}
+              <tbody className="divide-y divide-border">
+                <AnimatePresence>
+                  {sortedResults.map((item: any, index: number) => (
+                    <motion.tr
+                      key={getTldString(item) || item.domain || index}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="search-table-row group"
+                    >
+                      {/* 域名列 */}
+                      <td className="px-6 py-6">
+                        <div className="font-mono text-lg font-bold text-primary group-hover:text-primary/80">
+                          {item.domain}
+                        </div>
+                      </td>
+
+                      {/* 注册商价格列 */}
+                      {[0, 1, 2].map((registrarIndex) => (
+                        <td key={registrarIndex} className="px-4 py-6 text-center">
+
+                          {item.is_available && item.top_registrars && item.top_registrars[registrarIndex] ? (
+                            <div className={`registrar-price-card rounded-lg p-3 min-h-[80px] flex flex-col justify-center ${
+                              registrarIndex === 0
+                                ? 'best-price-card'
+                                : 'bg-muted/50 border border-border hover:bg-muted/70'
+                            }`}>
+                              <div className="font-medium text-foreground text-sm mb-2 truncate">
+                                {item.top_registrars[registrarIndex].registrar}
+                              </div>
+                              <div className="space-y-1">
+                                <div className="text-xs text-muted-foreground">
+                                  <span className="font-medium">注册:</span>
+                                  <span className="price-highlight ml-1">
+                                    ${item.top_registrars[registrarIndex].registrationPrice}
+                                  </span>
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  <span className="font-medium">续费:</span>
+                                  <span className="text-orange-600 font-semibold ml-1">
+                                    ${item.top_registrars[registrarIndex].renewalPrice}
+                                  </span>
+                                </div>
+                              </div>
+                              {registrarIndex === 0 && (
+                                <div className="text-xs text-green-600 font-medium mt-1 flex items-center justify-center">
+                                  <Sparkles className="w-3 h-3 mr-1" />
+                                  最低价
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="bg-muted/30 rounded-lg p-3 min-h-[80px] flex items-center justify-center">
+                              <span className="text-muted-foreground text-sm">
+                                {item.is_available ? '暂无数据' : '-'}
+                              </span>
+                            </div>
+                          )}
+                        </td>
+                      ))}
+
+                      {/* 状态列 */}
+                      <td className="px-4 py-6 text-center">
+                        <Badge
+                          variant={item.is_available ? "default" : "secondary"}
+                          className={`status-badge inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition-all ${
+                            item.is_available
+                              ? 'bg-green-100 text-green-800 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800'
+                              : 'bg-red-100 text-red-800 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800'
+                          }`}
+                        >
+                          {item.is_available ? (
+                            <>
+                              <Check className="w-4 h-4 mr-1" />
+                              可注册
+                            </>
+                          ) : (
+                            <>
+                              <X className="w-4 h-4 mr-1" />
+                              已注册
+                            </>
+                          )}
+                        </Badge>
+                      </td>
+
+                      {/* 操作列 */}
+                      <td className="px-6 py-6">
+                        <div className="flex justify-center">
+                          {item.is_available ? (
+                            <Button
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700 text-white transition-colors"
+                              onClick={() => {
+                                // 注册逻辑 - 跳转到最低价注册商
+                                if (item.top_registrars && item.top_registrars[0]) {
+                                  // 构建注册商URL
+                                  const registrarName = item.top_registrars[0].registrar.toLowerCase()
+                                  let registrarUrl = ''
+
+                                  // 根据注册商名称构建URL
+                                  switch (registrarName) {
+                                    case 'cloudflare':
+                                      registrarUrl = 'https://www.cloudflare.com/products/registrar/'
+                                      break
+                                    case 'porkbun':
+                                      registrarUrl = 'https://porkbun.com/'
+                                      break
+                                    case 'namecheap':
+                                      registrarUrl = 'https://www.namecheap.com/'
+                                      break
+                                    case 'godaddy':
+                                      registrarUrl = 'https://www.godaddy.com/'
+                                      break
+                                    case 'spaceship':
+                                      registrarUrl = 'https://www.spaceship.com/'
+                                      break
+                                    default:
+                                      registrarUrl = `https://www.${registrarName}.com/`
+                                  }
+
+                                  window.open(registrarUrl, '_blank')
+                                } else {
+                                  // 如果没有注册商数据，跳转到通用注册页面
+                                  window.open('https://www.cloudflare.com/products/registrar/', '_blank')
+                                }
+                              }}
+                            >
+                              <ShoppingCart className="w-4 h-4 mr-1" />
+                              注册
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                // WHOIS查询 - 跳转到域名详情页
+                                window.location.href = `/domain/${encodeURIComponent(item.domain)}`
+                              }}
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              WHOIS
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </AnimatePresence>
+              </tbody>
+            </table>
+          </div>
+        </Card>
+        </div>
+
+        {/* 移动端卡片布局 */}
+        <div className="lg:hidden space-y-3">
           <AnimatePresence>
             {sortedResults.map((item: any, index: number) => (
               <motion.div
                 key={getTldString(item) || item.domain || index}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
                 transition={{ delay: index * 0.05 }}
-                className="group"
               >
-                <Card className="transition-all duration-300 border hover:border-primary/30 hover:shadow-md">
+                <Card className="mobile-domain-card overflow-hidden">
                   <CardContent className="p-4">
-                    <div className="space-y-3">
-                      {/* Top row - Domain info and action */}
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-3 flex-1">
-                          <span className="font-mono text-lg font-bold text-primary group-hover:text-primary/80">
-                            {item.domain}
-                          </span>
-                          <Badge
-                            variant={item.is_available ? "default" : "secondary"}
-                            className={item.is_available
-                              ? "bg-green-100 text-green-800 border-green-200"
-                              : "bg-gray-100 text-gray-800 border-gray-200"
-                            }
-                          >
-                            {item.is_available ? '未注册' : '已注册'}
-                          </Badge>
+                    <div className="space-y-4">
+                      {/* 域名和状态 */}
+                      <div className="flex items-center justify-between">
+                        <div className="font-mono text-lg font-bold text-primary">
+                          {item.domain}
                         </div>
-
-                        <div className="flex items-center gap-3">
+                        <Badge
+                          variant={item.is_available ? "default" : "secondary"}
+                          className={`${
+                            item.is_available
+                              ? 'bg-green-100 text-green-800 border border-green-200'
+                              : 'bg-red-100 text-red-800 border border-red-200'
+                          }`}
+                        >
                           {item.is_available ? (
-                            <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                              <ShoppingCart className="mr-1 h-3 w-3" />
-                              注册
-                            </Button>
+                            <>
+                              <Check className="w-3 h-3 mr-1" />
+                              可注册
+                            </>
                           ) : (
-                            <Button size="sm" variant="outline" onClick={() => handleDetailsClick(item)}>
-                              <Eye className="mr-1 h-3 w-3" />
-                              详情
-                            </Button>
+                            <>
+                              <X className="w-3 h-3 mr-1" />
+                              已注册
+                            </>
                           )}
-                        </div>
+                        </Badge>
                       </div>
 
-                      {/* Bottom row - Registrar pricing (only for available domains) */}
+                      {/* 注册商价格 - 移动端简化显示 */}
                       {item.is_available && item.top_registrars && item.top_registrars.length > 0 && (
-                        <div className="border-t pt-3">
-                          <div className="text-xs text-muted-foreground mb-2">注册商价格对比（按注册价格排序）</div>
-                          <div className="grid grid-cols-3 gap-2">
-                            {item.top_registrars.map((registrar: any, index: number) => (
+                        <div className="space-y-2">
+                          <div className="text-xs text-muted-foreground font-medium">最优价格对比</div>
+                          <div className="grid grid-cols-1 gap-2">
+                            {item.top_registrars.slice(0, 2).map((registrar: any, registrarIndex: number) => (
                               <div
                                 key={registrar.registrar}
-                                className={`p-2 rounded border text-center ${
-                                  index === 0
+                                className={`p-3 rounded-lg border ${
+                                  registrarIndex === 0
                                     ? 'border-green-300 bg-green-50 dark:bg-green-900/20'
-                                    : 'border-gray-200 bg-gray-50 dark:bg-gray-800/20'
+                                    : 'border-border bg-muted/50'
                                 }`}
                               >
-                                <div className="text-xs font-medium">{registrar.registrar}</div>
-                                <div className="text-xs text-muted-foreground mt-1">
-                                  <div>注册: <span className="font-semibold text-primary">${registrar.registrationPrice}</span></div>
-                                  <div>续费: <span className="text-muted-foreground">${registrar.renewalPrice}</span></div>
+                                <div className="flex items-center justify-between">
+                                  <div className="font-medium text-sm">{registrar.registrar}</div>
+                                  {registrarIndex === 0 && (
+                                    <Badge className="bg-green-600 text-white text-xs">
+                                      <Sparkles className="w-3 h-3 mr-1" />
+                                      最低价
+                                    </Badge>
+                                  )}
                                 </div>
-                                {index === 0 && (
-                                  <div className="text-xs text-green-600 font-medium mt-1">最低价</div>
-                                )}
+                                <div className="flex items-center justify-between mt-2 text-xs">
+                                  <span>注册: <span className="font-semibold text-primary">${registrar.registrationPrice}</span></span>
+                                  <span>续费: <span className="font-semibold text-orange-600">${registrar.renewalPrice}</span></span>
+                                </div>
                               </div>
                             ))}
                           </div>
                         </div>
                       )}
+
+                      {/* 操作按钮 */}
+                      <div className="flex gap-2">
+                        {item.is_available ? (
+                          <Button
+                            size="sm"
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                            onClick={() => {
+                              if (item.top_registrars && item.top_registrars[0]) {
+                                // 构建注册商URL
+                                const registrarName = item.top_registrars[0].registrar.toLowerCase()
+                                let registrarUrl = ''
+
+                                // 根据注册商名称构建URL
+                                switch (registrarName) {
+                                  case 'cloudflare':
+                                    registrarUrl = 'https://www.cloudflare.com/products/registrar/'
+                                    break
+                                  case 'porkbun':
+                                    registrarUrl = 'https://porkbun.com/'
+                                    break
+                                  case 'namecheap':
+                                    registrarUrl = 'https://www.namecheap.com/'
+                                    break
+                                  case 'godaddy':
+                                    registrarUrl = 'https://www.godaddy.com/'
+                                    break
+                                  case 'spaceship':
+                                    registrarUrl = 'https://www.spaceship.com/'
+                                    break
+                                  default:
+                                    registrarUrl = `https://www.${registrarName}.com/`
+                                }
+
+                                window.open(registrarUrl, '_blank')
+                              } else {
+                                window.open('https://www.cloudflare.com/products/registrar/', '_blank')
+                              }
+                            }}
+                          >
+                            <ShoppingCart className="w-4 h-4 mr-1" />
+                            立即注册
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => {
+                              // WHOIS查询 - 跳转到域名详情页
+                              window.location.href = `/domain/${encodeURIComponent(item.domain)}`
+                            }}
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            查看WHOIS
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -682,19 +953,72 @@ function SearchPageContent() {
           </AnimatePresence>
         </div>
         
+        {/* 底部统计信息 */}
+        {sortedResults.length > 0 && (
+          <Card className="mt-6">
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-4">
+                  <span>
+                    {availabilityFilter === 'all' ? '共查询' : availabilityFilter === 'available' ? '可注册' : '已注册'}
+                    <span className="font-semibold text-foreground ml-1">{sortedResults.length}</span> 个域名
+                  </span>
+                  {availabilityFilter === 'all' && (
+                    <>
+                      <span className="hidden sm:inline">|</span>
+                      <span>
+                        其中 <span className="font-semibold text-green-600">{sortedResults.filter((item: any) => item.is_available).length}</span> 个可注册
+                      </span>
+                    </>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => window.print()}
+                    className="text-xs"
+                  >
+                    <ExternalLink className="w-3 h-3 mr-1" />
+                    导出结果
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      // 批量注册逻辑
+                      const availableDomains = sortedResults.filter((item: any) => item.is_available)
+                      if (availableDomains.length > 0) {
+                        alert(`发现 ${availableDomains.length} 个可注册域名，即将跳转到批量注册页面`)
+                      }
+                    }}
+                    className="text-xs bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <ShoppingCart className="w-3 h-3 mr-1" />
+                    批量注册
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {filteredResults.length === 0 && (
-          <div className="text-center py-20">
-            <div className="space-y-4">
-              <div className="text-6xl">🔍</div>
-              <h3 className="text-xl font-semibold">未找到匹配的域名</h3>
-              <p className="text-muted-foreground">
-                尝试调整筛选条件或搜索其他关键词
-              </p>
-              <Button onClick={() => setFilter('')} variant="outline">
-                清除筛选条件
-              </Button>
-            </div>
-          </div>
+          <Card className="mt-6">
+            <CardContent className="text-center py-20">
+              <div className="space-y-4">
+                <div className="text-6xl">🔍</div>
+                <h3 className="text-xl font-semibold">未找到匹配的域名</h3>
+                <p className="text-muted-foreground">
+                  尝试调整筛选条件或搜索其他关键词
+                </p>
+                <Button onClick={() => setFilter('')} variant="outline">
+                  清除筛选条件
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Pagination Controls */}
