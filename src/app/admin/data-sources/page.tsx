@@ -23,21 +23,49 @@ import {
 
 export const runtime = 'edge';
 
-// Access control component
+// Access control component with enhanced security
 function AccessControl({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [blockEndTime, setBlockEndTime] = useState<number | null>(null);
 
   useEffect(() => {
     const checkAccess = () => {
+      // Check if currently blocked
+      const storedBlockEnd = localStorage.getItem('admin_block_end');
+      if (storedBlockEnd) {
+        const blockEnd = parseInt(storedBlockEnd);
+        if (Date.now() < blockEnd) {
+          setIsBlocked(true);
+          setBlockEndTime(blockEnd);
+          setIsChecking(false);
+          return;
+        } else {
+          // Block expired, clear it
+          localStorage.removeItem('admin_block_end');
+          localStorage.removeItem('admin_failed_attempts');
+        }
+      }
+
       const key = searchParams.get('key');
-      const expectedKey = 'yuming-admin-2025'; // Should match server-side key
+      const expectedKeys = [
+        'yuming-admin-2025', // Default key
+        process.env.NEXT_PUBLIC_ADMIN_KEY, // Environment variable key
+      ].filter(Boolean);
+
+      console.log('Checking access with key:', key);
+      console.log('Expected keys:', expectedKeys);
 
       // Check URL parameter
-      if (key === expectedKey) {
+      if (key && expectedKeys.includes(key)) {
         setIsAuthorized(true);
         setIsChecking(false);
+        // Clear failed attempts on successful access
+        localStorage.removeItem('admin_failed_attempts');
+        setFailedAttempts(0);
         return;
       }
 
@@ -48,6 +76,19 @@ function AccessControl({ children }: { children: React.ReactNode }) {
         setIsAuthorized(true);
         setIsChecking(false);
         return;
+      }
+
+      // Failed access attempt
+      const currentAttempts = parseInt(localStorage.getItem('admin_failed_attempts') || '0') + 1;
+      localStorage.setItem('admin_failed_attempts', currentAttempts.toString());
+      setFailedAttempts(currentAttempts);
+
+      // Block after 5 failed attempts
+      if (currentAttempts >= 5) {
+        const blockEnd = Date.now() + (30 * 60 * 1000); // 30 minutes
+        localStorage.setItem('admin_block_end', blockEnd.toString());
+        setIsBlocked(true);
+        setBlockEndTime(blockEnd);
       }
 
       setIsAuthorized(false);
@@ -68,7 +109,38 @@ function AccessControl({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // Blocked due to too many failed attempts
+  if (isBlocked && blockEndTime) {
+    const remainingTime = Math.ceil((blockEndTime - Date.now()) / 1000 / 60);
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-red-500" />
+            <CardTitle className="text-red-600">访问被阻止</CardTitle>
+            <CardDescription>
+              由于多次失败尝试，您的访问已被暂时阻止
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-sm text-gray-600 mb-4">
+              请等待 <span className="font-semibold text-red-600">{remainingTime}</span> 分钟后重试
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => window.location.href = '/'}
+            >
+              返回首页
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (!isAuthorized) {
+    const remainingAttempts = Math.max(0, 5 - failedAttempts);
+
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Card className="w-full max-w-md">
@@ -80,15 +152,37 @@ function AccessControl({ children }: { children: React.ReactNode }) {
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-gray-600 mb-2">
               请联系系统管理员获取访问密钥
             </p>
-            <Button
-              variant="outline"
-              onClick={() => window.location.href = '/'}
-            >
-              返回首页
-            </Button>
+            {failedAttempts > 0 && (
+              <p className="text-sm text-orange-600 mb-4">
+                失败尝试: {failedAttempts}/5
+                {remainingAttempts > 0 && ` (还剩 ${remainingAttempts} 次机会)`}
+              </p>
+            )}
+            <div className="space-y-2">
+              <Button
+                variant="outline"
+                onClick={() => window.location.href = '/'}
+                className="w-full"
+              >
+                返回首页
+              </Button>
+              {failedAttempts > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    localStorage.removeItem('admin_failed_attempts');
+                    window.location.reload();
+                  }}
+                  className="w-full text-xs"
+                >
+                  重置尝试次数
+                </Button>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
