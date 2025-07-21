@@ -24,8 +24,6 @@ import {
   Shield
 } from 'lucide-react';
 
-export const runtime = 'edge';
-
 // Access control component with enhanced security
 function AccessControl({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
