@@ -9,20 +9,46 @@ export const GET = withAdminAuth(async (request: NextRequest, context: any) => {
     console.log('🧪 Test admin endpoint called');
     console.log('Context type:', typeof context);
     console.log('Context keys:', context ? Object.keys(context) : 'no context');
-    
-    // Try to access environment variables and bindings
-    const env = context?.env || context?.cloudflare?.env || context || {};
-    console.log('Env keys:', Object.keys(env));
+    console.log('Full context:', JSON.stringify(context, null, 2));
 
-    // Check for Cloudflare bindings with multiple access patterns
-    const d1Binding = env?.PRICING_DB || env?.['domain-pricing-db'] || (globalThis as any).PRICING_DB;
-    const kvBinding = env?.PRICING_CACHE || (globalThis as any).PRICING_CACHE;
+    // Try multiple ways to access bindings
+    const possibleEnvs = [
+      context?.env,
+      context?.cloudflare?.env,
+      context?.bindings,
+      context,
+      (globalThis as any).env,
+      process.env
+    ].filter(Boolean);
+
+    console.log('Possible env sources:', possibleEnvs.length);
+
+    let d1Binding = null;
+    let kvBinding = null;
+
+    // Try different binding access patterns
+    for (const env of possibleEnvs) {
+      if (env) {
+        console.log('Checking env source:', Object.keys(env));
+
+        // Try different D1 binding names
+        d1Binding = d1Binding || env.PRICING_DB || env['domain-pricing-db'] || env.DB || env.D1;
+
+        // Try different KV binding names
+        kvBinding = kvBinding || env.PRICING_CACHE || env.PRICINGCACHE || env.KV || env.CACHE;
+
+        if (d1Binding || kvBinding) {
+          console.log('Found bindings in env source:', Object.keys(env));
+          break;
+        }
+      }
+    }
 
     const hasD1 = !!d1Binding;
     const hasKV = !!kvBinding;
 
-    console.log('D1 binding found:', hasD1);
-    console.log('KV binding found:', hasKV);
+    console.log('D1 binding found:', hasD1, d1Binding ? 'available' : 'not found');
+    console.log('KV binding found:', hasKV, kvBinding ? 'available' : 'not found');
     
     return NextResponse.json({
       success: true,
@@ -30,16 +56,20 @@ export const GET = withAdminAuth(async (request: NextRequest, context: any) => {
       context: {
         available: !!context,
         type: typeof context,
-        keys: context ? Object.keys(context) : []
+        keys: context ? Object.keys(context) : [],
+        fullContext: context
       },
       environment: {
-        keys: Object.keys(env),
+        possibleEnvSources: possibleEnvs.length,
+        envKeys: possibleEnvs.map(env => env ? Object.keys(env) : []),
         hasD1,
         hasKV
       },
       bindings: {
         PRICING_DB: hasD1 ? 'available' : 'not found',
-        PRICING_CACHE: hasKV ? 'available' : 'not found'
+        PRICING_CACHE: hasKV ? 'available' : 'not found',
+        d1BindingType: d1Binding ? typeof d1Binding : 'undefined',
+        kvBindingType: kvBinding ? typeof kvBinding : 'undefined'
       },
       runtime: 'edge',
       message: 'Admin test endpoint working correctly'
