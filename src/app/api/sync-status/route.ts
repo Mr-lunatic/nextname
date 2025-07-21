@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withAdminAuth } from '@/lib/auth';
 
 // Configure Edge Runtime for Cloudflare Pages
 export const runtime = 'edge';
@@ -6,7 +7,7 @@ export const runtime = 'edge';
 // Declare D1 Database binding
 declare const PRICING_DB: any;
 
-export async function GET(request: NextRequest, context: any) {
+export const GET = withAdminAuth(async (request: NextRequest, context: any) => {
   const { searchParams } = new URL(request.url);
   const detailed = searchParams.get('detailed') === 'true';
   
@@ -184,4 +185,4 @@ export async function POST(request: NextRequest, context: any) {
     message: 'Use the Ubuntu crawler sync process to update D1 data',
     syncCommand: 'cd domain-price-crawler && node src/sync/cloudflare-sync.js'
   }, { status: 501 });
-}
+});

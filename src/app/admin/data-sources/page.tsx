@@ -1,26 +1,105 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DataSourceHealthStatus } from '@/components/data-source-indicator';
-import { 
-  RefreshCw, 
-  Database, 
-  Globe, 
-  Zap, 
-  Clock, 
-  CheckCircle, 
+import {
+  RefreshCw,
+  Database,
+  Globe,
+  Zap,
+  Clock,
+  CheckCircle,
   AlertTriangle,
   TrendingUp,
-  BarChart3
+  BarChart3,
+  Lock,
+  Shield
 } from 'lucide-react';
 
 export const runtime = 'edge';
 
+// Access control component
+function AccessControl({ children }: { children: React.ReactNode }) {
+  const searchParams = useSearchParams();
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
+
+  useEffect(() => {
+    const checkAccess = () => {
+      const key = searchParams.get('key');
+      const expectedKey = 'yuming-admin-2025'; // Should match server-side key
+
+      // Check URL parameter
+      if (key === expectedKey) {
+        setIsAuthorized(true);
+        setIsChecking(false);
+        return;
+      }
+
+      // Check if running on localhost (development)
+      if (typeof window !== 'undefined' &&
+          (window.location.hostname === 'localhost' ||
+           window.location.hostname === '127.0.0.1')) {
+        setIsAuthorized(true);
+        setIsChecking(false);
+        return;
+      }
+
+      setIsAuthorized(false);
+      setIsChecking(false);
+    };
+
+    checkAccess();
+  }, [searchParams]);
+
+  if (isChecking) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Shield className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">验证访问权限...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <Lock className="h-12 w-12 mx-auto mb-4 text-red-500" />
+            <CardTitle className="text-red-600">访问受限</CardTitle>
+            <CardDescription>
+              此页面需要管理员权限才能访问
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-sm text-gray-600 mb-4">
+              请联系系统管理员获取访问密钥
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => window.location.href = '/'}
+            >
+              返回首页
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
+
 export default function DataSourcesAdminPage() {
+  const searchParams = useSearchParams();
   const [healthData, setHealthData] = useState<any>(null);
   const [syncData, setSyncData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -28,9 +107,10 @@ export default function DataSourcesAdminPage() {
 
   const fetchData = async () => {
     try {
+      const key = searchParams.get('key') || 'yuming-admin-2025';
       const [healthResponse, syncResponse] = await Promise.all([
-        fetch('/api/data-source-status'),
-        fetch('/api/sync-status?detailed=true')
+        fetch(`/api/data-source-status?key=${key}`),
+        fetch(`/api/sync-status?detailed=true&key=${key}`)
       ]);
 
       if (healthResponse.ok) {
@@ -89,16 +169,19 @@ export default function DataSourcesAdminPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <RefreshCw className="w-8 h-8 animate-spin" />
-          <span className="ml-2">加载数据源状态...</span>
+      <AccessControl>
+        <div className="container mx-auto p-6">
+          <div className="flex items-center justify-center h-64">
+            <RefreshCw className="w-8 h-8 animate-spin" />
+            <span className="ml-2">加载数据源状态...</span>
+          </div>
         </div>
-      </div>
+      </AccessControl>
     );
   }
 
   return (
+    <AccessControl>
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
@@ -446,5 +529,6 @@ export default function DataSourcesAdminPage() {
         </TabsContent>
       </Tabs>
     </div>
+    </AccessControl>
   );
 }

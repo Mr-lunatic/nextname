@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withAdminAuth } from '@/lib/auth';
 
 // Configure Edge Runtime for Cloudflare Pages
 export const runtime = 'edge';
@@ -157,7 +158,7 @@ async function testKVCache(PRICING_CACHE: any) {
   }
 }
 
-export async function GET(request: NextRequest, context: any) {
+export const GET = withAdminAuth(async (request: NextRequest, context: any) => {
   const startTime = Date.now();
   
   // Access bindings
@@ -232,4 +233,4 @@ export async function GET(request: NextRequest, context: any) {
       }
     }, { status: 500 });
   }
-}
+});
