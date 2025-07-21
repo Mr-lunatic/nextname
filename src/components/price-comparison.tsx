@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { DataSourceIndicator } from '@/components/data-source-indicator'
 
 interface PriceInfo {
   registrar: string
@@ -27,19 +28,31 @@ export function PriceComparison({ domain, onClose }: PriceComparisonProps) {
   const [loading, setLoading] = useState(true)
   const [sortBy, setSortBy] = useState('new')
   const [currency, setCurrency] = useState('USD')
+  const [dataSource, setDataSource] = useState<string>('')
+  const [metadata, setMetadata] = useState<any>(null)
 
-  const fetchPricing = useCallback(async () => {
+  const fetchPricing = useCallback(async (forceSource?: string) => {
     setLoading(true)
     try {
-      const response = await fetch(`/api/pricing?domain=${encodeURIComponent(domain)}&order=${sortBy}&currency=${currency}`)
+      const url = `/api/pricing?domain=${encodeURIComponent(domain)}&order=${sortBy}${forceSource ? `&source=${forceSource}` : ''}`
+      const response = await fetch(url)
       const data = await response.json()
-      setPricing(data.pricing || [])
+
+      if (response.ok) {
+        setPricing(data.pricing || [])
+        setDataSource(data.source || '')
+        setMetadata(data.metadata || null)
+      } else {
+        console.error('API error:', data)
+        setPricing([])
+      }
     } catch (error) {
       console.error('Failed to fetch pricing:', error)
+      setPricing([])
     } finally {
       setLoading(false)
     }
-  }, [domain, sortBy, currency])
+  }, [domain, sortBy])
 
   useEffect(() => {
     fetchPricing()
@@ -101,8 +114,13 @@ export function PriceComparison({ domain, onClose }: PriceComparisonProps) {
             <CardTitle className="text-2xl">
               {domain} 价格对比
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="flex items-center gap-2">
               对比 {pricing.length} 家注册商的价格
+              <DataSourceIndicator
+                source={dataSource}
+                metadata={metadata}
+                onRefresh={() => fetchPricing()}
+              />
             </CardDescription>
           </div>
           <div className="flex space-x-2">
@@ -116,16 +134,22 @@ export function PriceComparison({ domain, onClose }: PriceComparisonProps) {
                 <SelectItem value="transfer">转入价格</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={currency} onValueChange={setCurrency}>
-              <SelectTrigger className="w-20">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="USD">USD</SelectItem>
-                <SelectItem value="CNY">CNY</SelectItem>
-                <SelectItem value="EUR">EUR</SelectItem>
-              </SelectContent>
-            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fetchPricing('d1')}
+              disabled={loading}
+            >
+              D1数据
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fetchPricing('nazhumi')}
+              disabled={loading}
+            >
+              实时数据
+            </Button>
           </div>
         </div>
       </CardHeader>

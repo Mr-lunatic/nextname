@@ -25,3 +25,16 @@ preview_id = "your_preview_kv_namespace_id"
 binding = "PRICING_DB"
 database_name = "domain-pricing-db"
 database_id = "c55ac10b-bef8-4d90-b4f1-3fae72221fc3"
+
+# Environment variables for data source configuration
+[vars]
+# Data source priority settings
+D1_PRIORITY = "true"
+D1_FRESHNESS_THRESHOLD_HOURS = "24"
+ENABLE_SMART_FALLBACK = "true"
+API_TIMEOUT_MS = "8000"
+D1_TIMEOUT_MS = "5000"
+
+# Cache configuration
+CACHE_TTL = "3600"
+SWR_WINDOW = "300"

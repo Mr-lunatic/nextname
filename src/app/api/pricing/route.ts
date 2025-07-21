@@ -11,6 +11,20 @@ declare const PRICING_DB: any;
 // Map to store pending requests for deduplication
 const pendingRequests = new Map<string, Promise<any>>();
 
+// Data source priority configuration
+const DATA_SOURCE_CONFIG = {
+  // D1数据库优先级设置
+  D1_PRIORITY: true,
+  // D1数据新鲜度阈值（小时）
+  D1_FRESHNESS_THRESHOLD_HOURS: 24,
+  // 是否启用智能切换
+  ENABLE_SMART_FALLBACK: true,
+  // API超时时间（毫秒）
+  API_TIMEOUT_MS: 8000,
+  // D1查询超时时间（毫秒）
+  D1_TIMEOUT_MS: 5000
+};
+
 // Function to validate pricing data structure
 function validatePricingData(data: any): boolean {
   // Basic validation: check if it's an array and has expected properties
@@ -49,91 +63,193 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 2)
   throw new Error('Fetch with retry failed after multiple attempts.'); // Should not be reached
 }
 
-// Function to fetch pricing data from Nazhumi API
-async function fetchNazhumiPricing(domain: string, order: string = 'new'): Promise<any[] | null> {
-  const NAZHUMI_API_BASE = 'https://www.nazhumi.com/api/v1'; // Moved here for clarity within this function
-
+// Enhanced function to fetch pricing data from Nazhumi API with better error handling
+async function fetchNazhumiPricing(domain: string, order: string = 'new'): Promise<{data: any[] | null, metadata: any}> {
+  const NAZHUMI_API_BASE = 'https://www.nazhumi.com/api/v1';
   const url = `${NAZHUMI_API_BASE}?domain=${encodeURIComponent(domain)}&order=${order}`;
-  console.log(`Fetching from Nazhumi: ${url}`);
+  const startTime = Date.now();
+
+  console.log(`🌐 Fetching from Nazhumi API: ${url}`);
 
   try {
-    const response = await fetchWithRetry(url, {
+    // 使用配置的超时时间
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), DATA_SOURCE_CONFIG.API_TIMEOUT_MS);
+
+    const response = await fetch(url, {
       headers: {
         'Accept': 'application/json',
         'User-Agent': 'Domain-Search-Platform/1.0'
-      }
+      },
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
+    const responseTime = Date.now() - startTime;
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
 
     let data;
     try {
       data = await response.json();
     } catch (jsonError: any) {
       console.error(`Failed to parse JSON from Nazhumi API for ${domain}:`, jsonError.message);
-      throw new Error('Invalid JSON response from Nazhumi API.');
+      return {
+        data: null,
+        metadata: {
+          source: 'nazhumi',
+          responseTime,
+          error: 'INVALID_JSON_RESPONSE'
+        }
+      };
     }
 
     // Nazhumi API returns { code: 100, data: { domain, order, count, price: [...] } }
     if (data.code === 100 && data.data && data.data.price && validatePricingData(data.data.price)) {
-      return data.data.price;
+      console.log(`✅ Nazhumi API success for ${domain}: ${data.data.price.length} records (${responseTime}ms)`);
+      return {
+        data: data.data.price,
+        metadata: {
+          source: 'nazhumi',
+          responseTime,
+          recordCount: data.data.price.length,
+          apiCode: data.code,
+          isFresh: true
+        }
+      };
     } else if (validatePricingData(data)) {
-      return data;
+      console.log(`✅ Nazhumi API success (direct format) for ${domain}: ${data.length} records (${responseTime}ms)`);
+      return {
+        data: data,
+        metadata: {
+          source: 'nazhumi',
+          responseTime,
+          recordCount: data.length,
+          isFresh: true
+        }
+      };
     } else {
       console.warn(`Nazhumi API returned unexpected data format for ${domain}:`, data);
-      return null; // Or throw a specific error for invalid data format
+      return {
+        data: null,
+        metadata: {
+          source: 'nazhumi',
+          responseTime,
+          error: 'UNEXPECTED_DATA_FORMAT',
+          apiResponse: data
+        }
+      };
     }
   } catch (error: any) {
-    console.error(`Nazhumi API error for ${domain}:`, error.message);
-    // Differentiate between network/timeout errors and API specific errors if possible
-    if (error.name === 'AbortError') {
-      throw new Error('Nazhumi API request timed out.');
-    }
-    throw new Error(`Failed to fetch from Nazhumi API: ${error.message}`);
+    const responseTime = Date.now() - startTime;
+    console.error(`❌ Nazhumi API error for ${domain} (${responseTime}ms):`, error.message);
+
+    return {
+      data: null,
+      metadata: {
+        source: 'nazhumi',
+        responseTime,
+        error: error.name === 'AbortError' ? 'API_TIMEOUT' : error.message,
+        isTimeout: error.name === 'AbortError'
+      }
+    };
   }
 }
 
 
 
-// Function to fetch pricing data from D1 database (Ubuntu sync data)
-async function fetchD1Pricing(domain: string, order: string, PRICING_DB: any): Promise<any[] | null> {
+// Enhanced function to fetch pricing data from D1 database with health checks
+async function fetchD1Pricing(domain: string, order: string, PRICING_DB: any): Promise<{data: any[] | null, metadata: any}> {
   if (!PRICING_DB) {
     console.log('D1 database not available');
-    return null;
+    return { data: null, metadata: { error: 'D1_NOT_AVAILABLE', source: 'd1' } };
   }
+
+  const startTime = Date.now();
 
   try {
     console.log(`🗄️ Querying D1 database for ${domain}`);
 
-    const query = `
-      SELECT
-        tld, registrar, registrar_name, registrar_url,
-        registration_price, renewal_price, transfer_price,
-        currency, currency_name, currency_type,
-        has_promo, promo_code, updated_time, crawled_at
-      FROM pricing_data
-      WHERE tld = ? AND is_active = 1
-      ORDER BY
-        CASE
-          WHEN ? = 'new' THEN registration_price
-          WHEN ? = 'renew' THEN renewal_price
-          WHEN ? = 'transfer' THEN transfer_price
-          ELSE registration_price
-        END ASC
-    `;
+    // 创建带超时的Promise
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('D1_QUERY_TIMEOUT')), DATA_SOURCE_CONFIG.D1_TIMEOUT_MS);
+    });
 
-    const result = await PRICING_DB.prepare(query)
-      .bind(domain, order, order, order)
-      .all();
+    const queryPromise = (async () => {
+      const query = `
+        SELECT
+          tld, registrar, registrar_name, registrar_url,
+          registration_price, renewal_price, transfer_price,
+          currency, currency_name, currency_type,
+          has_promo, promo_code, updated_time, crawled_at
+        FROM pricing_data
+        WHERE tld = ? AND is_active = 1
+        ORDER BY
+          CASE
+            WHEN ? = 'new' THEN registration_price
+            WHEN ? = 'renew' THEN renewal_price
+            WHEN ? = 'transfer' THEN transfer_price
+            ELSE registration_price
+          END ASC
+      `;
+
+      const result = await PRICING_DB.prepare(query)
+        .bind(domain, order, order, order)
+        .all();
+
+      return result;
+    })();
+
+    const result = await Promise.race([queryPromise, timeoutPromise]) as any;
+    const queryTime = Date.now() - startTime;
 
     if (result.results && result.results.length > 0) {
-      console.log(`✅ Found ${result.results.length} records in D1 for ${domain}`);
-      return result.results;
+      console.log(`✅ Found ${result.results.length} records in D1 for ${domain} (${queryTime}ms)`);
+
+      // 检查数据新鲜度
+      const latestRecord = result.results[0];
+      const crawledAt = new Date(latestRecord.crawled_at);
+      const hoursOld = (Date.now() - crawledAt.getTime()) / (1000 * 60 * 60);
+      const isFresh = hoursOld <= DATA_SOURCE_CONFIG.D1_FRESHNESS_THRESHOLD_HOURS;
+
+      return {
+        data: result.results,
+        metadata: {
+          source: 'd1',
+          queryTime,
+          recordCount: result.results.length,
+          dataAge: hoursOld,
+          isFresh,
+          lastCrawled: latestRecord.crawled_at
+        }
+      };
     } else {
-      console.log(`📭 No D1 data found for ${domain}`);
-      return null;
+      console.log(`📭 No D1 data found for ${domain} (${queryTime}ms)`);
+      return {
+        data: null,
+        metadata: {
+          source: 'd1',
+          queryTime,
+          recordCount: 0,
+          error: 'NO_DATA_FOUND'
+        }
+      };
     }
   } catch (error: any) {
-    console.error(`❌ D1 query error for ${domain}:`, error.message);
-    return null;
+    const queryTime = Date.now() - startTime;
+    console.error(`❌ D1 query error for ${domain} (${queryTime}ms):`, error.message);
+
+    return {
+      data: null,
+      metadata: {
+        source: 'd1',
+        queryTime,
+        error: error.message,
+        isTimeout: error.message === 'D1_QUERY_TIMEOUT'
+      }
+    };
   }
 }
 
@@ -302,11 +418,82 @@ const basicFallback = [
   { registrar: 'GoDaddy', registrarCode: 'godaddy', registrationPrice: 12.99, renewalPrice: 17.99, transferPrice: 8.99, currency: 'USD' }
 ];
 
+// Smart data source selection function
+async function selectDataSource(domain: string, order: string, PRICING_DB: any): Promise<{source: string, data: any[], metadata: any}> {
+  console.log(`🧠 Smart data source selection for ${domain}`);
+
+  // 1. 优先尝试D1数据库（如果启用）
+  if (DATA_SOURCE_CONFIG.D1_PRIORITY && PRICING_DB) {
+    console.log(`📊 Trying D1 database first for ${domain}`);
+    const d1Result = await fetchD1Pricing(domain, order, PRICING_DB);
+
+    if (d1Result.data && d1Result.data.length > 0) {
+      // 检查数据新鲜度
+      if (d1Result.metadata.isFresh) {
+        console.log(`✅ Using fresh D1 data for ${domain} (${d1Result.metadata.dataAge.toFixed(1)}h old)`);
+        return {
+          source: 'd1_fresh',
+          data: transformD1Data(d1Result.data, domain),
+          metadata: d1Result.metadata
+        };
+      } else if (DATA_SOURCE_CONFIG.ENABLE_SMART_FALLBACK) {
+        console.log(`⚠️ D1 data is stale for ${domain} (${d1Result.metadata.dataAge.toFixed(1)}h old), trying API`);
+        // 数据过期，尝试API，但保留D1数据作为备用
+        const apiResult = await fetchNazhumiPricing(domain, order);
+
+        if (apiResult.data && apiResult.data.length > 0) {
+          console.log(`✅ Using fresh API data for ${domain}, D1 data available as backup`);
+          return {
+            source: 'nazhumi_with_d1_backup',
+            data: transformNazhumiData(apiResult.data, domain),
+            metadata: { ...apiResult.metadata, hasD1Backup: true, d1BackupAge: d1Result.metadata.dataAge }
+          };
+        } else {
+          console.log(`⚠️ API failed, falling back to stale D1 data for ${domain}`);
+          return {
+            source: 'd1_stale_fallback',
+            data: transformD1Data(d1Result.data, domain),
+            metadata: { ...d1Result.metadata, usedAsFallback: true, apiError: apiResult.metadata.error }
+          };
+        }
+      } else {
+        // 不启用智能切换，直接使用D1数据
+        console.log(`📊 Using D1 data for ${domain} (smart fallback disabled)`);
+        return {
+          source: 'd1_only',
+          data: transformD1Data(d1Result.data, domain),
+          metadata: d1Result.metadata
+        };
+      }
+    } else {
+      console.log(`📭 No D1 data for ${domain}, trying API`);
+    }
+  }
+
+  // 2. D1无数据或不可用，使用nazhumi API
+  console.log(`🌐 Fetching from Nazhumi API for ${domain}`);
+  const apiResult = await fetchNazhumiPricing(domain, order);
+
+  if (apiResult.data && apiResult.data.length > 0) {
+    console.log(`✅ Using Nazhumi API data for ${domain}`);
+    return {
+      source: 'nazhumi_primary',
+      data: transformNazhumiData(apiResult.data, domain),
+      metadata: apiResult.metadata
+    };
+  }
+
+  // 3. 所有数据源都失败
+  console.error(`❌ All data sources failed for ${domain}`);
+  throw new Error(`No pricing data available for ${domain} from any source`);
+}
+
 // Main GET function for the API route
 export async function GET(request: NextRequest, context: any) {
   const { searchParams } = new URL(request.url);
   const domain = searchParams.get('domain');
   const order = searchParams.get('order') || 'new';
+  const forceSource = searchParams.get('source'); // 可选：强制指定数据源
 
   // Access KV and D1 bindings from context.env (may be undefined in development)
   const PRICING_CACHE_KV = context?.env?.PRICING_CACHE as any;
@@ -322,8 +509,9 @@ export async function GET(request: NextRequest, context: any) {
 
   const cleanDomain = domain.startsWith('.') ? domain.substring(1) : domain;
   const cacheKey = `pricing:${cleanDomain}:${order}`;
+  const requestStartTime = Date.now();
 
-  console.log(`🔍 Fetching pricing for ${cleanDomain} with order: ${order}`);
+  console.log(`🔍 Fetching pricing for ${cleanDomain} with order: ${order}${forceSource ? ` (forced source: ${forceSource})` : ''}`);
 
   // Request deduplication
   if (pendingRequests.has(cacheKey)) {
@@ -332,72 +520,107 @@ export async function GET(request: NextRequest, context: any) {
       const data = await pendingRequests.get(cacheKey);
       return NextResponse.json(data);
     } catch (error) {
-      // If the original request failed, re-throw or handle
-      return NextResponse.json({ error: 'Failed to fetch pricing data (deduplicated request failed)', domain, order, source: 'error' }, { status: 500 });
+      return NextResponse.json({
+        error: 'Failed to fetch pricing data (deduplicated request failed)',
+        domain: cleanDomain,
+        order,
+        source: 'error'
+      }, { status: 500 });
     }
   }
 
+  // Enhanced fetch and cache function with smart data source selection
   const fetchAndCache = async () => {
     try {
-      // Only try to fetch from Nazhumi API - no fallbacks
-      console.log(`🔍 Fetching real-time pricing from Nazhumi API for ${cleanDomain}`);
-      const nazhumiData = await fetchNazhumiPricing(cleanDomain, order);
+      let result;
 
-      if (nazhumiData && Array.isArray(nazhumiData) && nazhumiData.length > 0) {
-        console.log(`✅ Got ${nazhumiData.length} results from Nazhumi API`);
-
-        const transformedData = transformNazhumiData(nazhumiData, cleanDomain);
-
-        // Add features to each registrar
-        const enrichedData = transformedData.map(item => ({
-          ...item,
-          features: addRegistrarFeatures(item.registrarCode || ''),
-          registrarUrl: item.registrarUrl || getRegistrarUrl(item.registrarCode || ''),
-          isPopular: ['cosmotown', 'spaceship', 'cloudflare', 'namecheap', 'porkbun', 'dreamhost'].includes(item.registrarCode || ''),
-          isPremium: ['huawei', 'baidu', 'volcengine', 'ovh'].includes(item.registrarCode || '')
-        }));
-
-        // Sort by the requested order
-        enrichedData.sort((a, b) => {
-          const aPrice = order === 'new' ? a.registrationPrice :
-                        order === 'renew' ? a.renewalPrice : a.transferPrice;
-          const bPrice = order === 'new' ? b.registrationPrice :
-                        order === 'renew' ? b.renewalPrice : b.transferPrice;
-          return (aPrice || Infinity) - (bPrice || Infinity);
-        });
-
-        const responseData = {
-          domain: cleanDomain,
-          order,
-          source: 'nazhumi',
-          count: enrichedData.length,
-          pricing: enrichedData
-        };
-
-        // Cache the successful result
-        if (PRICING_CACHE_KV) {
-          await PRICING_CACHE_KV.put(
-            cacheKey,
-            JSON.stringify({ data: responseData, timestamp: Date.now() }),
-            { expirationTtl: CACHE_TTL_SECONDS + STALE_WHILE_REVALIDATE_SECONDS }
-          );
+      // 如果强制指定数据源
+      if (forceSource === 'd1' && PRICING_DB) {
+        console.log(`🎯 Force using D1 database for ${cleanDomain}`);
+        const d1Result = await fetchD1Pricing(cleanDomain, order, PRICING_DB);
+        if (d1Result.data && d1Result.data.length > 0) {
+          result = {
+            source: 'd1_forced',
+            data: transformD1Data(d1Result.data, cleanDomain),
+            metadata: d1Result.metadata
+          };
+        } else {
+          throw new Error('D1 database has no data for this domain');
         }
-
-        return responseData;
+      } else if (forceSource === 'nazhumi') {
+        console.log(`🎯 Force using Nazhumi API for ${cleanDomain}`);
+        const apiResult = await fetchNazhumiPricing(cleanDomain, order);
+        if (apiResult.data && apiResult.data.length > 0) {
+          result = {
+            source: 'nazhumi_forced',
+            data: transformNazhumiData(apiResult.data, cleanDomain),
+            metadata: apiResult.metadata
+          };
+        } else {
+          throw new Error('Nazhumi API has no data for this domain');
+        }
+      } else {
+        // 使用智能数据源选择
+        result = await selectDataSource(cleanDomain, order, PRICING_DB);
       }
 
-      // If Nazhumi API fails or returns no data, throw error
-      throw new Error('Nazhumi API returned no data or invalid data format');
+      console.log(`✅ Got ${result.data.length} results from ${result.source}`);
+
+      // Add features to each registrar
+      const enrichedData = result.data.map(item => ({
+        ...item,
+        features: addRegistrarFeatures(item.registrarCode || ''),
+        registrarUrl: item.registrarUrl || getRegistrarUrl(item.registrarCode || ''),
+        isPopular: ['cosmotown', 'spaceship', 'cloudflare', 'namecheap', 'porkbun', 'dreamhost'].includes(item.registrarCode || ''),
+        isPremium: ['huawei', 'baidu', 'volcengine', 'ovh'].includes(item.registrarCode || '')
+      }));
+
+      // Sort by the requested order
+      enrichedData.sort((a, b) => {
+        const aPrice = order === 'new' ? a.registrationPrice :
+                      order === 'renew' ? a.renewalPrice : a.transferPrice;
+        const bPrice = order === 'new' ? b.registrationPrice :
+                      order === 'renew' ? b.renewalPrice : b.transferPrice;
+        return (aPrice || Infinity) - (bPrice || Infinity);
+      });
+
+      const responseData = {
+        domain: cleanDomain,
+        order,
+        source: result.source,
+        count: enrichedData.length,
+        pricing: enrichedData,
+        metadata: {
+          ...result.metadata,
+          requestTime: Date.now() - requestStartTime,
+          timestamp: new Date().toISOString()
+        }
+      };
+
+      // Cache the successful result with different TTL based on source
+      if (PRICING_CACHE_KV) {
+        const cacheTTL = result.source.includes('d1') ?
+          CACHE_TTL_SECONDS * 2 : // D1数据缓存更久
+          CACHE_TTL_SECONDS;
+
+        await PRICING_CACHE_KV.put(
+          cacheKey,
+          JSON.stringify({ data: responseData, timestamp: Date.now() }),
+          { expirationTtl: cacheTTL + STALE_WHILE_REVALIDATE_SECONDS }
+        );
+      }
+
+      return responseData;
 
     } catch (error: any) {
-      console.error(`❌ Error fetching from Nazhumi API for ${cleanDomain}:`, error.message);
-      throw error; // Re-throw to be caught by the main try-catch
+      console.error(`❌ Error in fetchAndCache for ${cleanDomain}:`, error.message);
+      throw error;
     }
   };
 
   try {
     // 1. Try to get cached data (only if KV is available)
-    if (PRICING_CACHE_KV) {
+    if (PRICING_CACHE_KV && !forceSource) { // 强制指定数据源时跳过缓存
       const cachedEntry = await PRICING_CACHE_KV.get(cacheKey, { type: 'json' });
       const now = Date.now();
 
@@ -408,6 +631,13 @@ export async function GET(request: NextRequest, context: any) {
         // Check if cache is fresh
         if (now - cachedTimestamp < CACHE_TTL_SECONDS * 1000) {
           console.log(`⚡️ Cache hit (fresh) for ${cleanDomain}`);
+          // 添加缓存信息到响应
+          data.metadata = {
+            ...data.metadata,
+            cacheHit: true,
+            cacheAge: Math.round((now - cachedTimestamp) / 1000),
+            totalRequestTime: Date.now() - requestStartTime
+          };
           return NextResponse.json(data);
         }
 
@@ -419,72 +649,62 @@ export async function GET(request: NextRequest, context: any) {
             context.waitUntil(
               (async () => {
                 try {
-                  const freshData = await fetchAndCache(); // This will also update the cache
+                  const freshData = await fetchAndCache();
                   console.log(`✅ Background revalidation successful for ${cleanDomain}`);
                 } catch (revalidationError) {
-                  console.error(`Background revalidation failed for ${cleanDomain}:`, revalidationError);
+                  console.error(`❌ Background revalidation failed for ${cleanDomain}:`, revalidationError);
                 } finally {
-                  pendingRequests.delete(cacheKey); // Clear pending request after revalidation
+                  pendingRequests.delete(cacheKey);
                 }
               })()
             );
           }
-          return NextResponse.json(data); // Return stale data immediately
+          // 添加缓存信息到响应
+          data.metadata = {
+            ...data.metadata,
+            cacheHit: true,
+            cacheAge: Math.round((now - cachedTimestamp) / 1000),
+            staleWhileRevalidate: true,
+            totalRequestTime: Date.now() - requestStartTime
+          };
+          return NextResponse.json(data);
         }
       }
     }
 
-    // No cache or cache fully expired, try D1 database first
-    console.log(`🔄 No cache or cache fully expired for ${cleanDomain}. Checking D1 database.`);
+    // 2. No cache or cache fully expired, fetch fresh data
+    console.log(`🔄 Fetching fresh data for ${cleanDomain}${forceSource ? ` (forced: ${forceSource})` : ''}`);
 
-    // 2. Try to get data from D1 database (Ubuntu sync data)
-    const d1Data = await fetchD1Pricing(cleanDomain, order, PRICING_DB);
-    if (d1Data && d1Data.length > 0) {
-      console.log(`✅ Using D1 data for ${cleanDomain}`);
-      const transformedD1Data = transformD1Data(d1Data, cleanDomain);
-
-      const responseData = {
-        domain: cleanDomain,
-        order,
-        source: 'ubuntu_sync',
-        count: transformedD1Data.length,
-        pricing: transformedD1Data,
-        lastUpdated: d1Data[0]?.crawled_at || new Date().toISOString(),
-        note: 'Data from Ubuntu crawler (updated daily)'
-      };
-
-      // Cache the D1 data in KV for faster future access
-      if (PRICING_CACHE_KV) {
-        await PRICING_CACHE_KV.put(
-          cacheKey,
-          JSON.stringify({ data: responseData, timestamp: Date.now() }),
-          { expirationTtl: CACHE_TTL_SECONDS + STALE_WHILE_REVALIDATE_SECONDS }
-        );
-      }
-
-      return NextResponse.json(responseData);
-    }
-
-    // 3. No D1 data available, fetch from Nazhumi API
-    console.log(`🔄 No D1 data for ${cleanDomain}. Fetching from Nazhumi API.`);
     const promise = fetchAndCache();
-    pendingRequests.set(cacheKey, promise); // Store the promise for deduplication
+    pendingRequests.set(cacheKey, promise);
     const freshData = await promise;
-    pendingRequests.delete(cacheKey); // Clear pending request after successful fetch
+    pendingRequests.delete(cacheKey);
+
     return NextResponse.json(freshData);
 
   } catch (error: any) {
-    console.error(`❌ Pricing API error for ${cleanDomain}:`, error.message);
+    const totalRequestTime = Date.now() - requestStartTime;
+    console.error(`❌ Pricing API error for ${cleanDomain} (${totalRequestTime}ms):`, error.message);
 
-    // Try to return expired cached data if available
+    // Enhanced error handling with fallback strategies
+    let fallbackAttempted = false;
+
+    // 1. Try to return expired cached data if available
     if (PRICING_CACHE_KV) {
       try {
         const expiredCachedData = await PRICING_CACHE_KV.get(cacheKey, { type: 'json' });
         if (expiredCachedData && expiredCachedData.data) {
-          console.log(`⚠️ Using expired cache for ${cleanDomain} due to API error`);
+          console.log(`⚠️ Using expired cache for ${cleanDomain} due to error`);
+          fallbackAttempted = true;
           return NextResponse.json({
             ...expiredCachedData.data,
-            warning: 'Using cached data due to API unavailability'
+            metadata: {
+              ...expiredCachedData.data.metadata,
+              fallbackUsed: 'expired_cache',
+              originalError: error.message,
+              totalRequestTime
+            },
+            warning: 'Using cached data due to service unavailability'
           });
         }
       } catch (cacheError: any) {
@@ -492,15 +712,60 @@ export async function GET(request: NextRequest, context: any) {
       }
     }
 
-    // Return error response instead of fallback data
+    // 2. If no cache available, try alternative data source
+    if (!fallbackAttempted && !forceSource) {
+      try {
+        console.log(`🔄 Attempting fallback data source for ${cleanDomain}`);
+
+        // 如果主要错误来自API，尝试D1
+        if (error.message.includes('nazhumi') || error.message.includes('API')) {
+          const d1Result = await fetchD1Pricing(cleanDomain, order, PRICING_DB);
+          if (d1Result.data && d1Result.data.length > 0) {
+            console.log(`✅ Using D1 fallback data for ${cleanDomain}`);
+            const transformedData = transformD1Data(d1Result.data, cleanDomain);
+
+            return NextResponse.json({
+              domain: cleanDomain,
+              order,
+              source: 'd1_emergency_fallback',
+              count: transformedData.length,
+              pricing: transformedData,
+              metadata: {
+                ...d1Result.metadata,
+                fallbackUsed: 'd1_emergency',
+                originalError: error.message,
+                totalRequestTime
+              },
+              warning: 'Using backup data due to primary service unavailability'
+            });
+          }
+        }
+      } catch (fallbackError: any) {
+        console.error(`Fallback attempt failed for ${cleanDomain}:`, fallbackError.message);
+      }
+    }
+
+    // 3. Return comprehensive error response
     return NextResponse.json({
       error: 'Price data temporarily unavailable',
-      message: 'Unable to fetch current pricing data from nazhumi.com. Please try again later.',
+      message: 'Unable to fetch current pricing data. Please try again later.',
       domain: cleanDomain,
-      order
-    }, { status: 503 }); // Service Unavailable
+      order,
+      metadata: {
+        error: error.message,
+        totalRequestTime,
+        fallbackAttempted,
+        timestamp: new Date().toISOString()
+      },
+      suggestions: [
+        'Try again in a few minutes',
+        'Check if the domain extension is supported',
+        `Try with a different source: /api/pricing?domain=${cleanDomain}&source=d1`
+      ]
+    }, { status: 503 });
+
   } finally {
-    // Ensure pending request is cleared even if an unexpected error occurs
+    // Ensure pending request is cleared
     pendingRequests.delete(cacheKey);
   }
 }

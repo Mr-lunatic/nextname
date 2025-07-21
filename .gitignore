@@ -61,3 +61,31 @@ test-*.sh
 start-dev.sh
 implementation-summary.md
 enhanced-rdap-implementation.md
+
+# 🚫 爬虫相关文件 - 不需要部署到生产环境
+domain-price-crawler/
+check_d1_sync.js
+server_check_d1.sh
+analyze_crawl_data.js
+
+# 🚫 开发和测试文件
+test-new-pricing-api.js
+deploy.sh
+start-dev.sh
+nazhumi.html
+nazhumi-list.html
+domain.md
+domain_seo_solution.md
+caching_solution.txt
+
+# 🚫 文档文件（保留主要的README）
+PRICING_API_UPGRADE.md
+SETUP_GUIDE.md
+_compatibility.toml
+
+# 🚫 Cloudflare构建产物
+.vercel/
+.wrangler/
+
+# 🚫 数据库文件
+schema.sql
