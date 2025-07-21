@@ -213,7 +213,7 @@ export default function DataSourcesAdminPage() {
       console.log('Using key for API calls:', key ? 'Key provided' : 'No key');
 
       const [healthResponse, syncResponse] = await Promise.all([
-        fetch(`/api/data-source-status?key=${key}`, {
+        fetch(`/api/data-source-status-simple?key=${key}`, {
           headers: {
             'x-admin-key': key
           }

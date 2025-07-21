@@ -161,10 +161,22 @@ async function testKVCache(PRICING_CACHE: any) {
 export const GET = withAdminAuth(async (request: NextRequest, context: any) => {
   const startTime = Date.now();
 
-  // Access bindings - handle both context formats
-  const env = context?.env || context || {};
-  const PRICING_CACHE_KV = env?.PRICING_CACHE || (globalThis as any).PRICING_CACHE;
-  const PRICING_DB_INSTANCE = env?.PRICING_DB || (globalThis as any).PRICING_DB;
+  // Access bindings - Cloudflare Pages binding access
+  let PRICING_CACHE_KV: any = null;
+  let PRICING_DB_INSTANCE: any = null;
+
+  // Try different ways to access bindings
+  if (context?.env) {
+    PRICING_CACHE_KV = context.env.PRICING_CACHE;
+    PRICING_DB_INSTANCE = context.env.PRICING_DB;
+  } else if (context?.cloudflare?.env) {
+    PRICING_CACHE_KV = context.cloudflare.env.PRICING_CACHE;
+    PRICING_DB_INSTANCE = context.cloudflare.env.PRICING_DB;
+  } else {
+    // Try global access
+    PRICING_CACHE_KV = (globalThis as any).PRICING_CACHE;
+    PRICING_DB_INSTANCE = (globalThis as any).PRICING_DB;
+  }
   
   try {
     console.log('🔍 Running data source health checks...');

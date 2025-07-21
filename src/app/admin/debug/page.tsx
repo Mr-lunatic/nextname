@@ -50,13 +50,14 @@ export default function AdminDebugPage() {
 
       console.log('Test API Response status:', testResponse.status);
 
+      let testData = null;
       if (testResponse.ok) {
-        const testData = await testResponse.json();
+        testData = await testResponse.json();
         console.log('Test endpoint data:', testData);
       }
 
-      // Then test the main data source status endpoint
-      const response = await fetch(`/api/data-source-status?key=${testKey}`, {
+      // Test the simplified data source status endpoint (no bindings required)
+      const response = await fetch(`/api/data-source-status-simple?key=${testKey}`, {
         headers: {
           'x-admin-key': testKey
         }
@@ -64,7 +65,12 @@ export default function AdminDebugPage() {
 
       console.log('Main API Response status:', response.status);
 
-      const responseData = response.ok ? await response.json() : await response.text();
+      let responseData;
+      try {
+        responseData = response.ok ? await response.json() : await response.text();
+      } catch (error) {
+        responseData = `Error reading response: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      }
 
       setTestResults({
         status: response.status,
@@ -72,7 +78,7 @@ export default function AdminDebugPage() {
         statusText: response.statusText,
         data: responseData,
         keyUsed: testKey,
-        testEndpoint: testResponse.ok ? await testResponse.json() : 'Test endpoint failed'
+        testEndpoint: testData || 'Test endpoint failed'
       });
     } catch (error) {
       console.error('API Test error:', error);
