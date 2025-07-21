@@ -1,5 +1,8 @@
 'use client';
 
+// Configure Edge Runtime for Cloudflare Pages
+export const runtime = 'edge';
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
