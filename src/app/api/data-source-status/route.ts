@@ -196,7 +196,7 @@ export const GET = withAdminAuth(async (request: NextRequest, context: any) => {
         nazhumiAPI: nazhumiStatus,
         kvCache: kvStatus
       },
-      recommendations: []
+      recommendations: [] as string[]
     };
     
     // Add recommendations based on status
