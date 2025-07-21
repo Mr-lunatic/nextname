@@ -176,10 +176,10 @@ export const GET = withAdminAuth(async (request: NextRequest, context: any) => {
       available: false
     }, { status: 500 });
   }
-}
+});
 
 // POST endpoint to trigger manual sync (if needed)
-export async function POST(request: NextRequest, context: any) {
+export const POST = withAdminAuth(async (request: NextRequest, context: any) => {
   return NextResponse.json({
     error: 'Manual sync not implemented',
     message: 'Use the Ubuntu crawler sync process to update D1 data',
