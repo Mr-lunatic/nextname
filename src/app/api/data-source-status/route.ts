@@ -160,13 +160,18 @@ async function testKVCache(PRICING_CACHE: any) {
 
 export const GET = withAdminAuth(async (request: NextRequest, context: any) => {
   const startTime = Date.now();
-  
-  // Access bindings
-  const PRICING_CACHE_KV = context?.env?.PRICING_CACHE as any;
-  const PRICING_DB_INSTANCE = context?.env?.PRICING_DB as any;
+
+  // Access bindings - handle both context formats
+  const env = context?.env || context || {};
+  const PRICING_CACHE_KV = env?.PRICING_CACHE || (globalThis as any).PRICING_CACHE;
+  const PRICING_DB_INSTANCE = env?.PRICING_DB || (globalThis as any).PRICING_DB;
   
   try {
     console.log('🔍 Running data source health checks...');
+    console.log('Context available:', !!context);
+    console.log('Env available:', !!env);
+    console.log('PRICING_CACHE available:', !!PRICING_CACHE_KV);
+    console.log('PRICING_DB available:', !!PRICING_DB_INSTANCE);
     
     // Run all tests in parallel
     const [d1Status, nazhumiStatus, kvStatus] = await Promise.all([

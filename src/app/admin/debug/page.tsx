@@ -41,13 +41,28 @@ export default function AdminDebugPage() {
     console.log('Testing API access with key:', testKey);
 
     try {
+      // Test the simple test endpoint first
+      const testResponse = await fetch(`/api/test-admin?key=${testKey}`, {
+        headers: {
+          'x-admin-key': testKey
+        }
+      });
+
+      console.log('Test API Response status:', testResponse.status);
+
+      if (testResponse.ok) {
+        const testData = await testResponse.json();
+        console.log('Test endpoint data:', testData);
+      }
+
+      // Then test the main data source status endpoint
       const response = await fetch(`/api/data-source-status?key=${testKey}`, {
         headers: {
           'x-admin-key': testKey
         }
       });
 
-      console.log('API Response status:', response.status);
+      console.log('Main API Response status:', response.status);
 
       const responseData = response.ok ? await response.json() : await response.text();
 
@@ -56,7 +71,8 @@ export default function AdminDebugPage() {
         ok: response.ok,
         statusText: response.statusText,
         data: responseData,
-        keyUsed: testKey
+        keyUsed: testKey,
+        testEndpoint: testResponse.ok ? await testResponse.json() : 'Test endpoint failed'
       });
     } catch (error) {
       console.error('API Test error:', error);
@@ -243,21 +259,33 @@ export default function AdminDebugPage() {
           </Button>
           
           {testResults && (
-            <div className="p-4 bg-gray-50 rounded">
-              <div className="flex items-center gap-2 mb-2">
-                <Badge variant={testResults.ok ? "default" : "destructive"}>
-                  {testResults.status}
-                </Badge>
-                <span className="text-sm">{testResults.statusText}</span>
+            <div className="space-y-4">
+              <div className="p-4 bg-gray-50 rounded">
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge variant={testResults.ok ? "default" : "destructive"}>
+                    {testResults.status}
+                  </Badge>
+                  <span className="text-sm">{testResults.statusText}</span>
+                </div>
+                {testResults.keyUsed && (
+                  <div className="text-xs text-gray-600 mb-2">
+                    使用的密钥: {testResults.keyUsed}
+                  </div>
+                )}
+                <div className="text-sm font-medium mb-2">主要API响应:</div>
+                <pre className="text-xs bg-white p-2 rounded border overflow-auto max-h-64">
+                  {JSON.stringify(testResults.data, null, 2)}
+                </pre>
               </div>
-              {testResults.keyUsed && (
-                <div className="text-xs text-gray-600 mb-2">
-                  使用的密钥: {testResults.keyUsed}
+
+              {testResults.testEndpoint && (
+                <div className="p-4 bg-blue-50 rounded">
+                  <div className="text-sm font-medium mb-2">测试端点响应:</div>
+                  <pre className="text-xs bg-white p-2 rounded border overflow-auto max-h-64">
+                    {JSON.stringify(testResults.testEndpoint, null, 2)}
+                  </pre>
                 </div>
               )}
-              <pre className="text-xs bg-white p-2 rounded border overflow-auto max-h-64">
-                {JSON.stringify(testResults.data, null, 2)}
-              </pre>
             </div>
           )}
         </CardContent>
