@@ -38,20 +38,34 @@ export default function AdminDebugPage() {
 
   const testApiAccess = async () => {
     const testKey = urlKey || envKey || defaultKey;
+    console.log('Testing API access with key:', testKey);
+
     try {
-      const response = await fetch(`/api/data-source-status?key=${testKey}`);
+      const response = await fetch(`/api/data-source-status?key=${testKey}`, {
+        headers: {
+          'x-admin-key': testKey
+        }
+      });
+
+      console.log('API Response status:', response.status);
+
+      const responseData = response.ok ? await response.json() : await response.text();
+
       setTestResults({
         status: response.status,
         ok: response.ok,
         statusText: response.statusText,
-        data: response.ok ? await response.json() : await response.text()
+        data: responseData,
+        keyUsed: testKey
       });
     } catch (error) {
+      console.error('API Test error:', error);
       setTestResults({
         status: 'ERROR',
         ok: false,
         statusText: 'Network Error',
-        data: error instanceof Error ? error.message : 'Unknown error'
+        data: error instanceof Error ? error.message : 'Unknown error',
+        keyUsed: testKey
       });
     }
   };
@@ -236,7 +250,12 @@ export default function AdminDebugPage() {
                 </Badge>
                 <span className="text-sm">{testResults.statusText}</span>
               </div>
-              <pre className="text-xs bg-white p-2 rounded border overflow-auto">
+              {testResults.keyUsed && (
+                <div className="text-xs text-gray-600 mb-2">
+                  使用的密钥: {testResults.keyUsed}
+                </div>
+              )}
+              <pre className="text-xs bg-white p-2 rounded border overflow-auto max-h-64">
                 {JSON.stringify(testResults.data, null, 2)}
               </pre>
             </div>

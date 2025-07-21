@@ -202,10 +202,27 @@ export default function DataSourcesAdminPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const key = searchParams.get('key') || 'yuming-admin-2025';
+      // Try multiple key sources
+      const urlKey = searchParams.get('key');
+      const envKey = process.env.NEXT_PUBLIC_ADMIN_KEY;
+      const defaultKey = 'yuming-admin-2025';
+
+      // Use the first available key
+      const key = urlKey || envKey || defaultKey;
+
+      console.log('Using key for API calls:', key ? 'Key provided' : 'No key');
+
       const [healthResponse, syncResponse] = await Promise.all([
-        fetch(`/api/data-source-status?key=${key}`),
-        fetch(`/api/sync-status?detailed=true&key=${key}`)
+        fetch(`/api/data-source-status?key=${key}`, {
+          headers: {
+            'x-admin-key': key
+          }
+        }),
+        fetch(`/api/sync-status?detailed=true&key=${key}`, {
+          headers: {
+            'x-admin-key': key
+          }
+        })
       ]);
 
       if (healthResponse.ok) {

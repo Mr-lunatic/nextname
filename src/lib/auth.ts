@@ -5,8 +5,17 @@
 
 import { NextRequest } from 'next/server';
 
-// 管理员访问密钥 - 在生产环境中应该从环境变量获取
-const ADMIN_ACCESS_KEY = process.env.ADMIN_ACCESS_KEY || 'yuming-admin-2025';
+// 管理员访问密钥 - 支持多个密钥源
+const getValidKeys = () => {
+  const keys = [
+    process.env.ADMIN_ACCESS_KEY,
+    process.env.NEXT_PUBLIC_ADMIN_KEY,
+    'yuming-admin-2025' // 默认备用密钥
+  ].filter(Boolean);
+
+  console.log('Valid admin keys configured:', keys.length);
+  return keys;
+};
 
 // IP白名单 - 可以添加允许访问的IP地址
 const ALLOWED_IPS = process.env.ALLOWED_IPS?.split(',') || [];
@@ -19,15 +28,19 @@ export function verifyAdminAccess(request: NextRequest): {
   error?: string;
 } {
   try {
+    const validKeys = getValidKeys();
+
     // 方法1: 检查URL参数中的访问密钥
     const accessKey = request.nextUrl.searchParams.get('key');
-    if (accessKey === ADMIN_ACCESS_KEY) {
+    if (accessKey && validKeys.includes(accessKey)) {
+      console.log('Access granted via URL parameter');
       return { isAuthorized: true };
     }
 
     // 方法2: 检查请求头中的访问密钥
     const headerKey = request.headers.get('x-admin-key');
-    if (headerKey === ADMIN_ACCESS_KEY) {
+    if (headerKey && validKeys.includes(headerKey)) {
+      console.log('Access granted via header');
       return { isAuthorized: true };
     }
 
@@ -38,6 +51,10 @@ export function verifyAdminAccess(request: NextRequest): {
         return { isAuthorized: true };
       }
     }
+
+    console.log('Access denied - no valid key provided');
+    console.log('URL key:', accessKey ? 'provided' : 'missing');
+    console.log('Header key:', headerKey ? 'provided' : 'missing');
 
     return {
       isAuthorized: false,
@@ -115,7 +132,9 @@ export function withAdminAuth(handler: (request: NextRequest, context?: any) => 
  */
 export function generateAdminURL(basePath: string): string {
   const baseURL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-  return `${baseURL}${basePath}?key=${ADMIN_ACCESS_KEY}`;
+  const validKeys = getValidKeys();
+  const primaryKey = validKeys[0] || 'yuming-admin-2025';
+  return `${baseURL}${basePath}?key=${primaryKey}`;
 }
 
 /**
