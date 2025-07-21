@@ -165,18 +165,14 @@ export const GET = withAdminAuth(async (request: NextRequest, context: any) => {
   let PRICING_CACHE_KV: any = null;
   let PRICING_DB_INSTANCE: any = null;
 
-  // Try different ways to access bindings
-  if (context?.env) {
-    PRICING_CACHE_KV = context.env.PRICING_CACHE;
-    PRICING_DB_INSTANCE = context.env.PRICING_DB;
-  } else if (context?.cloudflare?.env) {
-    PRICING_CACHE_KV = context.cloudflare.env.PRICING_CACHE;
-    PRICING_DB_INSTANCE = context.cloudflare.env.PRICING_DB;
-  } else {
-    // Try global access
-    PRICING_CACHE_KV = (globalThis as any).PRICING_CACHE;
-    PRICING_DB_INSTANCE = (globalThis as any).PRICING_DB;
-  }
+  // Try different ways to access bindings based on Cloudflare Pages setup
+  const env = context?.env || context?.cloudflare?.env || context || {};
+
+  // D1 Database binding (name: domain-pricing-db, binding: PRICING_DB)
+  PRICING_DB_INSTANCE = env?.PRICING_DB || env?.['domain-pricing-db'] || (globalThis as any).PRICING_DB;
+
+  // KV Namespace binding (name: PRICINGCACHE, binding: PRICING_CACHE)
+  PRICING_CACHE_KV = env?.PRICING_CACHE || (globalThis as any).PRICING_CACHE;
   
   try {
     console.log('🔍 Running data source health checks...');

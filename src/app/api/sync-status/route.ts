@@ -11,9 +11,9 @@ export const GET = withAdminAuth(async (request: NextRequest, context: any) => {
   const { searchParams } = new URL(request.url);
   const detailed = searchParams.get('detailed') === 'true';
   
-  // Access D1 binding - handle both context formats
-  const env = context?.env || context || {};
-  const PRICING_DB_INSTANCE = env?.PRICING_DB || (globalThis as any).PRICING_DB;
+  // Access D1 binding - Cloudflare Pages binding access
+  const env = context?.env || context?.cloudflare?.env || context || {};
+  const PRICING_DB_INSTANCE = env?.PRICING_DB || env?.['domain-pricing-db'] || (globalThis as any).PRICING_DB;
   
   if (!PRICING_DB_INSTANCE) {
     return NextResponse.json({

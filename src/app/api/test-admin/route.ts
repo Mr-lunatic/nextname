@@ -10,13 +10,19 @@ export const GET = withAdminAuth(async (request: NextRequest, context: any) => {
     console.log('Context type:', typeof context);
     console.log('Context keys:', context ? Object.keys(context) : 'no context');
     
-    // Try to access environment variables
-    const env = context?.env || context || {};
+    // Try to access environment variables and bindings
+    const env = context?.env || context?.cloudflare?.env || context || {};
     console.log('Env keys:', Object.keys(env));
-    
-    // Check for Cloudflare bindings
-    const hasD1 = !!(env?.PRICING_DB || (globalThis as any).PRICING_DB);
-    const hasKV = !!(env?.PRICING_CACHE || (globalThis as any).PRICING_CACHE);
+
+    // Check for Cloudflare bindings with multiple access patterns
+    const d1Binding = env?.PRICING_DB || env?.['domain-pricing-db'] || (globalThis as any).PRICING_DB;
+    const kvBinding = env?.PRICING_CACHE || (globalThis as any).PRICING_CACHE;
+
+    const hasD1 = !!d1Binding;
+    const hasKV = !!kvBinding;
+
+    console.log('D1 binding found:', hasD1);
+    console.log('KV binding found:', hasKV);
     
     return NextResponse.json({
       success: true,

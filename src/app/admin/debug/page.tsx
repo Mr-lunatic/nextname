@@ -56,8 +56,8 @@ export default function AdminDebugPage() {
         console.log('Test endpoint data:', testData);
       }
 
-      // Test the simplified data source status endpoint (no bindings required)
-      const response = await fetch(`/api/data-source-status-simple?key=${testKey}`, {
+      // Test the main data source status endpoint (with bindings)
+      const response = await fetch(`/api/data-source-status?key=${testKey}`, {
         headers: {
           'x-admin-key': testKey
         }
