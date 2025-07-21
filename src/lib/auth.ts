@@ -98,15 +98,15 @@ export function createUnauthorizedResponse(error?: string) {
  * 管理员访问装饰器
  * 用于保护API路由
  */
-export function withAdminAuth(handler: (request: NextRequest) => Promise<Response>) {
-  return async (request: NextRequest) => {
+export function withAdminAuth(handler: (request: NextRequest, context?: any) => Promise<Response>) {
+  return async (request: NextRequest, context?: any) => {
     const authResult = verifyAdminAccess(request);
-    
+
     if (!authResult.isAuthorized) {
       return createUnauthorizedResponse(authResult.error);
     }
 
-    return handler(request);
+    return handler(request, context);
   };
 }
 

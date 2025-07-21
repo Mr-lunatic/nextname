@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -105,7 +105,7 @@ export default function DataSourcesAdminPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const key = searchParams.get('key') || 'yuming-admin-2025';
       const [healthResponse, syncResponse] = await Promise.all([
@@ -128,7 +128,7 @@ export default function DataSourcesAdminPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [searchParams]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -140,7 +140,7 @@ export default function DataSourcesAdminPage() {
     // Auto-refresh every 30 seconds
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchData]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
