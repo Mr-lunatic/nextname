@@ -11,7 +11,7 @@ export const GET = withAdminAuth(async (request: NextRequest, context: any) => {
     console.log('🔍 Running simplified data source health checks...');
     
     // Test external API (Nazhumi) - this should work without bindings
-    let nazhumiStatus = {
+    let nazhumiStatus: any = {
       available: false,
       responseTime: 0,
       error: 'Not tested'
@@ -30,7 +30,7 @@ export const GET = withAdminAuth(async (request: NextRequest, context: any) => {
         available: nazhumiResponse.ok,
         responseTime: Date.now() - nazhumiStart,
         status: nazhumiResponse.status,
-        error: nazhumiResponse.ok ? undefined : `HTTP ${nazhumiResponse.status}`
+        ...(nazhumiResponse.ok ? {} : { error: `HTTP ${nazhumiResponse.status}` })
       };
     } catch (error) {
       nazhumiStatus = {
