@@ -56,14 +56,14 @@ export async function GET(request: NextRequest, context: any) {
       kv: null as any
     };
     
-    // Direct access attempts
+    // Direct access attempts - Cloudflare Pages uses process.env
     const directAccessAttempts = [
+      () => (process.env as any)['domain-pricing-db'],
+      () => (process.env as any).PRICING_DB,
       () => context?.env?.PRICING_DB,
       () => context?.cloudflare?.env?.PRICING_DB,
       () => context?.PRICING_DB,
-      () => (globalThis as any).PRICING_DB,
-      () => context?.env?.['domain-pricing-db'],
-      () => context?.['domain-pricing-db']
+      () => (globalThis as any).PRICING_DB
     ];
     
     for (let i = 0; i < directAccessAttempts.length; i++) {
@@ -79,12 +79,12 @@ export async function GET(request: NextRequest, context: any) {
     }
     
     const kvAccessAttempts = [
+      () => (process.env as any).PRICING_CACHE,
+      () => (process.env as any).PRICINGCACHE,
       () => context?.env?.PRICING_CACHE,
       () => context?.cloudflare?.env?.PRICING_CACHE,
       () => context?.PRICING_CACHE,
-      () => (globalThis as any).PRICING_CACHE,
-      () => context?.env?.PRICINGCACHE,
-      () => context?.PRICINGCACHE
+      () => (globalThis as any).PRICING_CACHE
     ];
     
     for (let i = 0; i < kvAccessAttempts.length; i++) {

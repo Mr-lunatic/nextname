@@ -161,18 +161,13 @@ async function testKVCache(PRICING_CACHE: any) {
 export const GET = withAdminAuth(async (request: NextRequest, context: any) => {
   const startTime = Date.now();
 
-  // Access bindings - Cloudflare Pages binding access
+  // Access bindings - Cloudflare Pages passes bindings through process.env
   let PRICING_CACHE_KV: any = null;
   let PRICING_DB_INSTANCE: any = null;
 
-  // Try different ways to access bindings based on Cloudflare Pages setup
-  const env = context?.env || context?.cloudflare?.env || context || {};
-
-  // D1 Database binding (name: domain-pricing-db, binding: PRICING_DB)
-  PRICING_DB_INSTANCE = env?.PRICING_DB || env?.['domain-pricing-db'] || (globalThis as any).PRICING_DB;
-
-  // KV Namespace binding (name: PRICINGCACHE, binding: PRICING_CACHE)
-  PRICING_CACHE_KV = env?.PRICING_CACHE || (globalThis as any).PRICING_CACHE;
+  // Cloudflare Pages bindings are available in process.env
+  PRICING_DB_INSTANCE = (process.env as any)['domain-pricing-db'] || (process.env as any).PRICING_DB;
+  PRICING_CACHE_KV = (process.env as any).PRICING_CACHE || (process.env as any).PRICINGCACHE;
   
   try {
     console.log('🔍 Running data source health checks...');
