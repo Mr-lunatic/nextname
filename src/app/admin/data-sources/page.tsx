@@ -211,28 +211,70 @@ export default function DataSourcesAdminPage() {
       const key = urlKey || envKey || defaultKey;
 
       console.log('Using key for API calls:', key ? 'Key provided' : 'No key');
+      console.log('Key details:', {
+        urlKey: urlKey ? 'provided' : 'not provided',
+        envKey: envKey ? 'provided' : 'not provided',
+        defaultKey: defaultKey ? 'provided' : 'not provided',
+        finalKey: key ? `${key.substring(0, 4)}...` : 'none'
+      });
+
+      const healthUrl = `/api/data-source-status?key=${key}`;
+      const syncUrl = `/api/sync-status?detailed=true&key=${key}`;
+
+      console.log('Making API calls to:', { healthUrl, syncUrl });
 
       const [healthResponse, syncResponse] = await Promise.all([
-        fetch(`/api/data-source-status?key=${key}`, {
+        fetch(healthUrl, {
           headers: {
             'x-admin-key': key
           }
         }),
-        fetch(`/api/sync-status?detailed=true&key=${key}`, {
+        fetch(syncUrl, {
           headers: {
             'x-admin-key': key
           }
         })
       ]);
 
+      console.log('API Response status:', {
+        health: { status: healthResponse.status, ok: healthResponse.ok },
+        sync: { status: syncResponse.status, ok: syncResponse.ok }
+      });
+
       if (healthResponse.ok) {
         const health = await healthResponse.json();
+        console.log('Health data received:', health);
         setHealthData(health);
+      } else {
+        console.error('Health API failed:', {
+          status: healthResponse.status,
+          statusText: healthResponse.statusText,
+          url: healthUrl
+        });
+        try {
+          const errorText = await healthResponse.text();
+          console.error('Health API error response:', errorText);
+        } catch (e) {
+          console.error('Could not read health API error response');
+        }
       }
 
       if (syncResponse.ok) {
         const sync = await syncResponse.json();
+        console.log('Sync data received:', sync);
         setSyncData(sync);
+      } else {
+        console.error('Sync API failed:', {
+          status: syncResponse.status,
+          statusText: syncResponse.statusText,
+          url: syncUrl
+        });
+        try {
+          const errorText = await syncResponse.text();
+          console.error('Sync API error response:', errorText);
+        } catch (e) {
+          console.error('Could not read sync API error response');
+        }
       }
     } catch (error) {
       console.error('Failed to fetch data:', error);
