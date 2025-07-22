@@ -6,7 +6,7 @@ import { useState, useEffect, Suspense, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations } from '@/hooks/useTranslations'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Check, X, ExternalLink, Filter, SortAsc, Search, ShoppingCart, Globe, Info, Eye, Star, BarChart3, TrendingUp, Sparkles } from 'lucide-react'
+import { ArrowLeft, Check, X, ExternalLink, Filter, SortAsc, Search, Globe, Info, Eye, Star, BarChart3, TrendingUp, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -23,6 +23,7 @@ import { LanguageSwitcher } from '@/components/language-currency-switcher'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Footer } from '@/components/footer'
 import { trackDomainSearch, trackWhoisQuery } from '@/lib/analytics'
+import { getRegistrarOfficialUrl } from '@/lib/registrar-urls'
 import '@/styles/search-table.css'
 
 interface SearchResult {
@@ -681,33 +682,67 @@ function SearchPageContent() {
                       {[0, 1, 2].map((registrarIndex) => (
                         <td key={registrarIndex} className="px-4 py-6 text-center">
 
-                          {item.is_available && item.top_registrars && item.top_registrars[registrarIndex] ? (
-                            <div className={`registrar-price-card rounded-lg p-3 min-h-[80px] flex flex-col justify-center ${
-                              registrarIndex === 0
-                                ? 'best-price-card'
-                                : 'bg-muted/50 border border-border hover:bg-muted/70'
-                            }`}>
+                          {item.top_registrars && item.top_registrars[registrarIndex] ? (
+                            <div
+                              className={`registrar-price-card rounded-lg p-3 min-h-[80px] flex flex-col justify-center cursor-pointer transition-all duration-200 ${
+                                registrarIndex === 0
+                                  ? 'best-price-card hover:shadow-lg'
+                                  : 'bg-muted/50 border border-border hover:bg-muted/70 hover:shadow-md'
+                              }`}
+                              onClick={() => {
+                                // 跳转到注册商官网
+                                const registrarCode = item.top_registrars[registrarIndex].registrarCode ||
+                                                     item.top_registrars[registrarIndex].registrar.toLowerCase();
+                                const registrarUrl = getRegistrarOfficialUrl(registrarCode, '');
+                                window.open(registrarUrl, '_blank');
+                              }}
+                            >
                               <div className="font-medium text-foreground text-sm mb-2 truncate">
                                 {item.top_registrars[registrarIndex].registrar}
                               </div>
                               <div className="space-y-1">
-                                <div className="text-xs text-muted-foreground">
-                                  <span className="font-medium">注册:</span>
-                                  <span className="price-highlight ml-1">
-                                    ${item.top_registrars[registrarIndex].registrationPrice}
-                                  </span>
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  <span className="font-medium">续费:</span>
-                                  <span className="text-orange-600 font-semibold ml-1">
-                                    ${item.top_registrars[registrarIndex].renewalPrice}
-                                  </span>
-                                </div>
+                                {item.is_available ? (
+                                  <>
+                                    <div className="text-xs text-muted-foreground">
+                                      <span className="font-medium">注册:</span>
+                                      <span className="price-highlight ml-1">
+                                        ${item.top_registrars[registrarIndex].registrationPrice}
+                                      </span>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                      <span className="font-medium">续费:</span>
+                                      <span className="text-orange-600 font-semibold ml-1">
+                                        ${item.top_registrars[registrarIndex].renewalPrice}
+                                      </span>
+                                    </div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="text-xs text-muted-foreground">
+                                      <span className="font-medium">转入:</span>
+                                      <span className="text-blue-600 font-semibold ml-1">
+                                        ${item.top_registrars[registrarIndex].transferPrice || item.top_registrars[registrarIndex].registrationPrice}
+                                      </span>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                      <span className="font-medium">续费:</span>
+                                      <span className="text-orange-600 font-semibold ml-1">
+                                        ${item.top_registrars[registrarIndex].renewalPrice}
+                                      </span>
+                                    </div>
+                                  </>
+                                )}
                               </div>
-                              {registrarIndex === 0 && (
+                              {registrarIndex === 0 && item.is_available && (
                                 <div className="text-xs text-green-600 font-medium mt-1 flex items-center justify-center">
                                   <Sparkles className="w-3 h-3 mr-1" />
                                   最低价
+                                </div>
+                              )}
+                              {registrarIndex === 0 && !item.is_available && (
+                                <div className="text-xs text-blue-600 font-medium mt-1 flex items-center justify-center">
+                                  <ExternalLink className="w-3 h-3 mr-1" />
+                                  转入价
                                 </div>
                               )}
                             </div>
@@ -856,18 +891,24 @@ function SearchPageContent() {
                       </div>
 
                       {/* 注册商价格 - 移动端简化显示 */}
-                      {item.is_available && item.top_registrars && item.top_registrars.length > 0 && (
+                      {item.top_registrars && item.top_registrars.length > 0 && (
                         <div className="space-y-2">
                           <div className="text-xs text-muted-foreground font-medium">最优价格对比</div>
                           <div className="grid grid-cols-1 gap-2">
                             {item.top_registrars.slice(0, 2).map((registrar: any, registrarIndex: number) => (
                               <div
                                 key={registrar.registrar}
-                                className={`p-3 rounded-lg border ${
+                                className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 hover:shadow-md ${
                                   registrarIndex === 0
-                                    ? 'border-green-300 bg-green-50 dark:bg-green-900/20'
-                                    : 'border-border bg-muted/50'
+                                    ? 'border-green-300 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30'
+                                    : 'border-border bg-muted/50 hover:bg-muted/70'
                                 }`}
+                                onClick={() => {
+                                  // 跳转到注册商官网
+                                  const registrarCode = registrar.registrarCode || registrar.registrar.toLowerCase();
+                                  const registrarUrl = getRegistrarOfficialUrl(registrarCode, '');
+                                  window.open(registrarUrl, '_blank');
+                                }}
                               >
                                 <div className="flex items-center justify-between">
                                   <div className="font-medium text-sm">{registrar.registrar}</div>
@@ -983,21 +1024,7 @@ function SearchPageContent() {
                     <ExternalLink className="w-3 h-3 mr-1" />
                     导出结果
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      // 批量注册逻辑
-                      const availableDomains = sortedResults.filter((item: any) => item.is_available)
-                      if (availableDomains.length > 0) {
-                        alert(`发现 ${availableDomains.length} 个可注册域名，即将跳转到批量注册页面`)
-                      }
-                    }}
-                    className="text-xs bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    <ShoppingCart className="w-3 h-3 mr-1" />
-                    批量注册
-                  </Button>
+
                 </div>
               </div>
             </CardContent>

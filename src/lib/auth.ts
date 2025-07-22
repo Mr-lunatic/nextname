@@ -5,15 +5,18 @@
 
 import { NextRequest } from 'next/server';
 
-// 管理员访问密钥 - 支持多个密钥源
+// 管理员访问密钥 - 仅从环境变量获取
 const getValidKeys = () => {
   const keys = [
     process.env.ADMIN_ACCESS_KEY,
-    process.env.NEXT_PUBLIC_ADMIN_KEY,
-    'yuming-admin-2025' // 默认备用密钥
+    process.env.NEXT_PUBLIC_ADMIN_KEY
   ].filter(Boolean);
 
-  console.log('Valid admin keys configured:', keys.length);
+  if (keys.length === 0) {
+    console.warn('⚠️ No admin access keys configured in environment variables');
+  } else {
+    console.log('Valid admin keys configured:', keys.length);
+  }
   return keys;
 };
 
@@ -133,7 +136,12 @@ export function withAdminAuth(handler: (request: NextRequest, context?: any) => 
 export function generateAdminURL(basePath: string): string {
   const baseURL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
   const validKeys = getValidKeys();
-  const primaryKey = validKeys[0] || 'yuming-admin-2025';
+  const primaryKey = validKeys[0];
+
+  if (!primaryKey) {
+    throw new Error('No admin access key configured. Please set ADMIN_ACCESS_KEY environment variable.');
+  }
+
   return `${baseURL}${basePath}?key=${primaryKey}`;
 }
 
