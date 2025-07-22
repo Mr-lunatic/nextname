@@ -423,25 +423,32 @@ const basicFallback = [
 async function selectDataSource(domain: string, order: string, PRICING_DB: any): Promise<{source: string, data: any[], metadata: any}> {
   console.log(`🧠 Smart data source selection for ${domain}`);
 
+  let d1Result: any = null; // 保存D1结果供后续紧急备用
+
   // 1. 优先尝试D1数据库（如果启用）
   if (DATA_SOURCE_CONFIG.D1_PRIORITY && PRICING_DB) {
     console.log(`📊 Trying D1 database first for ${domain}`);
-    const d1Result = await fetchD1Pricing(domain, order, PRICING_DB);
+    d1Result = await fetchD1Pricing(domain, order, PRICING_DB);
 
     if (d1Result.data && d1Result.data.length > 0) {
-      // 强制D1优先策略：只要D1有数据就使用，不管新鲜度
-      console.log(`✅ Using D1 data for ${domain} (${d1Result.data.length} records, ${d1Result.metadata.dataAge.toFixed(1)}h old) - D1 PRIORITY ENFORCED`);
-      return {
-        source: d1Result.metadata.isFresh ? 'd1_fresh' : 'd1_priority',
-        data: transformD1Data(d1Result.data, domain),
-        metadata: { ...d1Result.metadata, priorityEnforced: true }
-      };
+      // 严格校验D1数据新鲜度：只有在72小时内才使用D1数据
+      if (d1Result.metadata.isFresh) {
+        console.log(`✅ Using fresh D1 data for ${domain} (${d1Result.data.length} records, ${d1Result.metadata.dataAge.toFixed(1)}h old)`);
+        return {
+          source: 'd1_fresh',
+          data: transformD1Data(d1Result.data, domain),
+          metadata: d1Result.metadata
+        };
+      } else {
+        console.log(`⚠️ D1 data is stale for ${domain} (${d1Result.metadata.dataAge.toFixed(1)}h old, threshold: ${DATA_SOURCE_CONFIG.D1_FRESHNESS_THRESHOLD_HOURS}h), falling back to API`);
+        // D1数据过期，继续使用API
+      }
     } else {
       console.log(`📭 No D1 data for ${domain}, trying API`);
     }
   }
 
-  // 2. D1无数据或不可用，使用nazhumi API
+  // 2. D1数据过期/无数据/不可用，使用nazhumi API
   console.log(`🌐 Fetching from Nazhumi API for ${domain}`);
   const apiResult = await fetchNazhumiPricing(domain, order);
 
@@ -454,7 +461,29 @@ async function selectDataSource(domain: string, order: string, PRICING_DB: any):
     };
   }
 
-  // 3. 所有数据源都失败
+  // 3. API也失败，尝试使用过期的D1数据作为紧急备用
+  if (DATA_SOURCE_CONFIG.D1_PRIORITY && PRICING_DB && d1Result?.data && d1Result.data.length > 0) {
+    console.log(`🚨 API failed, using stale D1 data as emergency fallback for ${domain} (${d1Result.metadata.dataAge.toFixed(1)}h old)`);
+    return {
+      source: 'd1_emergency_fallback',
+      data: transformD1Data(d1Result.data, domain),
+      metadata: { ...d1Result.metadata, emergencyFallback: true, apiError: apiResult.metadata?.error }
+    };
+  }
+
+  // 4. 兜底数据表（待爬虫完成后实现）
+  // TODO: 实现兜底数据表查询
+  // const fallbackResult = await fetchFallbackData(domain, order);
+  // if (fallbackResult.data && fallbackResult.data.length > 0) {
+  //   console.log(`🛡️ Using fallback data table for ${domain}`);
+  //   return {
+  //     source: 'fallback_table',
+  //     data: transformFallbackData(fallbackResult.data, domain),
+  //     metadata: fallbackResult.metadata
+  //   };
+  // }
+
+  // 5. 所有数据源都失败
   console.error(`❌ All data sources failed for ${domain}`);
   throw new Error(`No pricing data available for ${domain} from any source`);
 }
