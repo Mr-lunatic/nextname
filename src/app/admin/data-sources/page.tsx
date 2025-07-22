@@ -101,7 +101,7 @@ function AccessControl({ children }: { children: React.ReactNode }) {
 
   if (isChecking) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-surface-primary)' }}>
         <div className="text-center">
           <Shield className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
           <p className="text-gray-600">验证访问权限...</p>
@@ -114,7 +114,7 @@ function AccessControl({ children }: { children: React.ReactNode }) {
   if (isBlocked && blockEndTime) {
     const remainingTime = Math.ceil((blockEndTime - Date.now()) / 1000 / 60);
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-surface-primary)' }}>
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-red-500" />
@@ -143,7 +143,7 @@ function AccessControl({ children }: { children: React.ReactNode }) {
     const remainingAttempts = Math.max(0, 5 - failedAttempts);
 
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-surface-primary)' }}>
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <Lock className="h-12 w-12 mx-auto mb-4 text-red-500" />
@@ -335,8 +335,9 @@ export default function DataSourcesAdminPage() {
   }
 
   return (
-    <AccessControl>
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-surface-primary)' }}>
+      <AccessControl>
+        <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">数据源管理</h1>
@@ -682,7 +683,8 @@ export default function DataSourcesAdminPage() {
           </Card>
         </TabsContent>
       </Tabs>
+        </div>
+      </AccessControl>
     </div>
-    </AccessControl>
   );
 }

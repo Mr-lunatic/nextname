@@ -291,7 +291,7 @@ function SearchPageContent() {
 
               {is_available ? (
                 <div className="space-y-4">
-                  <div className="text-2xl font-bold text-primary">
+                  <div className="text-h2" style={{ color: 'var(--color-text-primary)' }}>
                     最低首年注册价格: <span className="text-green-600">${mockRegistrarPrices[0].registrationPrice}</span>
                     <span className="text-sm text-muted-foreground ml-2">({mockRegistrarPrices[0].registrar})</span>
                   </div>
@@ -669,7 +669,7 @@ function SearchPageContent() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ delay: index * 0.05 }}
-                      className="search-table-row group"
+                      className="search-table-row group table-row"
                     >
                       {/* 域名列 */}
                       <td className="px-6 py-6">
@@ -684,10 +684,10 @@ function SearchPageContent() {
 
                           {item.top_registrars && item.top_registrars[registrarIndex] ? (
                             <div
-                              className={`registrar-price-card rounded-lg p-3 min-h-[80px] flex flex-col justify-center cursor-pointer transition-all duration-200 ${
+                              className={`card-interactive rounded-lg p-3 min-h-[80px] flex flex-col justify-center ${
                                 registrarIndex === 0
-                                  ? 'best-price-card hover:shadow-lg'
-                                  : 'bg-muted/50 border border-border hover:bg-muted/70 hover:shadow-md'
+                                  ? 'bg-ds-accent/10 border border-ds-accent/20 text-ds-accent'
+                                  : 'bg-ds-surface-secondary border border-ds-border-default'
                               }`}
                               onClick={() => {
                                 // 跳转到注册商官网
@@ -1110,9 +1110,9 @@ function SearchPageContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen gradient-bg-premium hero-bg-pattern">
+      <div className="min-h-screen" style={{ backgroundColor: 'var(--color-background)' }}>
         {/* Header */}
-        <header className="container-magazine py-4 relative z-[10000]">
+        <header className="container-magazine py-4 relative z-[10000]" style={{ borderBottom: '1px solid var(--color-border-default)' }}>
           <div className="flex justify-between items-center backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -1161,9 +1161,9 @@ function SearchPageContent() {
   }
 
   return (
-    <div className="min-h-screen gradient-bg-premium hero-bg-pattern">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-surface-primary)' }}>
       {/* Header */}
-      <header className="container-magazine py-4 relative z-[10000]">
+      <header className="container-magazine py-4 relative z-[10000]" style={{ borderBottom: '1px solid var(--color-border-default)' }}>
         <div className="flex justify-between items-center backdrop-blur-sm">
           <motion.div
             initial={{ opacity: 0, x: -20 }}

@@ -7,24 +7,24 @@ export function Footer() {
   const { t } = useTranslations()
 
   return (
-    <footer className="bg-muted/50 py-12 mt-16">
+    <footer className="py-12 mt-16" style={{ backgroundColor: 'var(--color-surface-secondary)', borderTop: '1px solid var(--color-border-default)' }}>
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* 品牌信息 */}
           <div className="col-span-1 md:col-span-2">
             <div className="mb-4">
               <NextNameLogo className="text-foreground" />
-              <p className="text-sm text-muted-foreground mt-2">Find Your Perfect Domain</p>
+              <p className="text-small mt-2" style={{ color: 'var(--color-text-secondary)' }}>Find Your Perfect Domain</p>
             </div>
-            <p className="text-muted-foreground text-sm leading-relaxed max-w-md">
+            <p className="text-small leading-relaxed max-w-md" style={{ color: 'var(--color-text-secondary)' }}>
               {t('footer.brandDescription')}
             </p>
           </div>
           
           {/* 产品功能 */}
           <div>
-            <h4 className="font-semibold mb-4">产品功能</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
+            <h4 className="text-h3 mb-4" style={{ color: 'var(--color-text-primary)' }}>产品功能</h4>
+            <ul className="space-y-2 text-small" style={{ color: 'var(--color-text-secondary)' }}>
               <li>域名可用性查询</li>
               <li>价格对比分析</li>
               <li>WHOIS信息查询</li>

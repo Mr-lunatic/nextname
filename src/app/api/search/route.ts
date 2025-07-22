@@ -116,14 +116,47 @@ const registrarPricing = {
   ]
 }
 
-// Get top 3 cheapest registrars for a TLD
-function getTopRegistrars(tld: string) {
-  const pricing = registrarPricing[tld as keyof typeof registrarPricing]
-  if (!pricing) return []
-  
-  // Sort by registration price and return top 3
-  const sortedPricing = [...pricing].sort((a, b) => a.registrationPrice - b.registrationPrice)
-  return sortedPricing.slice(0, 3)
+// Get top 3 cheapest registrars for a TLD using smart data source
+async function getTopRegistrars(tld: string) {
+  try {
+    // 调用智能数据源的pricing API
+    const baseURL = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const response = await fetch(`${baseURL}/api/pricing?domain=${encodeURIComponent(tld)}&order=new&pageSize=3`);
+
+    if (!response.ok) {
+      console.warn(`Failed to fetch pricing for ${tld}, falling back to static data`);
+      // 回退到静态数据
+      const pricing = registrarPricing[tld as keyof typeof registrarPricing]
+      if (!pricing) return []
+      const sortedPricing = [...pricing].sort((a, b) => a.registrationPrice - b.registrationPrice)
+      return sortedPricing.slice(0, 3)
+    }
+
+    const data = await response.json();
+
+    if (data.pricing && Array.isArray(data.pricing)) {
+      // 转换为搜索结果需要的格式
+      return data.pricing.map((item: any) => ({
+        registrar: item.registrar,
+        registrarCode: item.registrarCode,
+        registrationPrice: item.registrationPrice,
+        renewalPrice: item.renewalPrice,
+        transferPrice: item.transferPrice,
+        currency: item.currency || 'USD',
+        features: item.features || [],
+        rating: item.rating || 4.0
+      }));
+    }
+
+    return [];
+  } catch (error) {
+    console.error(`Error fetching pricing for ${tld}:`, error);
+    // 回退到静态数据
+    const pricing = registrarPricing[tld as keyof typeof registrarPricing]
+    if (!pricing) return []
+    const sortedPricing = [...pricing].sort((a, b) => a.registrationPrice - b.registrationPrice)
+    return sortedPricing.slice(0, 3)
+  }
 }
 
 export async function GET(request: NextRequest) {
@@ -290,7 +323,7 @@ export async function GET(request: NextRequest) {
         
         const domainData = await domainResponse.json()
         
-        const topRegistrars = getTopRegistrars(tld.tld)
+        const topRegistrars = await getTopRegistrars(tld.tld)
         
         return {
           domain,
@@ -302,13 +335,13 @@ export async function GET(request: NextRequest) {
           market_share: tldInfo?.marketShare || 0,
           category: tldInfo?.category || 'generic',
           popularity: tldInfo?.popularity || 50,
-          top_registrars: domainData.is_available ? topRegistrars : [],
+          top_registrars: topRegistrars, // 无论域名是否可用，都提供注册商数据
           response_time: Date.now() - startTime
         }
       } catch (error) {
         console.error(`Failed to check ${domain}:`, error)
         // On error, return checking status instead of blocking
-        const topRegistrars = getTopRegistrars(tld.tld)
+        const topRegistrars = await getTopRegistrars(tld.tld)
         
         return {
           domain,

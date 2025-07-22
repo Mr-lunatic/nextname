@@ -17,6 +17,23 @@ module.exports = {
     },
     extend: {
       colors: {
+        // Design System Colors - 扩展版本
+        'ds-surface-primary': 'var(--color-surface-primary)',
+        'ds-surface-secondary': 'var(--color-surface-secondary)',
+        'ds-border-default': 'var(--color-border-default)',
+        'ds-border-interactive': 'var(--color-border-interactive)',
+        'ds-text-primary': 'var(--color-text-primary)',
+        'ds-text-secondary': 'var(--color-text-secondary)',
+        'ds-text-disabled': 'var(--color-text-disabled)',
+        'ds-accent': 'var(--color-accent-default)',
+        'ds-accent-hover': 'var(--color-accent-hover)',
+        'ds-accent-active': 'var(--color-accent-active)',
+        'ds-success': 'var(--color-success)',
+        'ds-warning': 'var(--color-warning)',
+        'ds-error': 'var(--color-error)',
+        'ds-info': 'var(--color-info)',
+
+        // Original Tailwind colors
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -70,6 +87,33 @@ module.exports = {
           tertiary: "hsl(var(--surface-tertiary))",
         },
       },
+      fontFamily: {
+        'ds': 'var(--font-family-base)',
+      },
+      fontSize: {
+        'ds-h1': 'var(--font-size-h1)',
+        'ds-h2': 'var(--font-size-h2)',
+        'ds-h3': 'var(--font-size-h3)',
+        'ds-body': 'var(--font-size-body)',
+        'ds-label': 'var(--font-size-label)',
+        'ds-small': 'var(--font-size-small)',
+        'ds-button': 'var(--font-size-button)',
+      },
+      fontWeight: {
+        'ds-regular': 'var(--font-weight-regular)',
+        'ds-medium': 'var(--font-weight-medium)',
+        'ds-semibold': 'var(--font-weight-semibold)',
+        'ds-bold': 'var(--font-weight-bold)',
+      },
+      lineHeight: {
+        'ds-h1': 'var(--line-height-h1)',
+        'ds-h2': 'var(--line-height-h2)',
+        'ds-h3': 'var(--line-height-h3)',
+        'ds-body': 'var(--line-height-body)',
+        'ds-label': 'var(--line-height-label)',
+        'ds-small': 'var(--line-height-small)',
+        'ds-button': 'var(--line-height-button)',
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
@@ -88,6 +132,19 @@ module.exports = {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        'skeleton-loading': 'skeleton-loading 1.5s infinite',
+        'button-spin': 'button-spin 0.8s linear infinite',
+        'fade-in': 'fade-in 0.3s ease-out',
+        'slide-in-right': 'slide-in-right 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+        'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      },
+      spacing: {
+        'ds-xs': 'var(--space-xs)',
+        'ds-sm': 'var(--space-sm)',
+        'ds-md': 'var(--space-md)',
+        'ds-lg': 'var(--space-lg)',
+        'ds-xl': 'var(--space-xl)',
+        'ds-2xl': 'var(--space-2xl)',
       },
     },
   },

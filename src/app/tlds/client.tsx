@@ -93,8 +93,8 @@ export default function TLDsPageClient() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="min-h-screen" style={{ backgroundColor: 'var(--color-surface-primary)' }}>
+        <header className="backdrop-blur" style={{ borderBottom: '1px solid var(--color-border-default)', backgroundColor: 'var(--color-surface-secondary)' }}>
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <Link href="/" className="cursor-pointer">
@@ -119,14 +119,14 @@ export default function TLDsPageClient() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-surface-primary)' }}>
       <TLDListStructuredData
         tlds={filteredAndSortedTLDs}
         totalCount={tlds.length}
       />
 
       {/* Header */}
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="backdrop-blur" style={{ borderBottom: '1px solid var(--color-border-default)', backgroundColor: 'var(--color-surface-secondary)' }}>
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="cursor-pointer">

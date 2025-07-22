@@ -6,6 +6,7 @@ import { usePreFetch, useSearchHistory, useUserPreferences } from '@/hooks/usePr
 import { Search, Globe, Hash, DollarSign, Clock, Star } from 'lucide-react'
 import Fuse from 'fuse.js'
 import { Button } from '@/components/ui/button'
+import { EnhancedButton } from '@/components/ui/enhanced-button'
 import { Card, CardContent } from '@/components/ui/card'
 
 type SearchType = 'auto' | 'domain' | 'prefix' | 'suffix'
@@ -291,12 +292,22 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
                   setIsOpen(false)
                 }
               }}
-              onFocus={() => setIsOpen(true)}
-              onBlur={() => {
-                // Delay hiding to allow clicking on suggestions
-                setTimeout(() => setIsOpen(false), 200)
+              className="w-full h-14 pl-12 pr-32 text-lg rounded-full border-2 transition-all duration-300 focus:outline-none"
+              style={{
+                backgroundColor: 'var(--color-surface-secondary)',
+                borderColor: 'var(--color-border-default)',
+                color: 'var(--color-text-primary)'
               }}
-              className="w-full h-14 pl-12 pr-32 text-lg rounded-full border-2 border-input bg-background hover:border-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-300"
+              onFocus={(e) => {
+                setIsOpen(true);
+                e.target.style.borderColor = 'var(--color-accent-default)';
+                e.target.style.boxShadow = '0 0 0 3px rgba(34, 197, 94, 0.1)';
+              }}
+              onBlur={(e) => {
+                setTimeout(() => setIsOpen(false), 200);
+                e.target.style.borderColor = 'var(--color-border-default)';
+                e.target.style.boxShadow = 'none';
+              }}
               autoComplete="off"
             />
             <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground pointer-events-none">
@@ -304,19 +315,27 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
             </div>
           </div>
           <div className="absolute right-2 flex items-center space-x-2">
-            <Button
+            <EnhancedButton
               onClick={() => handleSearch()}
               className="h-10 rounded-full"
               disabled={!query.trim()}
+              variant="primary"
+              size="md"
             >
               {t('common.search')}
-            </Button>
+            </EnhancedButton>
           </div>
         </div>
         
         {/* Suggestions dropdown */}
         {isOpen && suggestions.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-background border rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+          <div
+            className="absolute top-full left-0 right-0 mt-2 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto"
+            style={{
+              backgroundColor: 'var(--color-surface-secondary)',
+              border: '1px solid var(--color-border-default)'
+            }}
+          >
             {recentSearches.length > 0 && query === '' && (
               <div className="border-b">
                 <div className="px-3 py-2 text-xs font-medium text-muted-foreground">Recent Searches</div>

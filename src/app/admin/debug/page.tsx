@@ -103,7 +103,8 @@ export default function AdminDebugPage() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-surface-primary)' }}>
+      <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">管理员调试页面</h1>
@@ -323,6 +324,7 @@ export default function AdminDebugPage() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

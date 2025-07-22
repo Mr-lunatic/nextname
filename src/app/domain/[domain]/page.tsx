@@ -183,7 +183,7 @@ function DomainDetailContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
+      <div className="min-h-screen" style={{ backgroundColor: 'var(--color-surface-primary)' }}>
         <div className="container mx-auto px-4 py-8">
           <div className="mb-8">
             <Link href="/search">
@@ -208,7 +208,7 @@ function DomainDetailContent() {
 
   if (!detail) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
+      <div className="min-h-screen" style={{ backgroundColor: 'var(--color-surface-primary)' }}>
         <div className="container mx-auto px-4 py-8">
           <div className="text-center py-20">
             <div className="space-y-4">
@@ -224,7 +224,7 @@ function DomainDetailContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-surface-primary)' }}>
       <div className="container mx-auto px-4 py-8">
 
         {/* Domain Header */}
@@ -477,7 +477,7 @@ function DomainDetailContent() {
 export default function DomainDetailPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-surface-primary)' }}>
         <div className="text-center space-y-4">
           <SpinnerLoader size="lg" />
           <p className="text-lg font-medium">加载中...</p>

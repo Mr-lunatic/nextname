@@ -206,7 +206,7 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
   ]
 
   return (
-    <div className="min-h-screen gradient-bg-premium hero-bg-pattern">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-surface-primary)' }}>
       {/* Header */}
       <header className="container-magazine py-4 relative z-[10000]">
         <div className="flex justify-between items-center backdrop-blur-sm">
@@ -718,7 +718,7 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
               {t('cta.description')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="btn-primary text-lg px-8 py-3" onClick={scrollToSearch}>
+              <Button size="lg" className="button-primary text-button text-lg px-8 py-3" onClick={scrollToSearch}>
                 {t('cta.startSearch')}
                 <Search className="ml-2 h-5 w-5" />
               </Button>

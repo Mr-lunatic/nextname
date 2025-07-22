@@ -25,6 +25,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { EnhancedButton } from '@/components/ui/enhanced-button'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageSwitcher } from '@/components/language-currency-switcher'
 import { NextNameLogo } from '@/components/logo'
@@ -116,7 +117,7 @@ export default function AboutPage() {
   ]
 
   return (
-    <div className="min-h-screen gradient-bg-premium">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-surface-primary)' }}>
       {/* Header */}
       <header className="container-magazine py-4 relative z-[10000]">
         <div className="flex justify-between items-center">

@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import Design System */
+@import './design-system.css';
+
 /* Import enhanced styles */
 @import './enhanced-colors.css';
 @import './micro-interactions.css';

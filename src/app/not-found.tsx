@@ -6,7 +6,7 @@ export const runtime = 'edge';
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen gradient-bg-premium flex items-center justify-center text-center px-4">
+    <div className="min-h-screen flex items-center justify-center text-center px-4" style={{ backgroundColor: 'var(--color-surface-primary)' }}>
       <div className="space-y-6">
         <div className="inline-flex items-center justify-center">
           <AlertTriangle className="w-16 h-16 text-yellow-400" />
