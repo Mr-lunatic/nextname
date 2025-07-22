@@ -13,11 +13,11 @@ const pendingRequests = new Map<string, Promise<any>>();
 
 // Data source priority configuration
 const DATA_SOURCE_CONFIG = {
-  // D1数据库优先级设置
+  // D1数据库优先级设置 - 强制优先使用D1
   D1_PRIORITY: true,
-  // D1数据新鲜度阈值（小时）
-  D1_FRESHNESS_THRESHOLD_HOURS: 24,
-  // 是否启用智能切换
+  // D1数据新鲜度阈值（小时）- 延长到72小时
+  D1_FRESHNESS_THRESHOLD_HOURS: 72,
+  // 是否启用智能切换 - 保持启用但优先D1
   ENABLE_SMART_FALLBACK: true,
   // API超时时间（毫秒）
   API_TIMEOUT_MS: 8000,
@@ -428,43 +428,13 @@ async function selectDataSource(domain: string, order: string, PRICING_DB: any):
     const d1Result = await fetchD1Pricing(domain, order, PRICING_DB);
 
     if (d1Result.data && d1Result.data.length > 0) {
-      // 检查数据新鲜度
-      if (d1Result.metadata.isFresh) {
-        console.log(`✅ Using fresh D1 data for ${domain} (${d1Result.metadata.dataAge.toFixed(1)}h old)`);
-        return {
-          source: 'd1_fresh',
-          data: transformD1Data(d1Result.data, domain),
-          metadata: d1Result.metadata
-        };
-      } else if (DATA_SOURCE_CONFIG.ENABLE_SMART_FALLBACK) {
-        console.log(`⚠️ D1 data is stale for ${domain} (${d1Result.metadata.dataAge.toFixed(1)}h old), trying API`);
-        // 数据过期，尝试API，但保留D1数据作为备用
-        const apiResult = await fetchNazhumiPricing(domain, order);
-
-        if (apiResult.data && apiResult.data.length > 0) {
-          console.log(`✅ Using fresh API data for ${domain}, D1 data available as backup`);
-          return {
-            source: 'nazhumi_with_d1_backup',
-            data: transformNazhumiData(apiResult.data, domain),
-            metadata: { ...apiResult.metadata, hasD1Backup: true, d1BackupAge: d1Result.metadata.dataAge }
-          };
-        } else {
-          console.log(`⚠️ API failed, falling back to stale D1 data for ${domain}`);
-          return {
-            source: 'd1_stale_fallback',
-            data: transformD1Data(d1Result.data, domain),
-            metadata: { ...d1Result.metadata, usedAsFallback: true, apiError: apiResult.metadata.error }
-          };
-        }
-      } else {
-        // 不启用智能切换，直接使用D1数据
-        console.log(`📊 Using D1 data for ${domain} (smart fallback disabled)`);
-        return {
-          source: 'd1_only',
-          data: transformD1Data(d1Result.data, domain),
-          metadata: d1Result.metadata
-        };
-      }
+      // 强制D1优先策略：只要D1有数据就使用，不管新鲜度
+      console.log(`✅ Using D1 data for ${domain} (${d1Result.data.length} records, ${d1Result.metadata.dataAge.toFixed(1)}h old) - D1 PRIORITY ENFORCED`);
+      return {
+        source: d1Result.metadata.isFresh ? 'd1_fresh' : 'd1_priority',
+        data: transformD1Data(d1Result.data, domain),
+        metadata: { ...d1Result.metadata, priorityEnforced: true }
+      };
     } else {
       console.log(`📭 No D1 data for ${domain}, trying API`);
     }
@@ -495,9 +465,9 @@ export async function GET(request: NextRequest, context: any) {
   const order = searchParams.get('order') || 'new';
   const forceSource = searchParams.get('source'); // 可选：强制指定数据源
 
-  // Access KV and D1 bindings from context.env (may be undefined in development)
-  const PRICING_CACHE_KV = context?.env?.PRICING_CACHE as any;
-  const PRICING_DB = context?.env?.PRICING_DB as any;
+  // Access KV and D1 bindings - Cloudflare Pages uses process.env
+  const PRICING_CACHE_KV = (process.env as any).PRICING_CACHE || (process.env as any).PRICINGCACHE;
+  const PRICING_DB = (process.env as any)['domain-pricing-db'] || (process.env as any).PRICING_DB;
 
   // Parameterized cache configuration from environment variables
   const CACHE_TTL_SECONDS = parseInt(context?.env?.CACHE_TTL || '3600'); // Default 1 hour
