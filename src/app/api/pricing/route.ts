@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getRegistrarOfficialUrl } from '@/lib/registrar-urls';
 
 // Configure Edge Runtime for Cloudflare Pages
 export const runtime = 'edge';
@@ -262,7 +263,7 @@ function transformD1Data(d1Data: any[], domain: string) {
   return d1Data.map((item: any) => ({
     registrar: item.registrar_name || item.registrar || 'Unknown',
     registrarCode: item.registrar,
-    registrarUrl: item.registrar_url || getRegistrarUrl(item.registrar || ''),
+    registrarUrl: getRegistrarOfficialUrl(item.registrar, item.registrar_url),
     registrationPrice: typeof item.registration_price === 'number' ? item.registration_price : null,
     renewalPrice: typeof item.renewal_price === 'number' ? item.renewal_price : null,
     transferPrice: typeof item.transfer_price === 'number' ? item.transfer_price : null,
@@ -465,6 +466,11 @@ export async function GET(request: NextRequest, context: any) {
   const order = searchParams.get('order') || 'new';
   const forceSource = searchParams.get('source'); // 可选：强制指定数据源
 
+  // 分页参数
+  const page = parseInt(searchParams.get('page') || '1');
+  const pageSize = parseInt(searchParams.get('pageSize') || '10');
+  const offset = (page - 1) * pageSize;
+
   // Access KV and D1 bindings - Cloudflare Pages uses process.env
   const PRICING_CACHE_KV = (process.env as any).PRICING_CACHE || (process.env as any).PRICINGCACHE;
   const PRICING_DB = (process.env as any)['domain-pricing-db'] || (process.env as any).PRICING_DB;
@@ -554,12 +560,26 @@ export async function GET(request: NextRequest, context: any) {
         return (aPrice || Infinity) - (bPrice || Infinity);
       });
 
+      // 分页处理
+      const totalRecords = enrichedData.length;
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      const paginatedData = enrichedData.slice(offset, offset + pageSize);
+
       const responseData = {
         domain: cleanDomain,
         order,
         source: result.source,
-        count: enrichedData.length,
-        pricing: enrichedData,
+        count: paginatedData.length,
+        totalRecords,
+        pricing: paginatedData,
+        pagination: {
+          page,
+          pageSize,
+          totalPages,
+          totalRecords,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1
+        },
         metadata: {
           ...result.metadata,
           requestTime: Date.now() - requestStartTime,

@@ -31,10 +31,15 @@ export function PriceComparison({ domain, onClose }: PriceComparisonProps) {
   const [dataSource, setDataSource] = useState<string>('')
   const [metadata, setMetadata] = useState<any>(null)
 
-  const fetchPricing = useCallback(async (forceSource?: string) => {
+  // 分页状态
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pagination, setPagination] = useState<any>(null)
+  const pageSize = 10
+
+  const fetchPricing = useCallback(async (forceSource?: string, page: number = currentPage) => {
     setLoading(true)
     try {
-      const url = `/api/pricing?domain=${encodeURIComponent(domain)}&order=${sortBy}${forceSource ? `&source=${forceSource}` : ''}`
+      const url = `/api/pricing?domain=${encodeURIComponent(domain)}&order=${sortBy}&page=${page}&pageSize=${pageSize}${forceSource ? `&source=${forceSource}` : ''}`
       const response = await fetch(url)
       const data = await response.json()
 
@@ -42,17 +47,31 @@ export function PriceComparison({ domain, onClose }: PriceComparisonProps) {
         setPricing(data.pricing || [])
         setDataSource(data.source || '')
         setMetadata(data.metadata || null)
+        setPagination(data.pagination || null)
       } else {
         console.error('API error:', data)
         setPricing([])
+        setPagination(null)
       }
     } catch (error) {
       console.error('Failed to fetch pricing:', error)
       setPricing([])
+      setPagination(null)
     } finally {
       setLoading(false)
     }
-  }, [domain, sortBy])
+  }, [domain, sortBy, currentPage, pageSize])
+
+  // 分页控制函数
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage)
+    fetchPricing(undefined, newPage)
+  }
+
+  const handleSortChange = (newSortBy: string) => {
+    setSortBy(newSortBy)
+    setCurrentPage(1) // 重置到第一页
+  }
 
   useEffect(() => {
     fetchPricing()
@@ -124,7 +143,7 @@ export function PriceComparison({ domain, onClose }: PriceComparisonProps) {
             </CardDescription>
           </div>
           <div className="flex space-x-2">
-            <Select value={sortBy} onValueChange={setSortBy}>
+            <Select value={sortBy} onValueChange={handleSortChange}>
               <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
@@ -241,7 +260,59 @@ export function PriceComparison({ domain, onClose }: PriceComparisonProps) {
             )
           })}
         </div>
-        
+
+        {/* 分页控件 */}
+        {pagination && pagination.totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              显示第 {((pagination.page - 1) * pagination.pageSize) + 1} - {Math.min(pagination.page * pagination.pageSize, pagination.totalRecords)} 条，
+              共 {pagination.totalRecords} 条记录
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={!pagination.hasPrevPage}
+              >
+                上一页
+              </Button>
+
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                  const pageNum = Math.max(1, Math.min(
+                    pagination.totalPages - 4,
+                    Math.max(1, currentPage - 2)
+                  )) + i;
+
+                  if (pageNum > pagination.totalPages) return null;
+
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={pageNum === currentPage ? "default" : "outline"}
+                      size="sm"
+                      className="w-8 h-8 p-0"
+                      onClick={() => handlePageChange(pageNum)}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={!pagination.hasNextPage}
+              >
+                下一页
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div className="mt-6 p-4 bg-muted/50 rounded-lg">
           <h4 className="font-semibold mb-2">价格说明</h4>
           <ul className="text-sm text-muted-foreground space-y-1">
