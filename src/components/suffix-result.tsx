@@ -42,20 +42,25 @@ export function SuffixResult({ suffix, registrarPrices = [], description, catego
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchPricingData = useCallback(async () => {
+  // 分页状态
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pagination, setPagination] = useState<any>(null)
+  const pageSize = 10
+
+  const fetchPricingData = useCallback(async (page: number = currentPage) => {
     setLoading(true)
     setError(null)
-    
+
     try {
       const cleanSuffix = suffix.startsWith('.') ? suffix.substring(1) : suffix
-      const response = await fetch(`/api/pricing?domain=${encodeURIComponent(cleanSuffix)}&order=new`)
-      
+      const response = await fetch(`/api/pricing?domain=${encodeURIComponent(cleanSuffix)}&order=new&page=${page}&pageSize=${pageSize}`)
+
       if (!response.ok) {
         throw new Error(`Failed to fetch pricing: ${response.status}`)
       }
-      
+
       const data = await response.json()
-      
+
       if (data.pricing && Array.isArray(data.pricing)) {
         const transformedPricing = data.pricing.map((item: any) => ({
           registrar: item.registrar,
@@ -71,9 +76,10 @@ export function SuffixResult({ suffix, registrarPrices = [], description, catego
           isPremium: item.isPremium,
           hasPromo: item.hasPromo
         }))
-        
+
         setPricing(transformedPricing)
-        console.log(`✅ Loaded ${transformedPricing.length} pricing entries for ${suffix}`)
+        setPagination(data.pagination || null)
+        console.log(`✅ Loaded ${transformedPricing.length} pricing entries for ${suffix} (page ${page})`)
       } else {
         throw new Error('Invalid pricing data format')
       }
@@ -84,7 +90,13 @@ export function SuffixResult({ suffix, registrarPrices = [], description, catego
     } finally {
       setLoading(false)
     }
-  }, [suffix])
+  }, [suffix, currentPage, pageSize])
+
+  // 分页控制函数
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage)
+    fetchPricingData(newPage)
+  }
 
   // Fetch pricing data on component mount
   useEffect(() => {
@@ -397,6 +409,58 @@ export function SuffixResult({ suffix, registrarPrices = [], description, catego
               </div>
             </TabsContent>
           </Tabs>
+
+          {/* 分页控件 */}
+          {pagination && pagination.totalPages > 1 && (
+            <div className="mt-6 flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                显示第 {((pagination.page - 1) * pagination.pageSize) + 1} - {Math.min(pagination.page * pagination.pageSize, pagination.totalRecords)} 条，
+                共 {pagination.totalRecords} 条记录
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={!pagination.hasPrevPage}
+                >
+                  上一页
+                </Button>
+
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                    const pageNum = Math.max(1, Math.min(
+                      pagination.totalPages - 4,
+                      Math.max(1, currentPage - 2)
+                    )) + i;
+
+                    if (pageNum > pagination.totalPages) return null;
+
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={pageNum === currentPage ? "default" : "outline"}
+                        size="sm"
+                        className="w-8 h-8 p-0"
+                        onClick={() => handlePageChange(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={!pagination.hasNextPage}
+                >
+                  下一页
+                </Button>
+              </div>
+            </div>
+          )}
         </>
       )}
 
