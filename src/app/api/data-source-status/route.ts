@@ -172,7 +172,6 @@ export const GET = withAdminAuth(async (request: NextRequest, context: any) => {
   try {
     console.log('🔍 Running data source health checks...');
     console.log('Context available:', !!context);
-    console.log('Env available:', !!env);
     console.log('PRICING_CACHE available:', !!PRICING_CACHE_KV);
     console.log('PRICING_DB available:', !!PRICING_DB_INSTANCE);
     
