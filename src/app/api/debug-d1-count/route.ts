@@ -80,7 +80,7 @@ export const GET = withAdminAuth(async (request: NextRequest, context: any) => {
         dataFreshness: freshnessResult || {},
         priceRange: priceRangeResult || {},
         sampleRecords: (allRecordsResult?.results || []).slice(0, 10), // 前10条记录
-        allRegistrars: (allRecordsResult?.results || []).map(r => r.registrar).filter((v, i, a) => a.indexOf(v) === i)
+        allRegistrars: (allRecordsResult?.results || []).map((r: any) => r.registrar).filter((v, i, a) => a.indexOf(v) === i)
       },
       debug: {
         d1Available: !!PRICING_DB,
