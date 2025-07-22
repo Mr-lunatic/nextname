@@ -5,6 +5,7 @@ import { useTranslations } from '@/hooks/useTranslations'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ExternalLink, Star, Shield, TrendingUp, Globe, Crown, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { EnhancedButton } from '@/components/ui/enhanced-button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -79,7 +80,7 @@ export function SuffixResult({ suffix, registrarPrices = [], description, catego
 
         setPricing(transformedPricing)
         setPagination(data.pagination || null)
-        console.log(`✅ Loaded ${transformedPricing.length} pricing entries for ${suffix} (page ${page})`)
+        console.log(`✅ Loaded ${transformedPricing.length} pricing entries for ${suffix} (page ${page}) from ${data.source}`)
       } else {
         throw new Error('Invalid pricing data format')
       }
@@ -148,7 +149,7 @@ export function SuffixResult({ suffix, registrarPrices = [], description, catego
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.05 }}
-        className="border rounded-lg hover:shadow-md transition-all duration-200 relative overflow-hidden"
+        className="surface card-interactive relative overflow-hidden"
       >
         {registrar.hasPromo && (
           <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded z-10">
@@ -162,11 +163,11 @@ export function SuffixResult({ suffix, registrarPrices = [], description, catego
             <div className="flex items-center space-x-3 flex-1 min-w-0">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center space-x-2 mb-2">
-                  <h3 className="text-lg font-semibold truncate">{registrar.registrar}</h3>
+                  <h3 className="text-h3 truncate" style={{ color: 'var(--color-text-primary)' }}>{registrar.registrar}</h3>
                   {getPopularityBadge(registrar)}
                 </div>
                 
-                <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-2">
+                <div className="flex items-center space-x-4 text-small mb-2" style={{ color: 'var(--color-text-secondary)' }}>
                   <div className="flex items-center">
                     {[...Array(5)].map((_, i) => (
                       <Star
@@ -262,17 +263,21 @@ export function SuffixResult({ suffix, registrarPrices = [], description, catego
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
-    >
-      {/* Header */}
-      <Card className="border-l-4 border-l-primary">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-surface-primary)' }}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="container mx-auto px-4 py-8 space-y-6"
+      >
+        {/* Header */}
+        <Card
+          className="border-l-4 surface"
+          style={{ borderLeftColor: 'var(--color-accent-default)' }}
+        >
         <CardHeader>
           <div className="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0">
             <div>
-              <CardTitle className="text-2xl md:text-3xl">
+              <CardTitle className="text-h1" style={{ color: 'var(--color-text-primary)' }}>
                 {suffix} 域名注册
               </CardTitle>
               <div className="flex flex-wrap items-center space-x-4 mt-2">
@@ -297,7 +302,7 @@ export function SuffixResult({ suffix, registrarPrices = [], description, catego
             </div>
             <div className="text-center md:text-right">
               <div className="text-sm text-muted-foreground">最低价格</div>
-              <div className="text-2xl font-bold text-primary">
+              <div className="text-h2" style={{ color: 'var(--color-accent-default)' }}>
                 {pricing.length > 0 ? formatPrice(
                   Math.min(...pricing.map(r => r.registrationPrice || 999).filter(p => p !== 999)), 
                   pricing[0]?.currency || 'USD'
@@ -308,58 +313,58 @@ export function SuffixResult({ suffix, registrarPrices = [], description, catego
         </CardHeader>
         {description && (
           <CardContent>
-            <p className="text-muted-foreground">{description}</p>
+            <p className="text-body" style={{ color: 'var(--color-text-secondary)' }}>{description}</p>
           </CardContent>
         )}
       </Card>
 
-      {error && pricing.length === 0 && (
-        <Card>
-          <CardContent className="text-center py-12">
-            <div className="space-y-4">
-              <div className="text-6xl">⚠️</div>
-              <h3 className="text-xl font-semibold">价格数据暂时不可用</h3>
-              <p className="text-muted-foreground max-w-md mx-auto">
-                无法从 nazhumi.com 获取最新的价格数据。这可能是由于网络问题或API暂时不可用。
-              </p>
-              <div className="space-y-2">
-                <Button onClick={() => window.location.reload()} variant="outline">
-                  重新加载
-                </Button>
-                <p className="text-sm text-muted-foreground">
-                  或者您可以直接访问各大注册商网站查看最新价格
+        {error && pricing.length === 0 && (
+          <Card className="surface">
+            <CardContent className="text-center py-12">
+              <div className="space-y-4">
+                <div className="text-6xl">⚠️</div>
+                <h3 className="text-h3" style={{ color: 'var(--color-text-primary)' }}>价格数据暂时不可用</h3>
+                <p className="text-body max-w-md mx-auto" style={{ color: 'var(--color-text-secondary)' }}>
+                  无法获取最新的价格数据。这可能是由于网络问题或API暂时不可用。
                 </p>
+                <div className="space-y-2">
+                  <EnhancedButton onClick={() => window.location.reload()} variant="secondary">
+                    重新加载
+                  </EnhancedButton>
+                  <p className="text-small" style={{ color: 'var(--color-text-secondary)' }}>
+                    或者您可以直接访问各大注册商网站查看最新价格
+                  </p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
+        )}
 
       {pricing.length > 0 && (
         <>
           {/* Sort Controls */}
           <div className="flex flex-wrap gap-2 justify-end">
-            <Button
-              variant={sortBy === 'price' ? 'default' : 'outline'}
+            <EnhancedButton
+              variant={sortBy === 'price' ? 'primary' : 'secondary'}
               size="sm"
               onClick={() => setSortBy('price')}
             >
               按价格排序
-            </Button>
-            <Button
-              variant={sortBy === 'rating' ? 'default' : 'outline'}
+            </EnhancedButton>
+            <EnhancedButton
+              variant={sortBy === 'rating' ? 'primary' : 'secondary'}
               size="sm"
               onClick={() => setSortBy('rating')}
             >
               按评分排序
-            </Button>
-            <Button
-              variant={sortBy === 'popularity' ? 'default' : 'outline'}
+            </EnhancedButton>
+            <EnhancedButton
+              variant={sortBy === 'popularity' ? 'primary' : 'secondary'}
               size="sm"
               onClick={() => setSortBy('popularity')}
             >
               按热度排序
-            </Button>
+            </EnhancedButton>
           </div>
 
           {/* Price Comparison Tabs */}
@@ -413,19 +418,19 @@ export function SuffixResult({ suffix, registrarPrices = [], description, catego
           {/* 分页控件 */}
           {pagination && pagination.totalPages > 1 && (
             <div className="mt-6 flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
+              <div className="text-small" style={{ color: 'var(--color-text-secondary)' }}>
                 显示第 {((pagination.page - 1) * pagination.pageSize) + 1} - {Math.min(pagination.page * pagination.pageSize, pagination.totalRecords)} 条，
                 共 {pagination.totalRecords} 条记录
               </div>
               <div className="flex items-center space-x-2">
-                <Button
-                  variant="outline"
+                <EnhancedButton
+                  variant="secondary"
                   size="sm"
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={!pagination.hasPrevPage}
                 >
                   上一页
-                </Button>
+                </EnhancedButton>
 
                 <div className="flex items-center space-x-1">
                   {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
@@ -437,15 +442,15 @@ export function SuffixResult({ suffix, registrarPrices = [], description, catego
                     if (pageNum > pagination.totalPages) return null;
 
                     return (
-                      <Button
+                      <EnhancedButton
                         key={pageNum}
-                        variant={pageNum === currentPage ? "default" : "outline"}
+                        variant={pageNum === currentPage ? "primary" : "secondary"}
                         size="sm"
                         className="w-8 h-8 p-0"
                         onClick={() => handlePageChange(pageNum)}
                       >
                         {pageNum}
-                      </Button>
+                      </EnhancedButton>
                     );
                   })}
                 </div>
@@ -473,7 +478,7 @@ export function SuffixResult({ suffix, registrarPrices = [], description, catego
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2 text-sm text-muted-foreground">
+          <div className="space-y-2 text-small" style={{ color: 'var(--color-text-secondary)' }}>
             <p>• 价格可能因促销活动和地区差异而有所变动</p>
             <p>• 首年注册价格通常与续费价格不同</p>
             <p>• 部分注册商提供多年注册的批量折扣</p>
@@ -482,7 +487,8 @@ export function SuffixResult({ suffix, registrarPrices = [], description, catego
             <p>• 注册商特色功能标签根据registrarcode自动匹配，如阿里云、腾讯云等知名服务商</p>
           </div>
         </CardContent>
-      </Card>
-    </motion.div>
+        </Card>
+      </motion.div>
+    </div>
   )
 }

@@ -431,14 +431,17 @@ async function selectDataSource(domain: string, order: string, PRICING_DB: any):
     d1Result = await fetchD1Pricing(domain, order, PRICING_DB);
 
     if (d1Result.data && d1Result.data.length > 0) {
-      // 严格校验D1数据新鲜度：只有在72小时内才使用D1数据
-      if (d1Result.metadata.isFresh) {
+      // 严格校验D1数据新鲜度和完整性：只有在72小时内且记录数>=5才使用D1数据
+      if (d1Result.metadata.isFresh && d1Result.data.length >= 5) {
         console.log(`✅ Using fresh D1 data for ${domain} (${d1Result.data.length} records, ${d1Result.metadata.dataAge.toFixed(1)}h old)`);
         return {
           source: 'd1_fresh',
           data: transformD1Data(d1Result.data, domain),
           metadata: d1Result.metadata
         };
+      } else if (d1Result.data.length < 5) {
+        console.log(`⚠️ D1 data incomplete for ${domain} (only ${d1Result.data.length} records), falling back to API for more complete data`);
+        // D1数据不完整，继续使用API
       } else {
         console.log(`⚠️ D1 data is stale for ${domain} (${d1Result.metadata.dataAge.toFixed(1)}h old, threshold: ${DATA_SOURCE_CONFIG.D1_FRESHNESS_THRESHOLD_HOURS}h), falling back to API`);
         // D1数据过期，继续使用API
@@ -569,7 +572,14 @@ export async function GET(request: NextRequest, context: any) {
         result = await selectDataSource(cleanDomain, order, PRICING_DB);
       }
 
-      console.log(`✅ Got ${result.data.length} results from ${result.source}`);
+      console.log(`✅ Got ${result.data.length} results from ${result.source} for domain ${cleanDomain}`);
+      console.log(`📊 Data source details:`, {
+        source: result.source,
+        recordCount: result.data.length,
+        domain: cleanDomain,
+        requestedPageSize: pageSize,
+        requestedPage: page
+      });
 
       // Add features to each registrar
       const enrichedData = result.data.map(item => ({
