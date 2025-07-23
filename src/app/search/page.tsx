@@ -212,7 +212,7 @@ function SearchPageContent() {
     } finally {
       setLoadingDetails(false)
     }
-  }, [])
+  }, [loadingDetails])
 
   const fetchPricingData = useCallback(async (domain: string, page: number = 1) => {
     if (!domain || loadingPricing) return
@@ -278,7 +278,7 @@ function SearchPageContent() {
         fetchDomainDetails(result.result.domain)
       }
     }
-  }, [result?.result?.domain, result?.result?.is_available, domainDetails, fetchDomainDetails])
+  }, [result?.type, result?.result?.domain, result?.result?.is_available, domainDetails, fetchDomainDetails])
 
   // Fetch pricing data when we have an available domain search result
   useEffect(() => {
@@ -288,7 +288,7 @@ function SearchPageContent() {
         fetchPricingData(result.result.domain, pricingPage)
       }
     }
-  }, [result?.result?.domain, result?.result?.is_available, pricingPage, pricingData, fetchPricingData])
+  }, [result?.type, result?.result?.domain, result?.result?.is_available, pricingPage, pricingData, fetchPricingData])
 
   const renderDomainResult = () => {
     if (!result?.result) return null
@@ -1355,13 +1355,14 @@ function OtherExtensionsCheck({ domain }: { domain: string }) {
   const [extensionsData, setExtensionsData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
+  const commonExtensions = ['.com', '.cn', '.net', '.org', '.io', '.co', '.me'] // 只显示7个后缀
+
   // 添加安全检查
   if (!domain || typeof domain !== 'string') {
     return <div>域名信息无效</div>
   }
 
   const domainPrefix = domain.split('.')[0]
-  const commonExtensions = ['.com', '.cn', '.net', '.org', '.io', '.co', '.me'] // 只显示7个后缀
 
   useEffect(() => {
     const checkExtensions = async () => {
@@ -1412,7 +1413,7 @@ function OtherExtensionsCheck({ domain }: { domain: string }) {
     }
 
     checkExtensions()
-  }, [domain, domainPrefix])
+  }, [domain, domainPrefix, commonExtensions])
 
   const handleDomainClick = (clickedDomain: string) => {
     window.location.href = `/search?q=${encodeURIComponent(clickedDomain)}&type=domain`
