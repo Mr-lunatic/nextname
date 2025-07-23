@@ -16,6 +16,7 @@ import { SuffixResult } from '@/components/suffix-result'
 import { SearchResultsSkeleton, PriceComparisonSkeleton, WhoisSkeleton, SpinnerLoader } from '@/components/ui/loading-skeleton'
 import { EnhancedSmartSearchV2 } from '@/components/enhanced-smart-search-v2'
 import { EnhancedWhoisResult } from '@/components/enhanced-whois-result'
+import { OtherExtensionsCheck } from '@/components/other-extensions-check'
 import { CardSpotlight, BestNameSpotlight } from '@/components/ui/framer-spotlight'
 import { NextNameLogo } from '@/components/logo'
 import { RegistrarLogo } from '@/components/registrar-logos'
@@ -600,26 +601,7 @@ function SearchPageContent() {
           </motion.div>
         )}
 
-        {/* Other Extensions Check */}
-        {!is_available && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Globe className="h-6 w-6 text-primary" />
-                  <span>其它后缀可用性</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <OtherExtensionsCheck domain={domain} />
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
+
 
 
       </div>
@@ -1350,165 +1332,4 @@ export default function SearchPage() {
   )
 }
 
-// Other Extensions Check Component
-function OtherExtensionsCheck({ domain }: { domain: string }) {
-  const [extensionsData, setExtensionsData] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
 
-  // 使用 useMemo 来避免 commonExtensions 在每次渲染时都改变
-  const commonExtensions = useMemo(() => ['.com', '.cn', '.net', '.org', '.io', '.co', '.me'], [])
-
-  const domainPrefix = useMemo(() => {
-    if (!domain || typeof domain !== 'string') {
-      return ''
-    }
-    return domain.split('.')[0]
-  }, [domain])
-
-  useEffect(() => {
-    const checkExtensions = async () => {
-      // 添加安全检查
-      if (!domain || typeof domain !== 'string' || !domainPrefix) {
-        setLoading(false)
-        return
-      }
-
-      setLoading(true)
-      try {
-        const results = await Promise.all(
-          commonExtensions.map(async (ext) => {
-            const fullDomain = `${domainPrefix}${ext}`
-
-            // 如果是当前域名，直接返回当前域名的状态
-            if (fullDomain === domain) {
-              return {
-                domain: fullDomain,
-                extension: ext,
-                available: false, // 当前域名肯定是已注册的（因为我们在查看它）
-                loading: false,
-                isCurrent: true
-              }
-            }
-
-            try {
-              const response = await fetch(`/api/search?q=${encodeURIComponent(fullDomain)}&type=domain`)
-              const data = await response.json()
-              return {
-                domain: fullDomain,
-                extension: ext,
-                available: data.result?.is_available || false,
-                loading: false
-              }
-            } catch {
-              return {
-                domain: fullDomain,
-                extension: ext,
-                available: false,
-                loading: false,
-                error: true
-              }
-            }
-          })
-        )
-
-        setExtensionsData(results)
-      } catch (error) {
-        console.error('Error checking extensions:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    checkExtensions()
-  }, [domain, domainPrefix, commonExtensions])
-
-  const handleDomainClick = (clickedDomain: string) => {
-    window.location.href = `/search?q=${encodeURIComponent(clickedDomain)}&type=domain`
-  }
-
-  const handleViewMore = () => {
-    window.location.href = `/search?q=${encodeURIComponent(domainPrefix)}&type=prefix`
-  }
-
-  // 添加安全检查
-  if (!domain || typeof domain !== 'string') {
-    return <div>域名信息无效</div>
-  }
-
-  if (loading) {
-    return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {Array.from({ length: 8 }).map((_, index) => (
-          <div key={index} className="animate-pulse">
-            <div className="h-16 bg-muted rounded-lg"></div>
-          </div>
-        ))}
-      </div>
-    )
-  }
-
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      {extensionsData.map((item, index) => (
-        <motion.div
-          key={item.domain}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.05 }}
-          onClick={() => handleDomainClick(item.domain)}
-          className="cursor-pointer group"
-        >
-          <Card className={`h-full hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 ${
-            item.isCurrent ? 'ring-2 ring-primary/20 bg-primary/5' : ''
-          }`}>
-            <CardContent className="p-4 text-center">
-              <div className="space-y-2">
-                <div className={`font-mono text-sm font-semibold ${
-                  item.isCurrent ? 'text-primary' : 'text-primary group-hover:text-primary/80'
-                }`}>
-                  {item.domain}
-                  {item.isCurrent && (
-                    <span className="ml-1 text-xs text-muted-foreground">(当前)</span>
-                  )}
-                </div>
-                <div className="flex items-center justify-center">
-                  {item.available ? (
-                    <Badge variant="default" className="bg-green-100 text-green-800 border-green-300">
-                      <Check className="w-3 h-3 mr-1" />
-                      可注册
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary" className="bg-red-100 text-red-800 border-red-300">
-                      <X className="w-3 h-3 mr-1" />
-                      已注册
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      ))}
-
-      {/* 查看更多按钮，与其他卡片大小一致 */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: extensionsData.length * 0.05 }}
-        onClick={handleViewMore}
-        className="cursor-pointer group"
-      >
-        <Card className="h-full hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 border-dashed border-2">
-          <CardContent className="p-4 text-center h-full flex flex-col justify-center">
-            <div className="space-y-2">
-              <Search className="w-6 h-6 mx-auto text-muted-foreground group-hover:text-primary transition-colors" />
-              <div className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">
-                查看更多
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-    </div>
-  )
-}

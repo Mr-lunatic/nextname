@@ -28,6 +28,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { OtherExtensionsCheck } from '@/components/other-extensions-check'
 
 interface WhoisInfo {
   domainName: string
@@ -76,6 +77,17 @@ interface WhoisInfo {
     phone?: string
   }
   lastUpdateOfWhoisDatabase?: string
+  // Support for underscore format from API
+  registry_expiry_date?: string
+  expiry_date?: string
+  created_date?: string
+  updated_date?: string
+  transfer_date?: string
+  registrar_iana_id?: string
+  registrar_url?: string
+  registrar_whois_server?: string
+  registrar_abuse_contact_email?: string
+  registrar_abuse_contact_phone?: string
 }
 
 interface EnhancedWhoisResultProps {
@@ -422,7 +434,24 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false }: 
         )}
       </div>
 
-
+      {/* Other Extensions Check */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Globe className="h-6 w-6 text-primary" />
+              <span>其它后缀可用性</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <OtherExtensionsCheck domain={domain} />
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Footer Information */}
       <Card className="bg-muted/30">
