@@ -503,6 +503,8 @@ export async function GET(request: NextRequest, context: any) {
   const pageSize = parseInt(searchParams.get('pageSize') || '10');
   const offset = (page - 1) * pageSize;
 
+  console.log(`📄 Pagination params: page=${page}, pageSize=${pageSize}, offset=${offset}`);
+
   // Access KV and D1 bindings - Cloudflare Pages uses process.env
   const PRICING_CACHE_KV = (process.env as any).PRICING_CACHE || (process.env as any).PRICINGCACHE;
   const PRICING_DB = (process.env as any)['domain-pricing-db'] || (process.env as any).PRICING_DB;
@@ -604,6 +606,8 @@ export async function GET(request: NextRequest, context: any) {
       const totalPages = Math.ceil(totalRecords / pageSize);
       const paginatedData = enrichedData.slice(offset, offset + pageSize);
 
+      console.log(`📊 Pagination processing: totalRecords=${totalRecords}, pageSize=${pageSize}, totalPages=${totalPages}, offset=${offset}, paginatedData.length=${paginatedData.length}`);
+
       const responseData = {
         domain: cleanDomain,
         order,
@@ -613,11 +617,13 @@ export async function GET(request: NextRequest, context: any) {
         pricing: paginatedData,
         pagination: {
           page,
-          pageSize,
+          pageSize: pageSize, // 确保使用原始的pageSize值
           totalPages,
           totalRecords,
           hasNextPage: page < totalPages,
-          hasPrevPage: page > 1
+          hasPrevPage: page > 1,
+          debug_originalPageSize: parseInt(searchParams.get('pageSize') || '10'), // 调试信息
+          debug_paginatedDataLength: paginatedData.length // 调试信息
         },
         metadata: {
           ...result.metadata,

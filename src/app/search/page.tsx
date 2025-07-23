@@ -18,6 +18,7 @@ import { EnhancedSmartSearchV2 } from '@/components/enhanced-smart-search-v2'
 import { EnhancedWhoisResult } from '@/components/enhanced-whois-result'
 import { CardSpotlight, BestNameSpotlight } from '@/components/ui/framer-spotlight'
 import { NextNameLogo } from '@/components/logo'
+import { RegistrarLogo } from '@/components/registrar-logos'
 import Image from 'next/image'
 import { LanguageSwitcher } from '@/components/language-currency-switcher'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -32,6 +33,8 @@ interface SearchResult {
   result: any
 }
 
+
+
 function SearchPageContent() {
   const searchParams = useSearchParams()
   const t = useTranslations()
@@ -45,6 +48,11 @@ function SearchPageContent() {
   const [totalPages, setTotalPages] = useState(1)
   const [paginationInfo, setPaginationInfo] = useState<any>(null)
   const [searchCache, setSearchCache] = useState(new Map())
+  const [domainDetails, setDomainDetails] = useState<any>(null)
+  const [loadingDetails, setLoadingDetails] = useState(false)
+  const [pricingData, setPricingData] = useState<any>(null)
+  const [loadingPricing, setLoadingPricing] = useState(false)
+  const [pricingPage, setPricingPage] = useState(1)
 
   const query = searchParams.get('q') || ''
   const type = searchParams.get('type') || 'auto'
@@ -184,18 +192,107 @@ function SearchPageContent() {
     }
   }, [query, type, searchCache, preloadNextPage])
 
+  const fetchDomainDetails = useCallback(async (domain: string) => {
+    if (!domain || loadingDetails) return
+
+    setLoadingDetails(true)
+    try {
+      const response = await fetch(`/api/domain/${encodeURIComponent(domain)}`)
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      setDomainDetails(data)
+
+    } catch (error) {
+      console.error('Failed to fetch domain details:', error)
+      setDomainDetails(null)
+    } finally {
+      setLoadingDetails(false)
+    }
+  }, [])
+
+  const fetchPricingData = useCallback(async (domain: string, page: number = 1) => {
+    if (!domain || loadingPricing) return
+
+    setLoadingPricing(true)
+    try {
+      const tld = domain.split('.').pop()
+      const response = await fetch(`/api/pricing?domain=${encodeURIComponent(tld)}&order=new&page=${page}&pageSize=10`)
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+
+      // 检查数据源和数量，决定是否使用API数据还是兜底数据
+      if (data.pricing && data.pricing.length >= 8) {
+        // 如果API返回足够多的数据（>=8条），使用API数据
+        setPricingData(data)
+      } else {
+        // 如果API数据不足，使用兜底数据但保留分页信息
+        setPricingData({
+          ...data,
+          usesFallback: true,
+          originalApiData: data.pricing || []
+        })
+      }
+
+    } catch (error) {
+      console.error('Failed to fetch pricing data:', error)
+      // API失败时也使用兜底数据
+      setPricingData({
+        usesFallback: true,
+        originalApiData: [],
+        pagination: {
+          page: page,
+          pageSize: 10,
+          totalPages: 1,
+          totalRecords: 0,
+          hasNextPage: false,
+          hasPrevPage: false
+        }
+      })
+    } finally {
+      setLoadingPricing(false)
+    }
+  }, [loadingPricing])
+
   useEffect(() => {
     if (query) {
       fetchSearchResults()
     }
   }, [query, type, fetchSearchResults])
 
+  // Fetch domain details when we have a domain search result
+  useEffect(() => {
+    if (result?.type === 'domain' && result?.result?.domain && !result?.result?.is_available) {
+      // Only fetch if we don't already have details for this domain
+      if (!domainDetails || domainDetails.domain !== result.result.domain) {
+        fetchDomainDetails(result.result.domain)
+      }
+    }
+  }, [result?.result?.domain, result?.result?.is_available, domainDetails, fetchDomainDetails])
+
+  // Fetch pricing data when we have an available domain search result
+  useEffect(() => {
+    if (result?.type === 'domain' && result?.result?.domain && result?.result?.is_available) {
+      // Only fetch if we don't already have pricing for this domain
+      if (!pricingData || pricingData.domain !== result.result.domain.split('.').pop()) {
+        fetchPricingData(result.result.domain, pricingPage)
+      }
+    }
+  }, [result?.result?.domain, result?.result?.is_available, pricingPage, pricingData, fetchPricingData])
+
   const renderDomainResult = () => {
     if (!result?.result) return null
-    
+
     const { domain, is_available, whois_info } = result.result
-    
-    // Mock registrar prices for available domains
+
+    // Mock registrar prices for available domains with more entries for pagination
     const mockRegistrarPrices = [
       {
         registrar: 'Cloudflare',
@@ -252,257 +349,240 @@ function SearchPageContent() {
         rating: 4.2,
         features: ['免费WHOIS隐私', '24/7客服', '域名转发'],
         affiliateLink: 'https://godaddy.com'
+      },
+      {
+        registrar: 'Name.com',
+        logo: '/logos/name.svg',
+        registrationPrice: 13.99,
+        renewalPrice: 13.99,
+        transferPrice: 13.99,
+        currency: 'USD',
+        rating: 4.1,
+        features: ['免费WHOIS隐私', '邮箱转发', 'DNS管理'],
+        affiliateLink: 'https://name.com'
+      },
+      {
+        registrar: 'Dynadot',
+        logo: '/logos/dynadot.svg',
+        registrationPrice: 14.99,
+        renewalPrice: 14.99,
+        transferPrice: 14.99,
+        currency: 'USD',
+        rating: 4.0,
+        features: ['域名停放', 'DNS管理', '批量工具'],
+        affiliateLink: 'https://dynadot.com'
+      },
+      {
+        registrar: 'Hover',
+        logo: '/logos/hover.svg',
+        registrationPrice: 15.99,
+        renewalPrice: 15.99,
+        transferPrice: 15.99,
+        currency: 'USD',
+        rating: 3.9,
+        features: ['简洁界面', '免费WHOIS隐私', '邮箱转发'],
+        affiliateLink: 'https://hover.com'
+      },
+      {
+        registrar: 'Domain.com',
+        logo: '/logos/domain.svg',
+        registrationPrice: 16.99,
+        renewalPrice: 16.99,
+        transferPrice: 16.99,
+        currency: 'USD',
+        rating: 3.8,
+        features: ['网站建设工具', '邮箱服务', 'SSL证书'],
+        affiliateLink: 'https://domain.com'
+      },
+      {
+        registrar: 'Gandi',
+        logo: '/logos/gandi.svg',
+        registrationPrice: 17.99,
+        renewalPrice: 17.99,
+        transferPrice: 17.99,
+        currency: 'USD',
+        rating: 3.7,
+        features: ['隐私保护', '邮箱服务', '网站托管'],
+        affiliateLink: 'https://gandi.net'
       }
     ].sort((a, b) => a.registrationPrice - b.registrationPrice)
-    
-    // Enhanced domain result display based on requirements
+
+    // 分页逻辑
+    const pageSize = 5
+    const startIndex = (pricingPage - 1) * pageSize
+    const endIndex = startIndex + pageSize
+    const currentPagePrices = mockRegistrarPrices.slice(startIndex, endIndex)
+    const totalPages = Math.ceil(mockRegistrarPrices.length / pageSize)
+    const hasNextPage = pricingPage < totalPages
+    const hasPrevPage = pricingPage > 1
+
     return (
       <div className="space-y-8">
-        {/* Primary Result Card */}
-        <BestNameSpotlight>
+        {/* Domain Status Display */}
+        {is_available ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="glass-card p-8 rounded-3xl relative overflow-hidden"
+            transition={{ delay: 0.05 }}
+            className="mb-8"
           >
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-purple-500/5" />
-          <div className="relative z-10">
-            <div className="text-center space-y-6">
-              <div className="space-y-2">
-                <h1 className="text-4xl font-bold font-mono text-primary">{domain}</h1>
-                <div className="flex items-center justify-center space-x-2">
-                  {is_available ? (
-                    <>
-                      <div className="flex items-center space-x-2 px-4 py-2 bg-green-100 text-green-800 rounded-full">
-                        <Check className="h-5 w-5" />
-                        <span className="font-semibold">可以注册！</span>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex items-center space-x-2 px-4 py-2 bg-red-100 text-red-800 rounded-full">
-                        <X className="h-5 w-5" />
-                        <span className="font-semibold">已被注册</span>
-                      </div>
-                    </>
-                  )}
+            <Card className="border-l-4 border-l-green-500">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold tracking-tight text-2xl font-mono">{domain}</h3>
+                  <div className="flex items-center space-x-2">
+                    <Badge className="bg-green-100 text-green-800 border border-green-200 text-lg px-4 py-2">
+                      <Check className="w-4 h-4 mr-2" />
+                      可注册
+                    </Badge>
+                  </div>
                 </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="mb-8"
+          >
+            <Card className="border-l-4 border-l-red-500">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold tracking-tight text-2xl font-mono">{domain}</h3>
+                  <div className="flex items-center space-x-2">
+                    <Badge className="bg-red-100 text-red-800 border border-red-200 text-lg px-4 py-2">
+                      <X className="w-4 h-4 mr-2" />
+                      已注册
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* Price Comparison Table for Available Domains */}
+        {is_available && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <BarChart3 className="h-6 w-6 text-primary" />
+                <span>注册商价格对比</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-3 px-4">注册商</th>
+                      <th className="text-center py-3 px-4">首年注册</th>
+                      <th className="text-center py-3 px-4">续费价格</th>
+                      <th className="text-center py-3 px-4">转入价格</th>
+                      <th className="text-center py-3 px-4">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentPagePrices.map((price, index) => (
+                      <tr
+                        key={price.registrar}
+                        className="border-b hover:bg-muted/50"
+                      >
+                        <td className="py-4 px-4">
+                          <div className="flex items-center space-x-3">
+                            <RegistrarLogo
+                              registrar={price.registrar}
+                              size={32}
+                              className="flex-shrink-0"
+                            />
+                            <div>
+                              <div className="font-semibold">{price.registrar}</div>
+                              {price.specialOffer && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {price.specialOffer}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="text-center py-4 px-4">
+                          <div className="font-bold text-lg">
+                            ${price.registrationPrice}
+                            {startIndex + index === 0 && (
+                              <Badge className="ml-2 bg-green-100 text-green-800">最低价</Badge>
+                            )}
+                          </div>
+                        </td>
+                        <td className="text-center py-4 px-4">
+                          <span className="text-muted-foreground">
+                            ${price.renewalPrice}
+                          </span>
+                        </td>
+                        <td className="text-center py-4 px-4">
+                          <span className="text-muted-foreground">
+                            ${price.transferPrice}
+                          </span>
+                        </td>
+                        <td className="text-center py-4 px-4">
+                          <Button
+                            size="sm"
+                            className={startIndex + index === 0 ? "bg-green-600 hover:bg-green-700" : ""}
+                            onClick={() => handleRegisterDomain(price.affiliateLink)}
+                          >
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            注册
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
 
-              {is_available ? (
-                <div className="space-y-4">
-                  <div className="text-h2" style={{ color: 'var(--color-text-primary)' }}>
-                    最低首年注册价格: <span className="text-green-600">${mockRegistrarPrices[0].registrationPrice}</span>
-                    <span className="text-sm text-muted-foreground ml-2">({mockRegistrarPrices[0].registrar})</span>
+              {/* 分页控件 */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-6 pt-4 border-t">
+                  <div className="text-sm text-muted-foreground">
+                    第 {pricingPage} 页，共 {totalPages} 页 (共 {mockRegistrarPrices.length} 个注册商)
                   </div>
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Button 
-                      size="lg" 
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                      onClick={() => handleRegisterDomain(mockRegistrarPrices[0].affiliateLink)}
-                    >
-                      <ShoppingCart className="mr-2 h-5 w-5" />
-                      立即注册
-                    </Button>
-                    <Button 
-                      size="lg" 
+                  <div className="flex items-center space-x-2">
+                    <Button
                       variant="outline"
-                      onClick={scrollToPriceComparison}
+                      size="sm"
+                      disabled={!hasPrevPage}
+                      onClick={() => setPricingPage(pricingPage - 1)}
                     >
-                      <TrendingUp className="mr-2 h-5 w-5" />
-                      对比所有价格
+                      上一页
                     </Button>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center text-sm">
-                    <button 
-                      onClick={() => handleBrowseOtherSuffixes(domain)}
-                      className="text-primary hover:text-primary/80 hover:underline transition-colors"
-                    >
-                      浏览其他后缀
-                    </button>
-                    <span className="text-muted-foreground hidden sm:inline">|</span>
-                    <button 
-                      onClick={() => handleViewRecommendations(domain)}
-                      className="text-primary hover:text-primary/80 hover:underline transition-colors"
-                    >
-                      查看建议域名
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Button 
-                      size="lg" 
+                    <Button
                       variant="outline"
-                      onClick={scrollToWhoisInfo}
+                      size="sm"
+                      disabled={!hasNextPage}
+                      onClick={() => setPricingPage(pricingPage + 1)}
                     >
-                      <Info className="mr-2 h-5 w-5" />
-                      查看WHOIS信息
-                    </Button>
-                    <Button 
-                      size="lg" 
-                      variant="outline"
-                      onClick={() => handleBrowseOtherSuffixes(domain)}
-                    >
-                      <Globe className="mr-2 h-5 w-5" />
-                      浏览其他后缀
+                      下一页
                     </Button>
                   </div>
                 </div>
               )}
-            </div>
-          </div>
-        </motion.div>
-        </BestNameSpotlight>
-
-        {/* Price Comparison Table for Available Domains */}
-        {is_available && (
-          <motion.div
-            id="price-comparison"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="mb-8"
-          >
-            <CardSpotlight>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <BarChart3 className="h-6 w-6 text-primary" />
-                    <span>注册商价格对比</span>
-                  </CardTitle>
-                </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-3 px-4">注册商</th>
-                        <th className="text-center py-3 px-4">评分</th>
-                        <th className="text-center py-3 px-4">首年注册</th>
-                        <th className="text-center py-3 px-4">续费价格</th>
-                        <th className="text-center py-3 px-4">转入价格</th>
-                        <th className="text-center py-3 px-4">特色功能</th>
-                        <th className="text-center py-3 px-4">操作</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {mockRegistrarPrices.map((price, index) => (
-                        <motion.tr
-                          key={price.registrar}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.1 }}
-                          className={`border-b hover:bg-muted/50 transition-colors ${
-                            index === 0 ? 'bg-green-50 dark:bg-green-900/20' : ''
-                          }`}
-                        >
-                          <td className="py-4 px-4">
-                            <div className="flex items-center space-x-3">
-                              <Image
-                                src={price.logo}
-                                alt={`${price.registrar} logo`}
-                                width={32}
-                                height={32}
-                                className="object-contain"
-                              />
-                              <div>
-                                <div className="font-semibold">{price.registrar}</div>
-                                {price.specialOffer && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    {price.specialOffer}
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="text-center py-4 px-4">
-                            <div className="flex items-center justify-center space-x-1">
-                              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                              <span className="font-medium">{price.rating}</span>
-                            </div>
-                          </td>
-                          <td className="text-center py-4 px-4">
-                            <div className="font-bold text-lg">
-                              ${price.registrationPrice}
-                              {index === 0 && (
-                                <Badge className="ml-2 bg-green-100 text-green-800">最低价</Badge>
-                              )}
-                            </div>
-                          </td>
-                          <td className="text-center py-4 px-4">
-                            <span className="text-muted-foreground">${price.renewalPrice}</span>
-                          </td>
-                          <td className="text-center py-4 px-4">
-                            <span className="text-muted-foreground">${price.transferPrice}</span>
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="flex flex-wrap gap-1 justify-center">
-                              {price.features.slice(0, 2).map((feature) => (
-                                <Badge key={feature} variant="outline" className="text-xs">
-                                  {feature}
-                                </Badge>
-                              ))}
-                              {price.features.length > 2 && (
-                                <Badge variant="outline" className="text-xs">
-                                  +{price.features.length - 2}
-                                </Badge>
-                              )}
-                            </div>
-                          </td>
-                          <td className="text-center py-4 px-4">
-                            <Button 
-                              size="sm"
-                              className={index === 0 ? "bg-green-600 hover:bg-green-700" : ""}
-                              onClick={() => handleRegisterDomain(price.affiliateLink)}
-                            >
-                              <ExternalLink className="mr-2 h-4 w-4" />
-                              注册
-                            </Button>
-                          </td>
-                        </motion.tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-            </CardSpotlight>
-          </motion.div>
+            </CardContent>
+          </Card>
         )}
 
-        {/* Enhanced WHOIS Display */}
-        {!is_available && (
-          <div id="whois-info">
-            <EnhancedWhoisResult
-              domain={domain}
-              whoisInfo={{
-                domainName: domain,
-                registryDomainId: whois_info?.registry_domain_id || null,
-                registrarWhoisServer: whois_info?.registrar_whois_server || null,
-                registrarUrl: whois_info?.registrar_url || null,
-                updatedDate: whois_info?.updated_date || null,
-                creationDate: whois_info?.created_date || null,
-                registryExpiryDate: whois_info?.expiry_date || null,
-                transferDate: whois_info?.transfer_date || null,
-                registrar: whois_info?.registrar || null,
-                registrarIanaId: whois_info?.registrar_iana_id || null,
-                registrarAbuseContactEmail: whois_info?.registrar_abuse_contact_email || null,
-                registrarAbuseContactPhone: whois_info?.registrar_abuse_contact_phone || null,
-                domainStatus: whois_info?.status || [
-                  'clientDeleteProhibited https://icann.org/epp#clientDeleteProhibited',
-                  'clientTransferProhibited https://icann.org/epp#clientTransferProhibited',
-                  'clientUpdateProhibited https://icann.org/epp#clientUpdateProhibited'
-                ],
-                nameServers: whois_info?.name_servers || [],
-                dnssec: whois_info?.dnssec || 'unsigned',
-                lastUpdateOfWhoisDatabase: whois_info?.last_update_of_whois_database || new Date().toISOString()
-              }}
-              isAvailable={is_available}
-            />
-          </div>
-        )}
+        {/* Other Extensions Check */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Globe className="h-6 w-6 text-primary" />
+              <span>其它后缀可用性</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <OtherExtensionsCheck domain={domain} />
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -1210,6 +1290,152 @@ function SearchPageContent() {
       </div>
 
       <Footer />
+    </div>
+  )
+}
+
+// Other Extensions Check Component
+function OtherExtensionsCheck({ domain }: { domain: string }) {
+  const [extensionsData, setExtensionsData] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const domainPrefix = domain.split('.')[0]
+  const currentExtension = '.' + domain.split('.').slice(1).join('.')
+  const commonExtensions = ['.com', '.cn', '.net', '.org', '.io', '.co', '.me'] // 只显示7个后缀
+
+  useEffect(() => {
+    const checkExtensions = async () => {
+      setLoading(true)
+      try {
+        const results = await Promise.all(
+          commonExtensions.map(async (ext) => {
+            const fullDomain = `${domainPrefix}${ext}`
+
+            // 如果是当前域名，直接返回当前域名的状态
+            if (fullDomain === domain) {
+              return {
+                domain: fullDomain,
+                extension: ext,
+                available: false, // 当前域名肯定是已注册的（因为我们在查看它）
+                loading: false,
+                isCurrent: true
+              }
+            }
+
+            try {
+              const response = await fetch(`/api/search?q=${encodeURIComponent(fullDomain)}&type=domain`)
+              const data = await response.json()
+              return {
+                domain: fullDomain,
+                extension: ext,
+                available: data.result?.is_available || false,
+                loading: false
+              }
+            } catch {
+              return {
+                domain: fullDomain,
+                extension: ext,
+                available: false,
+                loading: false,
+                error: true
+              }
+            }
+          })
+        )
+
+        setExtensionsData(results)
+      } catch (error) {
+        console.error('Error checking extensions:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    checkExtensions()
+  }, [domain, domainPrefix])
+
+  const handleDomainClick = (clickedDomain: string) => {
+    window.location.href = `/search?q=${encodeURIComponent(clickedDomain)}&type=domain`
+  }
+
+  const handleViewMore = () => {
+    window.location.href = `/search?q=${encodeURIComponent(domainPrefix)}&type=prefix`
+  }
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {Array.from({ length: 8 }).map((_, index) => (
+          <div key={index} className="animate-pulse">
+            <div className="h-16 bg-muted rounded-lg"></div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {extensionsData.map((item, index) => (
+        <motion.div
+          key={item.domain}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.05 }}
+          onClick={() => handleDomainClick(item.domain)}
+          className="cursor-pointer group"
+        >
+          <Card className={`h-full hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 ${
+            item.isCurrent ? 'ring-2 ring-primary/20 bg-primary/5' : ''
+          }`}>
+            <CardContent className="p-4 text-center">
+              <div className="space-y-2">
+                <div className={`font-mono text-sm font-semibold ${
+                  item.isCurrent ? 'text-primary' : 'text-primary group-hover:text-primary/80'
+                }`}>
+                  {item.domain}
+                  {item.isCurrent && (
+                    <span className="ml-1 text-xs text-muted-foreground">(当前)</span>
+                  )}
+                </div>
+                <div className="flex items-center justify-center">
+                  {item.available ? (
+                    <Badge variant="default" className="bg-green-100 text-green-800 border-green-300">
+                      <Check className="w-3 h-3 mr-1" />
+                      可注册
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="bg-red-100 text-red-800 border-red-300">
+                      <X className="w-3 h-3 mr-1" />
+                      已注册
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      ))}
+
+      {/* 查看更多按钮，与其他卡片大小一致 */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: extensionsData.length * 0.05 }}
+        onClick={handleViewMore}
+        className="cursor-pointer group"
+      >
+        <Card className="h-full hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 border-dashed border-2">
+          <CardContent className="p-4 text-center h-full flex flex-col justify-center">
+            <div className="space-y-2">
+              <Search className="w-6 h-6 mx-auto text-muted-foreground group-hover:text-primary transition-colors" />
+              <div className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">
+                查看更多
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   )
 }

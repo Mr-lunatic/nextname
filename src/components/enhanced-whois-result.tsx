@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslations } from '@/hooks/useTranslations'
 import { motion } from 'framer-motion'
 import {
@@ -20,7 +20,10 @@ import {
   Info,
   User,
   MapPin,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Search,
+  Check,
+  X
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -96,18 +99,22 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false }: 
     try {
       // Handle different date formats from RDAP
       const date = new Date(dateString)
-      
+
       // Check if date is valid
       if (isNaN(date.getTime())) {
         return dateString
       }
-      
-      // Format to UTC to avoid timezone issues
-      return date.toLocaleDateString('zh-CN', {
+
+      // Format to include date and time with seconds precision
+      return date.toLocaleString('zh-CN', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
-        timeZone: 'UTC'
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        timeZone: 'UTC',
+        hour12: false
       }) + ' (UTC)'
     } catch {
       return dateString
@@ -272,7 +279,6 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false }: 
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-0">
-            <InfoRow icon={Globe} label="域名" value={whoisInfo.domainName} copyable />
             <InfoRow icon={Calendar} label="注册日期" value={formatDate(whoisInfo.creationDate)} />
             {domainAge && (
               <InfoRow icon={Clock} label="域名年龄" value={domainAge} />
@@ -281,9 +287,15 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false }: 
             {whoisInfo.transferDate && (
               <InfoRow icon={ArrowRightLeft} label="转移日期" value={formatDate(whoisInfo.transferDate)} />
             )}
-            <InfoRow icon={AlertCircle} label="到期日期" value={formatDate(whoisInfo.registryExpiryDate)} />
-            <InfoRow icon={Info} label="注册局域名ID" value={whoisInfo.registryDomainId} copyable />
-            
+            <InfoRow icon={AlertCircle} label="过期日期" value={formatDate(whoisInfo.registryExpiryDate)} />
+            {daysUntilExpiry !== null && (
+              <InfoRow
+                icon={Clock}
+                label="距离过期"
+                value={daysUntilExpiry > 0 ? `${daysUntilExpiry} 天` : '已过期'}
+              />
+            )}
+
             {whoisInfo.domainStatus && whoisInfo.domainStatus.length > 0 && (
               <div className="py-2 border-b border-border/50">
                 <div className="flex items-center space-x-3 mb-2">
@@ -410,6 +422,19 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false }: 
         )}
       </div>
 
+      {/* Other Extensions Check */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Globe className="h-6 w-6 text-primary" />
+            <span>其他后缀可用性</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <OtherExtensionsCheck domain={whoisInfo.domainName} />
+        </CardContent>
+      </Card>
+
       {/* Footer Information */}
       <Card className="bg-muted/30">
         <CardContent className="pt-6">
@@ -455,5 +480,133 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false }: 
         </CardContent>
       </Card>
     </motion.div>
+  )
+}
+
+// Other Extensions Check Component
+function OtherExtensionsCheck({ domain }: { domain: string }) {
+  const [extensionsData, setExtensionsData] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const domainPrefix = domain.split('.')[0]
+  const commonExtensions = ['.com', '.cn', '.net', '.org', '.io', '.co', '.me'] // 只显示7个后缀
+
+  useEffect(() => {
+    const checkExtensions = async () => {
+      setLoading(true)
+      try {
+        const results = await Promise.all(
+          commonExtensions.map(async (ext) => {
+            const fullDomain = `${domainPrefix}${ext}`
+            if (fullDomain === domain) return null // Skip current domain
+
+            try {
+              const response = await fetch(`/api/search?q=${encodeURIComponent(fullDomain)}&type=domain`)
+              const data = await response.json()
+              return {
+                domain: fullDomain,
+                extension: ext,
+                available: data.result?.is_available || false,
+                loading: false
+              }
+            } catch {
+              return {
+                domain: fullDomain,
+                extension: ext,
+                available: false,
+                loading: false,
+                error: true
+              }
+            }
+          })
+        )
+
+        setExtensionsData(results.filter(Boolean))
+      } catch (error) {
+        console.error('Error checking extensions:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    checkExtensions()
+  }, [domain, domainPrefix])
+
+  const handleDomainClick = (clickedDomain: string) => {
+    window.location.href = `/search?q=${encodeURIComponent(clickedDomain)}&type=domain`
+  }
+
+  const handleViewMore = () => {
+    window.location.href = `/search?q=${encodeURIComponent(domainPrefix)}&type=prefix`
+  }
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {Array.from({ length: 8 }).map((_, index) => (
+          <div key={index} className="animate-pulse">
+            <div className="h-16 bg-muted rounded-lg"></div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {extensionsData.map((item, index) => (
+        <motion.div
+          key={item.domain}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.05 }}
+          onClick={() => handleDomainClick(item.domain)}
+          className="cursor-pointer group"
+        >
+          <Card className="h-full hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
+            <CardContent className="p-4 text-center">
+              <div className="space-y-2">
+                <div className="font-mono text-sm font-semibold text-primary group-hover:text-primary/80">
+                  {item.domain}
+                </div>
+                <div className="flex items-center justify-center">
+                  {item.available ? (
+                    <Badge variant="default" className="bg-green-100 text-green-800 border-green-300">
+                      <Check className="w-3 h-3 mr-1" />
+                      可注册
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="bg-red-100 text-red-800 border-red-300">
+                      <X className="w-3 h-3 mr-1" />
+                      已注册
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      ))}
+
+      {/* 查看更多按钮，与其他卡片大小一致 */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: extensionsData.length * 0.05 }}
+        onClick={handleViewMore}
+        className="cursor-pointer group"
+      >
+        <Card className="h-full hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 border-dashed border-2">
+          <CardContent className="p-4 text-center h-full flex flex-col justify-center">
+            <div className="space-y-2">
+              <Search className="w-6 h-6 mx-auto text-muted-foreground group-hover:text-primary transition-colors" />
+              <div className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">
+                查看更多
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </div>
   )
 }
