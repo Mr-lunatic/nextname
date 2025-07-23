@@ -172,8 +172,8 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false }: 
     return statusMap[statusCode] || statusCode
   }
 
-  const daysUntilExpiry = getDaysUntilExpiry(whoisInfo.registryExpiryDate)
-  const domainAge = getDomainAge(whoisInfo.creationDate)
+  const daysUntilExpiry = getDaysUntilExpiry(whoisInfo.registryExpiryDate || whoisInfo.registry_expiry_date || whoisInfo.expiry_date)
+  const domainAge = getDomainAge(whoisInfo.creationDate || whoisInfo.created_date)
 
   const InfoRow = ({ icon: Icon, label, value, copyable = false }: { 
     icon: any; 
@@ -279,15 +279,15 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false }: 
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-0">
-            <InfoRow icon={Calendar} label="注册日期" value={formatDate(whoisInfo.creationDate)} />
+            <InfoRow icon={Calendar} label="注册日期" value={formatDate(whoisInfo.creationDate || whoisInfo.created_date)} />
             {domainAge && (
               <InfoRow icon={Clock} label="域名年龄" value={domainAge} />
             )}
-            <InfoRow icon={Clock} label="更新日期" value={formatDate(whoisInfo.updatedDate)} />
-            {whoisInfo.transferDate && (
-              <InfoRow icon={ArrowRightLeft} label="转移日期" value={formatDate(whoisInfo.transferDate)} />
+            <InfoRow icon={Clock} label="更新日期" value={formatDate(whoisInfo.updatedDate || whoisInfo.updated_date)} />
+            {(whoisInfo.transferDate || whoisInfo.transfer_date) && (
+              <InfoRow icon={ArrowRightLeft} label="转移日期" value={formatDate(whoisInfo.transferDate || whoisInfo.transfer_date)} />
             )}
-            <InfoRow icon={AlertCircle} label="过期日期" value={formatDate(whoisInfo.registryExpiryDate)} />
+            <InfoRow icon={AlertCircle} label="过期日期" value={formatDate(whoisInfo.registryExpiryDate || whoisInfo.registry_expiry_date || whoisInfo.expiry_date)} />
             {daysUntilExpiry !== null && (
               <InfoRow
                 icon={Clock}
@@ -296,14 +296,14 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false }: 
               />
             )}
 
-            {whoisInfo.domainStatus && whoisInfo.domainStatus.length > 0 && (
+            {(whoisInfo.domainStatus || whoisInfo.domain_status || whoisInfo.status) && (whoisInfo.domainStatus || whoisInfo.domain_status || whoisInfo.status).length > 0 && (
               <div className="py-2 border-b border-border/50">
                 <div className="flex items-center space-x-3 mb-2">
                   <Shield className="w-4 h-4 text-muted-foreground" />
                   <div className="text-sm font-medium">域名状态</div>
                 </div>
                 <div className="flex flex-wrap gap-1 ml-7">
-                  {whoisInfo.domainStatus.map((status, index) => {
+                  {(whoisInfo.domainStatus || whoisInfo.domain_status || whoisInfo.status || []).map((status, index) => {
                     const statusCode = status.split(' ')[0]
                     const displayName = getStatusDisplayName(status)
                     const isProtective = statusCode.includes('Prohibited') || statusCode.includes('Hold')
@@ -337,11 +337,11 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false }: 
             {/* 注册商信息部分 */}
             <div className="space-y-0">
               <InfoRow icon={Building} label="注册商" value={whoisInfo.registrar} copyable />
-              <InfoRow icon={Info} label="注册商IANA ID" value={whoisInfo.registrarIanaId} />
-              <InfoRow icon={Globe} label="注册商网站" value={whoisInfo.registrarUrl} copyable />
-              <InfoRow icon={Server} label="WHOIS服务器" value={whoisInfo.registrarWhoisServer} copyable />
-              <InfoRow icon={Mail} label="投诉邮箱" value={whoisInfo.registrarAbuseContactEmail} copyable />
-              <InfoRow icon={Phone} label="投诉电话" value={whoisInfo.registrarAbuseContactPhone} copyable />
+              <InfoRow icon={Info} label="注册商IANA ID" value={whoisInfo.registrarIanaId || whoisInfo.registrar_iana_id} />
+              <InfoRow icon={Globe} label="注册商网站" value={whoisInfo.registrarUrl || whoisInfo.registrar_url} copyable />
+              <InfoRow icon={Server} label="WHOIS服务器" value={whoisInfo.registrarWhoisServer || whoisInfo.registrar_whois_server} copyable />
+              <InfoRow icon={Mail} label="投诉邮箱" value={whoisInfo.registrarAbuseContactEmail || whoisInfo.registrar_abuse_contact_email} copyable />
+              <InfoRow icon={Phone} label="投诉电话" value={whoisInfo.registrarAbuseContactPhone || whoisInfo.registrar_abuse_contact_phone} copyable />
             </div>
 
             {/* 分隔线 */}
@@ -351,14 +351,14 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false }: 
             <div className="space-y-0">
               <InfoRow icon={Shield} label="DNSSEC" value={whoisInfo.dnssec === 'signedDelegation' ? '已启用' : '未启用'} />
 
-              {whoisInfo.nameServers && whoisInfo.nameServers.length > 0 && (
+              {(whoisInfo.nameServers || whoisInfo.name_servers) && (whoisInfo.nameServers || whoisInfo.name_servers).length > 0 && (
                 <div className="py-2">
                   <div className="flex items-center space-x-3 mb-2">
                     <Server className="w-4 h-4 text-muted-foreground" />
-                    <div className="text-sm font-medium">名称服务器 ({whoisInfo.nameServers.length})</div>
+                    <div className="text-sm font-medium">名称服务器 ({(whoisInfo.nameServers || whoisInfo.name_servers).length})</div>
                   </div>
                   <div className="ml-7 space-y-1">
-                    {whoisInfo.nameServers.map((ns, index) => (
+                    {(whoisInfo.nameServers || whoisInfo.name_servers || []).map((ns, index) => (
                       <div key={index} className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground font-mono truncate pr-2">{ns.toLowerCase()}</span>
                         <Button
@@ -422,18 +422,7 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false }: 
         )}
       </div>
 
-      {/* Other Extensions Check */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Globe className="h-6 w-6 text-primary" />
-            <span>其他后缀可用性</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <OtherExtensionsCheck domain={whoisInfo.domainName} />
-        </CardContent>
-      </Card>
+
 
       {/* Footer Information */}
       <Card className="bg-muted/30">
@@ -483,130 +472,4 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false }: 
   )
 }
 
-// Other Extensions Check Component
-function OtherExtensionsCheck({ domain }: { domain: string }) {
-  const [extensionsData, setExtensionsData] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
 
-  const domainPrefix = domain.split('.')[0]
-  const commonExtensions = ['.com', '.cn', '.net', '.org', '.io', '.co', '.me'] // 只显示7个后缀
-
-  useEffect(() => {
-    const checkExtensions = async () => {
-      setLoading(true)
-      try {
-        const results = await Promise.all(
-          commonExtensions.map(async (ext) => {
-            const fullDomain = `${domainPrefix}${ext}`
-            if (fullDomain === domain) return null // Skip current domain
-
-            try {
-              const response = await fetch(`/api/search?q=${encodeURIComponent(fullDomain)}&type=domain`)
-              const data = await response.json()
-              return {
-                domain: fullDomain,
-                extension: ext,
-                available: data.result?.is_available || false,
-                loading: false
-              }
-            } catch {
-              return {
-                domain: fullDomain,
-                extension: ext,
-                available: false,
-                loading: false,
-                error: true
-              }
-            }
-          })
-        )
-
-        setExtensionsData(results.filter(Boolean))
-      } catch (error) {
-        console.error('Error checking extensions:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    checkExtensions()
-  }, [domain, domainPrefix])
-
-  const handleDomainClick = (clickedDomain: string) => {
-    window.location.href = `/search?q=${encodeURIComponent(clickedDomain)}&type=domain`
-  }
-
-  const handleViewMore = () => {
-    window.location.href = `/search?q=${encodeURIComponent(domainPrefix)}&type=prefix`
-  }
-
-  if (loading) {
-    return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {Array.from({ length: 8 }).map((_, index) => (
-          <div key={index} className="animate-pulse">
-            <div className="h-16 bg-muted rounded-lg"></div>
-          </div>
-        ))}
-      </div>
-    )
-  }
-
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      {extensionsData.map((item, index) => (
-        <motion.div
-          key={item.domain}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.05 }}
-          onClick={() => handleDomainClick(item.domain)}
-          className="cursor-pointer group"
-        >
-          <Card className="h-full hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
-            <CardContent className="p-4 text-center">
-              <div className="space-y-2">
-                <div className="font-mono text-sm font-semibold text-primary group-hover:text-primary/80">
-                  {item.domain}
-                </div>
-                <div className="flex items-center justify-center">
-                  {item.available ? (
-                    <Badge variant="default" className="bg-green-100 text-green-800 border-green-300">
-                      <Check className="w-3 h-3 mr-1" />
-                      可注册
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary" className="bg-red-100 text-red-800 border-red-300">
-                      <X className="w-3 h-3 mr-1" />
-                      已注册
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      ))}
-
-      {/* 查看更多按钮，与其他卡片大小一致 */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: extensionsData.length * 0.05 }}
-        onClick={handleViewMore}
-        className="cursor-pointer group"
-      >
-        <Card className="h-full hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 border-dashed border-2">
-          <CardContent className="p-4 text-center h-full flex flex-col justify-center">
-            <div className="space-y-2">
-              <Search className="w-6 h-6 mx-auto text-muted-foreground group-hover:text-primary transition-colors" />
-              <div className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">
-                查看更多
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-    </div>
-  )
-}

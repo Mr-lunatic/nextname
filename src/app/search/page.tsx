@@ -6,7 +6,7 @@ import { useState, useEffect, Suspense, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations } from '@/hooks/useTranslations'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Check, X, ExternalLink, Filter, SortAsc, Search, ShoppingCart, Globe, Info, Eye, Star, BarChart3, TrendingUp, Sparkles } from 'lucide-react'
+import { ArrowLeft, Check, X, ExternalLink, Filter, SortAsc, Search, ShoppingCart, Globe, Eye, Star, BarChart3, TrendingUp, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -295,6 +295,11 @@ function SearchPageContent() {
 
     const { domain, is_available, whois_info } = result.result
 
+    // 添加安全检查
+    if (!domain || typeof domain !== 'string') {
+      return <div>域名信息无效</div>
+    }
+
     // Mock registrar prices for available domains with more entries for pagination
     const mockRegistrarPrices = [
       {
@@ -421,62 +426,46 @@ function SearchPageContent() {
 
     return (
       <div className="space-y-8">
-        {/* Domain Status Display */}
-        {is_available ? (
+
+        {/* Domain Information for Available Domains */}
+        {is_available && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-            className="mb-8"
+            transition={{ delay: 0.1 }}
           >
             <Card className="border-l-4 border-l-green-500">
-              <CardContent className="p-6">
+              <CardHeader>
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold tracking-tight text-2xl font-mono">{domain}</h3>
                   <div className="flex items-center space-x-2">
-                    <Badge className="bg-green-100 text-green-800 border border-green-200 text-lg px-4 py-2">
+                    <Badge className="bg-green-600 text-white hover:bg-green-700 text-lg px-4 py-2">
                       <Check className="w-4 h-4 mr-2" />
                       可注册
                     </Badge>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-            className="mb-8"
-          >
-            <Card className="border-l-4 border-l-red-500">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold tracking-tight text-2xl font-mono">{domain}</h3>
-                  <div className="flex items-center space-x-2">
-                    <Badge className="bg-red-100 text-red-800 border border-red-200 text-lg px-4 py-2">
-                      <X className="w-4 h-4 mr-2" />
-                      已注册
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
+              </CardHeader>
             </Card>
           </motion.div>
         )}
 
         {/* Price Comparison Table for Available Domains */}
         {is_available && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <BarChart3 className="h-6 w-6 text-primary" />
-                <span>注册商价格对比</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <BarChart3 className="h-6 w-6 text-primary" />
+                  <span>注册商价格对比</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
@@ -572,20 +561,67 @@ function SearchPageContent() {
               )}
             </CardContent>
           </Card>
+          </motion.div>
+        )}
+
+        {/* Other Extensions Check for Available Domains */}
+        {is_available && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Globe className="h-6 w-6 text-primary" />
+                  <span>其它后缀可用性</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <OtherExtensionsCheck domain={domain} />
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* WHOIS Information for registered domains */}
+        {!is_available && whois_info && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <EnhancedWhoisResult
+              domain={domain}
+              whoisInfo={whois_info}
+              isAvailable={is_available}
+            />
+          </motion.div>
         )}
 
         {/* Other Extensions Check */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Globe className="h-6 w-6 text-primary" />
-              <span>其它后缀可用性</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <OtherExtensionsCheck domain={domain} />
-          </CardContent>
-        </Card>
+        {!is_available && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Globe className="h-6 w-6 text-primary" />
+                  <span>其它后缀可用性</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <OtherExtensionsCheck domain={domain} />
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+
       </div>
     )
   }
@@ -1297,13 +1333,34 @@ function SearchPageContent() {
   )
 }
 
+
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <SpinnerLoader size="lg" />
+          <p className="text-lg font-medium">Loading...</p>
+        </div>
+      </div>
+    }>
+      <SearchPageContent />
+    </Suspense>
+  )
+}
+
 // Other Extensions Check Component
 function OtherExtensionsCheck({ domain }: { domain: string }) {
   const [extensionsData, setExtensionsData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
+  // 添加安全检查
+  if (!domain || typeof domain !== 'string') {
+    return <div>域名信息无效</div>
+  }
+
   const domainPrefix = domain.split('.')[0]
-  const currentExtension = '.' + domain.split('.').slice(1).join('.')
   const commonExtensions = ['.com', '.cn', '.net', '.org', '.io', '.co', '.me'] // 只显示7个后缀
 
   useEffect(() => {
@@ -1440,20 +1497,5 @@ function OtherExtensionsCheck({ domain }: { domain: string }) {
         </Card>
       </motion.div>
     </div>
-  )
-}
-
-export default function SearchPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <SpinnerLoader size="lg" />
-          <p className="text-lg font-medium">Loading...</p>
-        </div>
-      </div>
-    }>
-      <SearchPageContent />
-    </Suspense>
   )
 }
