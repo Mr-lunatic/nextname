@@ -283,14 +283,14 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
                   {t('hero.title')}
                 </motion.h1>
                 
-                <motion.p 
+                <motion.p
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4, duration: 0.8 }}
                   className="lead-text max-w-2xl mx-auto"
                 >
                   {t('hero.subtitle')}
-                  <span className="font-semibold text-primary">{t('hero.description')}</span>
+                  {t('hero.description') && <span className="font-semibold text-primary">{t('hero.description')}</span>}
                 </motion.p>
 
                 {/* Enhanced Search */}
@@ -364,7 +364,7 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
                 className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-3xl mx-auto"
               >
                 <div className="text-center space-y-2">
-                  <div className="text-3xl md:text-4xl font-bold text-primary">1000+</div>
+                  <div className="text-3xl md:text-4xl font-bold text-primary">2000+</div>
                   <div className="text-sm text-muted-foreground">{t('hero.stats.supportedTlds')}</div>
                 </div>
                 <div className="text-center space-y-2">

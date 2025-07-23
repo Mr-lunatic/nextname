@@ -41,8 +41,8 @@
   "hero": {
     "badge": "Fast · Comprehensive · Accurate Domain Search Tool",
     "title": "Find Your Perfect Domain",
-    "subtitle": "Instantly check domain availability, compare 50+ registrar prices, discover hidden domain treasures.",
-    "description": "Get the most comprehensive and accurate domain information at lightning speed.",
+    "subtitle": "Global Domain Search · Cross-Platform Price Comparison · Smart Domain Recommendations",
+    "description": "",
     "searchFeatures": {
       "realtime": "Real-time availability check",
       "priceComparison": "50+ registrar price comparison",
@@ -51,7 +51,7 @@
     },
     "popularTlds": "Popular domain extensions:",
     "stats": {
-      "supportedTlds": "Supported TLDs",
+      "supportedTlds": "Supported Extensions",
       "registrarComparison": "Registrar Price Comparison",
       "domainQueries": "Domain Queries",
       "realtimeUpdates": "Real-time Data Updates"

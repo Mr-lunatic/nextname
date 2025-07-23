@@ -41,8 +41,8 @@
   "hero": {
     "badge": "快·全·准的域名查询工具",
     "title": "找到你的完美域名",
-    "subtitle": "即时查询域名可用性，对比50+顶级注册商价格，发现隐藏的域名宝藏。",
-    "description": "让你以最快的速度获得最全面、最准确的域名信息。",
+    "subtitle": "全球域名查询 · 跨平台价格对比 · 智能域名推荐",
+    "description": "",
     "searchFeatures": {
       "realtime": "实时可用性检查",
       "priceComparison": "50+注册商价格对比",
@@ -51,7 +51,7 @@
     },
     "popularTlds": "热门域名后缀：",
     "stats": {
-      "supportedTlds": "支持的域名后缀",
+      "supportedTlds": "支持的后缀",
       "registrarComparison": "注册商价格对比",
       "domainQueries": "域名查询次数",
       "realtimeUpdates": "实时数据更新"
