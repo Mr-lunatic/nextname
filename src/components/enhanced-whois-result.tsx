@@ -88,6 +88,9 @@ interface WhoisInfo {
   registrar_whois_server?: string
   registrar_abuse_contact_email?: string
   registrar_abuse_contact_phone?: string
+  domain_status?: string[]
+  status?: string[]
+  name_servers?: string[]
 }
 
 interface EnhancedWhoisResultProps {
