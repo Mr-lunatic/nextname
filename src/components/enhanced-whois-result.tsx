@@ -311,7 +311,9 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false }: 
               />
             )}
 
-            {(whoisInfo.domainStatus || whoisInfo.domain_status || whoisInfo.status) && (whoisInfo.domainStatus || whoisInfo.domain_status || whoisInfo.status)?.length > 0 && (
+            {((whoisInfo.domainStatus && whoisInfo.domainStatus.length > 0) ||
+              (whoisInfo.domain_status && whoisInfo.domain_status.length > 0) ||
+              (whoisInfo.status && whoisInfo.status.length > 0)) && (
               <div className="py-2 border-b border-border/50">
                 <div className="flex items-center space-x-3 mb-2">
                   <Shield className="w-4 h-4 text-muted-foreground" />
@@ -366,11 +368,12 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false }: 
             <div className="space-y-0">
               <InfoRow icon={Shield} label="DNSSEC" value={whoisInfo.dnssec === 'signedDelegation' ? '已启用' : '未启用'} />
 
-              {(whoisInfo.nameServers || whoisInfo.name_servers) && (whoisInfo.nameServers || whoisInfo.name_servers)?.length > 0 && (
+              {((whoisInfo.nameServers && whoisInfo.nameServers.length > 0) ||
+                (whoisInfo.name_servers && whoisInfo.name_servers.length > 0)) && (
                 <div className="py-2">
                   <div className="flex items-center space-x-3 mb-2">
                     <Server className="w-4 h-4 text-muted-foreground" />
-                    <div className="text-sm font-medium">名称服务器 ({(whoisInfo.nameServers || whoisInfo.name_servers)?.length || 0})</div>
+                    <div className="text-sm font-medium">名称服务器 ({(whoisInfo.nameServers || whoisInfo.name_servers || []).length})</div>
                   </div>
                   <div className="ml-7 space-y-1">
                     {(whoisInfo.nameServers || whoisInfo.name_servers || []).map((ns, index) => (
