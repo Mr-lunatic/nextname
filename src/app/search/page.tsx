@@ -220,6 +220,9 @@ function SearchPageContent() {
     setLoadingPricing(true)
     try {
       const tld = domain.split('.').pop()
+      if (!tld) {
+        throw new Error('Invalid domain format')
+      }
       const response = await fetch(`/api/pricing?domain=${encodeURIComponent(tld)}&order=new&page=${page}&pageSize=10`)
 
       if (!response.ok) {
