@@ -2,7 +2,7 @@
 
 export const runtime = 'edge';
 
-import { useState, useEffect, Suspense, useCallback } from 'react'
+import { useState, useEffect, Suspense, useCallback, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations } from '@/hooks/useTranslations'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -1355,17 +1355,24 @@ function OtherExtensionsCheck({ domain }: { domain: string }) {
   const [extensionsData, setExtensionsData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  const commonExtensions = ['.com', '.cn', '.net', '.org', '.io', '.co', '.me'] // 只显示7个后缀
+  // 使用 useMemo 来避免 commonExtensions 在每次渲染时都改变
+  const commonExtensions = useMemo(() => ['.com', '.cn', '.net', '.org', '.io', '.co', '.me'], [])
 
-  // 添加安全检查
-  if (!domain || typeof domain !== 'string') {
-    return <div>域名信息无效</div>
-  }
-
-  const domainPrefix = domain.split('.')[0]
+  const domainPrefix = useMemo(() => {
+    if (!domain || typeof domain !== 'string') {
+      return ''
+    }
+    return domain.split('.')[0]
+  }, [domain])
 
   useEffect(() => {
     const checkExtensions = async () => {
+      // 添加安全检查
+      if (!domain || typeof domain !== 'string' || !domainPrefix) {
+        setLoading(false)
+        return
+      }
+
       setLoading(true)
       try {
         const results = await Promise.all(
@@ -1421,6 +1428,11 @@ function OtherExtensionsCheck({ domain }: { domain: string }) {
 
   const handleViewMore = () => {
     window.location.href = `/search?q=${encodeURIComponent(domainPrefix)}&type=prefix`
+  }
+
+  // 添加安全检查
+  if (!domain || typeof domain !== 'string') {
+    return <div>域名信息无效</div>
   }
 
   if (loading) {
