@@ -200,7 +200,7 @@ async function handleInvalidate(pageCache: PageCache, body: any) {
   let results = {
     deletedKeys: 0,
     deletedPatterns: 0,
-    errors: []
+    errors: [] as string[]
   }
 
   // Delete specific keys
