@@ -20,7 +20,8 @@ export async function GET(request: NextRequest) {
     domain,
     tld,
     timestamp: new Date().toISOString(),
-    tests: [] as any[]
+    tests: [] as any[],
+    summary: {} as any
   }
 
   // 测试IANA Bootstrap
