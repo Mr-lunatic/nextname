@@ -267,7 +267,7 @@ export class AutoInvalidationManager {
   async emit(event: string, data?: any) {
     const callbacks = this.listeners.get(event)
     if (callbacks) {
-      for (const callback of callbacks) {
+      for (const callback of Array.from(callbacks)) {
         try {
           await callback(data)
         } catch (error) {
