@@ -260,7 +260,7 @@ async function handlePreload(pageCache: PageCache, body: any) {
 
   const results = {
     preloaded: 0,
-    errors: []
+    errors: [] as string[]
   }
 
   for (const domain of domains) {
