@@ -97,9 +97,10 @@ interface EnhancedWhoisResultProps {
   domain: string
   whoisInfo: WhoisInfo
   isAvailable?: boolean
+  showDomainHeader?: boolean // 新增参数控制是否显示域名头部
 }
 
-export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false }: EnhancedWhoisResultProps) {
+export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false, showDomainHeader = true }: EnhancedWhoisResultProps) {
   const t = useTranslations()
   const [copiedField, setCopiedField] = useState<string | null>(null)
 
@@ -232,26 +233,28 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false }: 
         animate={{ opacity: 1, y: 0 }}
         className="space-y-6"
       >
-        <Card className="border-l-4 border-l-green-500">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-2xl font-mono">{domain}</CardTitle>
-              <Badge variant="default" className="text-lg px-4 py-2 bg-green-500">
-                <CheckCircle className="w-4 h-4 mr-2" />
-                可注册
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <p className="text-lg text-green-600">🎉 恭喜！此域名可以注册。</p>
-              <Button size="lg" className="w-full">
-                查看注册商价格对比
-                <ExternalLink className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {showDomainHeader && (
+          <Card className="border-l-4 border-l-green-500">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-2xl font-mono">{domain}</CardTitle>
+                <Badge variant="default" className="text-lg px-4 py-2 bg-green-500">
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  可注册
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-lg text-green-600">🎉 恭喜！此域名可以注册。</p>
+                <Button size="lg" className="w-full">
+                  查看注册商价格对比
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </motion.div>
     )
   }
@@ -262,26 +265,28 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false }: 
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6"
     >
-      {/* Domain Header */}
-      <Card className="border-l-4 border-l-red-500">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-2xl font-mono">{domain}</CardTitle>
-            <div className="flex items-center space-x-2">
-              <Badge variant="destructive" className="text-lg px-4 py-2">
-                <XCircle className="w-4 h-4 mr-2" />
-                已注册
-              </Badge>
-              {daysUntilExpiry && (
-                <Badge variant={daysUntilExpiry < 30 ? "destructive" : daysUntilExpiry < 90 ? "secondary" : "outline"}>
-                  <Clock className="w-3 h-3 mr-1" />
-                  {daysUntilExpiry > 0 ? `${daysUntilExpiry}天后到期` : '已过期'}
+      {/* Domain Header - 只在 showDomainHeader 为 true 时显示 */}
+      {showDomainHeader && (
+        <Card className="border-l-4 border-l-red-500">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-2xl font-mono">{domain}</CardTitle>
+              <div className="flex items-center space-x-2">
+                <Badge variant="destructive" className="text-lg px-4 py-2">
+                  <XCircle className="w-4 h-4 mr-2" />
+                  已注册
                 </Badge>
-              )}
+                {daysUntilExpiry && (
+                  <Badge variant={daysUntilExpiry < 30 ? "destructive" : daysUntilExpiry < 90 ? "secondary" : "outline"}>
+                    <Clock className="w-3 h-3 mr-1" />
+                    {daysUntilExpiry > 0 ? `${daysUntilExpiry}天后到期` : '已过期'}
+                  </Badge>
+                )}
+              </div>
             </div>
-          </div>
-        </CardHeader>
-      </Card>
+          </CardHeader>
+        </Card>
+      )}
 
       {/* Comprehensive WHOIS Information */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">

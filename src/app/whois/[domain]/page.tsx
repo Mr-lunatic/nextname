@@ -1,20 +1,19 @@
 import { Metadata } from 'next'
-import { Suspense } from 'react'
 
 // Configure Edge Runtime for Cloudflare Pages
 export const runtime = 'edge'
 
-interface DomainPageProps {
+interface WhoisPageProps {
   params: { domain: string }
 }
 
-// Generate metadata for domain pages
-export async function generateMetadata({ params }: DomainPageProps): Promise<Metadata> {
+// Generate metadata for WHOIS pages
+export async function generateMetadata({ params }: WhoisPageProps): Promise<Metadata> {
   const domain = decodeURIComponent(params.domain)
-
+  
   // Basic domain validation
   const isValidDomain = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/.test(domain)
-
+  
   if (!isValidDomain) {
     return {
       title: '无效域名',
@@ -22,24 +21,24 @@ export async function generateMetadata({ params }: DomainPageProps): Promise<Met
     }
   }
 
-  const title = `${domain} - 域名查询、WHOIS信息与价格对比 | NextName`
-  const description = `查看 ${domain} 的详细信息：WHOIS查询、注册状态、到期时间、DNS记录，以及50+注册商价格对比。免费域名查询工具。`
-
+  const title = `${domain} WHOIS查询 - 域名注册信息查询 | NextName`
+  const description = `查询 ${domain} 的WHOIS信息：注册商、注册时间、到期时间、DNS服务器、域名状态等详细注册信息。免费WHOIS查询工具。`
+  
   return {
     title,
     description,
-    keywords: `${domain},域名查询,WHOIS查询,域名价格,域名注册,${domain}注册,${domain}价格`,
+    keywords: `${domain},WHOIS查询,域名注册信息,域名到期时间,DNS查询,${domain}注册商`,
     openGraph: {
       title,
       description,
       type: 'website',
-      url: `https://nextname.app/domain/${domain}`,
+      url: `https://nextname.app/whois/${domain}`,
       images: [
         {
-          url: '/og-domain.png',
+          url: '/og-whois.png',
           width: 1200,
           height: 630,
-          alt: `${domain} 域名查询结果`,
+          alt: `${domain} WHOIS查询结果`,
         },
       ],
     },
@@ -49,21 +48,21 @@ export async function generateMetadata({ params }: DomainPageProps): Promise<Met
       description,
     },
     alternates: {
-      canonical: `/domain/${domain}`,
+      canonical: `/whois/${domain}`,
     },
   }
 }
-import DomainPageClient from './client'
+
+import DomainPageClient from '../../domain/[domain]/client'
 import { DomainStructuredData } from '@/components/domain-structured-data'
 
-export default function DomainPage({ params }: DomainPageProps) {
+export default function WhoisPage({ params }: WhoisPageProps) {
   const domain = decodeURIComponent(params.domain)
 
   return (
     <>
       <DomainStructuredData domain={domain} />
-      <DomainPageClient domain={domain} pageType="domain" />
+      <DomainPageClient domain={domain} pageType="whois" />
     </>
   )
 }
-

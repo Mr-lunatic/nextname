@@ -56,16 +56,16 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
   const [isOpen, setIsOpen] = useState(false)
   const [recentSearches, setRecentSearches] = useState<string[]>([])
 
-  // Initialize prefetching on mount
+  // Initialize prefetching on mount - TEMPORARILY DISABLED to fix infinite loop
   useEffect(() => {
     // Start prefetching popular domains after a short delay
     const timer = setTimeout(() => {
-      preFetchHotDomains()
-      preFetchTldList()
+      // preFetchHotDomains() // DISABLED: causing infinite API calls
+      preFetchTldList() // Keep TLD prefetch as it's less intensive
     }, 1000)
 
     return () => clearTimeout(timer)
-  }, [preFetchHotDomains, preFetchTldList])
+  }, [preFetchTldList])
 
   // Load recent searches from localStorage (now using the hook)
   useEffect(() => {

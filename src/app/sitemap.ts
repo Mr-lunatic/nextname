@@ -34,7 +34,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }))
 
-    return [...staticPages, ...tldPages]
+    // 添加示例域名页面（用于SEO）
+    const exampleDomains = ['example.com', 'test.com', 'demo.org', 'sample.net']
+    const domainPages: MetadataRoute.Sitemap = exampleDomains.flatMap((domain) => [
+      {
+        url: `${siteUrl}/domain/${domain}`,
+        lastModified: new Date(),
+        changeFrequency: 'daily' as const,
+        priority: 0.6,
+      },
+      {
+        url: `${siteUrl}/whois/${domain}`,
+        lastModified: new Date(),
+        changeFrequency: 'daily' as const,
+        priority: 0.5,
+      },
+      {
+        url: `${siteUrl}/price/${domain}`,
+        lastModified: new Date(),
+        changeFrequency: 'daily' as const,
+        priority: 0.5,
+      }
+    ])
+
+    return [...staticPages, ...tldPages, ...domainPages]
   } catch (error) {
     console.error('Error generating sitemap:', error)
     // 如果TLD数据加载失败，至少返回静态页面

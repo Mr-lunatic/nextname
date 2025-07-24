@@ -248,7 +248,7 @@ async function handleResetStats() {
 }
 
 // Utility function to format cache statistics for display
-export function formatCacheStats(stats: any) {
+function formatCacheStats(stats: any) {
   if (!stats) return 'No statistics available'
   
   const formatSize = (bytes: number) => {
