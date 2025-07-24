@@ -301,13 +301,17 @@ async function queryRDAP(domain: string): Promise<any> {
   const topServers = rdapServers.slice(0, 3)
   
   // Try all servers in parallel, take the first successful response
+  console.log(`🚀 Starting parallel RDAP queries for ${domain} using servers:`, topServers)
+
   const promises = topServers.map(async (server) => {
     const rdapUrl = `${server}domain/${domain}`
     
     try {
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 3000) // Reduced to 3 seconds
-      
+      const timeoutId = setTimeout(() => controller.abort(), 8000) // Increased to 8 seconds
+
+      console.log(`🔍 Querying RDAP server: ${rdapUrl}`)
+
       const response = await fetch(rdapUrl, {
         headers: {
           'Accept': 'application/rdap+json',
@@ -315,12 +319,17 @@ async function queryRDAP(domain: string): Promise<any> {
         },
         signal: controller.signal
       })
-      
+
       clearTimeout(timeoutId)
 
+      console.log(`📡 RDAP response from ${server}: ${response.status} ${response.statusText}`)
+
       if (!response.ok) {
+        console.log(`❌ RDAP server ${server} returned ${response.status}: ${response.statusText}`)
+
         if (response.status === 404) {
           // Domain not found - likely available
+          console.log(`✅ Domain ${domain} not found in registry (available)`)
           return {
             available: true,
             reason: 'Domain not found in registry',
@@ -328,23 +337,38 @@ async function queryRDAP(domain: string): Promise<any> {
             success: true
           }
         }
-        
+
         if (response.status === 429) {
           // Rate limited - mark server as slow
+          console.log(`⏰ Rate limited on ${server}`)
           throw new Error(`Rate limited on ${server}`)
         }
-        
+
         // Other errors
-        throw new Error(`Server ${server} returned ${response.status}`)
+        const errorText = await response.text().catch(() => 'Unknown error')
+        console.log(`🚫 Server ${server} error: ${response.status} - ${errorText}`)
+        throw new Error(`Server ${server} returned ${response.status}: ${errorText}`)
       }
 
       const data = await response.json()
-      
+
+      console.log(`📋 RDAP data structure from ${server}:`, {
+        objectClassName: data.objectClassName,
+        hasEvents: !!data.events,
+        hasEntities: !!data.entities,
+        hasStatus: !!data.status,
+        eventsCount: data.events?.length || 0,
+        entitiesCount: data.entities?.length || 0
+      })
+
       // Check if this is a valid RDAP response
       if (!data.objectClassName || data.objectClassName !== 'domain') {
+        console.log(`❌ Invalid RDAP response from ${server}: missing or wrong objectClassName`)
         throw new Error(`Invalid RDAP response from ${server}`)
       }
-      
+
+      console.log(`✅ Valid RDAP response received from ${server}`)
+
       return {
         available: false,
         rdapData: data,
@@ -352,33 +376,49 @@ async function queryRDAP(domain: string): Promise<any> {
         success: true
       }
     } catch (error) {
+      console.log(`❌ RDAP server ${server} failed:`, error instanceof Error ? error.message : error)
       throw new Error(`${server}: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
   
   try {
     // Wait for the first successful response using Promise.allSettled
+    console.log(`⏳ Waiting for RDAP responses from ${promises.length} servers...`)
     const results = await Promise.allSettled(promises)
-    
+
+    // Log all results for debugging
+    console.log(`📋 RDAP query results:`, results.map((result, index) => ({
+      server: topServers[index],
+      status: result.status,
+      success: result.status === 'fulfilled' ? result.value?.success : false,
+      error: result.status === 'rejected' ? result.reason?.message : null
+    })))
+
     // Find the first successful result
     const successfulResult = results.find(
-      (result): result is PromiseFulfilledResult<any> => 
+      (result): result is PromiseFulfilledResult<any> =>
         result.status === 'fulfilled' && result.value.success
     )
-    
+
     if (!successfulResult) {
+      const errors = results
+        .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
+        .map(result => result.reason?.message || 'Unknown error')
+
+      console.log(`❌ All RDAP servers failed for ${domain}. Errors:`, errors)
       throw new Error('All servers failed')
     }
-    
+
     const result = successfulResult.value
-    
+
     // Cache the working server for this TLD
     if (result.success) {
       const workingServers = [result.server, ...topServers.filter(s => s !== result.server)]
       workingRdapServers.set(tld, workingServers)
       rdapServerCacheTime.set(tld, Date.now())
+      console.log(`💾 Cached working RDAP server for .${tld}: ${result.server}`)
     }
-    
+
     console.log(`✅ Successful RDAP response from ${result.server}`)
     return result
   } catch (error) {

@@ -129,12 +129,33 @@ export default function DomainPageClient({ domain, pageType = 'domain' }: Domain
     setError(null)
 
     try {
+      console.log(`🔍 Fetching domain information for: ${domain}`)
+
       // Fetch domain information
       const domainResponse = await fetch(`/api/domain/${encodeURIComponent(domain)}`)
       const domainData = await domainResponse.json()
 
+      console.log(`📡 Domain API response:`, {
+        status: domainResponse.status,
+        ok: domainResponse.ok,
+        isAvailable: domainData.is_available,
+        hasWhoisData: !domainData.is_available && !!domainData.registrar
+      })
+
       if (!domainResponse.ok) {
+        console.error(`❌ Domain API error:`, domainData)
         throw new Error(domainData.error || 'Failed to fetch domain information')
+      }
+
+      // 检查WHOIS数据的完整性
+      if (!domainData.is_available) {
+        console.log(`📋 WHOIS data check:`, {
+          hasRegistrar: !!domainData.registrar,
+          hasCreatedDate: !!domainData.created_date,
+          hasExpiryDate: !!domainData.expiry_date,
+          hasNameServers: !!(domainData.name_servers && domainData.name_servers.length > 0),
+          hasStatus: !!(domainData.status && domainData.status.length > 0)
+        })
       }
 
       setDetail({
@@ -146,7 +167,7 @@ export default function DomainPageClient({ domain, pageType = 'domain' }: Domain
       })
 
     } catch (err) {
-      console.error('Error fetching domain detail:', err)
+      console.error('❌ Error fetching domain detail:', err)
       setError(err instanceof Error ? err.message : 'Unknown error occurred')
     } finally {
       setLoading(false)
