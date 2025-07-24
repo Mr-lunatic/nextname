@@ -10,6 +10,17 @@ export interface InvalidationRule {
   delay?: number // Delay in seconds before invalidation
 }
 
+export interface DataSourceUpdateEvent {
+  type: string
+  tld?: string
+  domain?: string
+}
+
+export interface DomainQueryEvent {
+  domain: string
+  frequency?: number
+}
+
 export class CacheInvalidator {
   private pageCache: PageCache | null
   private rules: InvalidationRule[] = []
@@ -215,14 +226,14 @@ export class AutoInvalidationManager {
    */
   private setupEventListeners() {
     // Listen for data source changes
-    this.on('data_source_update', async (data) => {
+    this.on('data_source_update', async (data: DataSourceUpdateEvent) => {
       if (data.type === 'pricing') {
         await this.invalidator.invalidatePricing(data.tld)
       }
     })
 
     // Listen for domain queries that might affect cache
-    this.on('domain_query', async (data) => {
+    this.on('domain_query', async (data: DomainQueryEvent) => {
       // If this is a frequently queried domain, preload its cache
       if (data.frequency && data.frequency > 10) {
         await this.preloadDomainCache(data.domain)
