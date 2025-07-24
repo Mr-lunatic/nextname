@@ -90,12 +90,12 @@ function calculateCombinedStats(pageCacheStats: any, apiCacheStats: any) {
   }
 
   const pageStats = pageCacheStats || { hits: 0, misses: 0, hitRate: 0, totalSize: 0 }
-  const apiStatsTotal = apiCacheStats ? 
+  const apiStatsTotal = apiCacheStats ?
     Object.values(apiCacheStats).reduce((acc: any, cache: any) => ({
       hits: acc.hits + (cache.hits || 0),
       misses: acc.misses + (cache.misses || 0),
       size: acc.size + (cache.size || 0)
-    }), { hits: 0, misses: 0, size: 0 }) : 
+    }), { hits: 0, misses: 0, size: 0 }) as { hits: number, misses: number, size: number } :
     { hits: 0, misses: 0, size: 0 }
 
   const totalHits = pageStats.hits + apiStatsTotal.hits
