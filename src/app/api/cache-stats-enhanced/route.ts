@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const pageCacheStats = pageCache ? pageCache.getStats() : null
 
     // Get API cache stats (existing functionality)
-    const apiCacheStats = getCacheStats()
+    const apiCacheStats = getApiCacheStats()
 
     // Calculate combined metrics
     const combinedStats = calculateCombinedStats(pageCacheStats, apiCacheStats)
