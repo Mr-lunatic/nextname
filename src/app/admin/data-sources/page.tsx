@@ -235,20 +235,24 @@ export default function DataSourcesAdminPage() {
         keySource: urlKey ? 'url' : envKey ? 'env' : 'none'
       });
 
-      const healthUrl = `/api/data-source-status?key=${key}`;
-      const syncUrl = `/api/sync-status?detailed=true&key=${key}`;
+      const healthUrl = `/api/data-source-status?key=${encodeURIComponent(key)}`;
+      const syncUrl = `/api/sync-status?detailed=true&key=${encodeURIComponent(key)}`;
 
       console.log('Making API calls to:', { healthUrl, syncUrl });
 
       const [healthResponse, syncResponse] = await Promise.all([
         fetch(healthUrl, {
+          method: 'GET',
           headers: {
-            'x-admin-key': key
+            'x-admin-key': key,
+            'Content-Type': 'application/json'
           }
         }),
         fetch(syncUrl, {
+          method: 'GET', 
           headers: {
-            'x-admin-key': key
+            'x-admin-key': key,
+            'Content-Type': 'application/json'
           }
         })
       ]);

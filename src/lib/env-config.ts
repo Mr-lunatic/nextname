@@ -21,14 +21,13 @@ interface EnvConfig {
 }
 
 const ENV_CONFIG: EnvConfig = {
-  required: [
+  required: [],  // 在生产环境中，我们不强制要求任何变量
+  optional: [
     {
       name: 'NEXT_PUBLIC_BASE_URL',
       description: '应用的基础URL，用于生成完整的链接',
       category: 'general'
-    }
-  ],
-  optional: [
+    },
     {
       name: 'ADMIN_ACCESS_KEY',
       description: '服务端管理员访问密钥',
@@ -121,7 +120,10 @@ export function checkEnvConfig(): EnvCheckResult {
   const missing: string[] = [];
   const configured: string[] = [];
 
-  // 检查必需的环境变量
+  // 在客户端环境中，只检查 NEXT_PUBLIC_ 开头的变量
+  const isClientSide = typeof window !== 'undefined';
+  
+  // 检查必需的环境变量（目前为空，所以跳过）
   for (const config of ENV_CONFIG.required) {
     const value = process.env[config.name];
     if (!value || value.trim() === '') {
@@ -129,21 +131,16 @@ export function checkEnvConfig(): EnvCheckResult {
       missing.push(config.name);
     } else {
       configured.push(config.name);
-      
-      // 特殊检查：URL格式验证
-      if (config.name === 'NEXT_PUBLIC_BASE_URL') {
-        try {
-          new URL(value.trim());
-          console.log(`✅ ${config.name} 配置正确:`, value.trim());
-        } catch (e) {
-          warnings.push(`⚠️ ${config.name} URL格式可能不正确: ${value}`);
-        }
-      }
     }
   }
 
   // 检查可选的环境变量
   for (const config of ENV_CONFIG.optional) {
+    // 在客户端只检查公开的环境变量
+    if (isClientSide && !config.name.startsWith('NEXT_PUBLIC_')) {
+      continue;
+    }
+    
     const value = process.env[config.name];
     if (!value || value.trim() === '') {
       if (config.category === 'auth') {
@@ -159,6 +156,16 @@ export function checkEnvConfig(): EnvCheckResult {
       }
       if (config.name === 'ADMIN_ACCESS_KEY' && value === 'your-secret-admin-key-here-please-change') {
         warnings.push(`⚠️  请更改默认密钥: ${config.name}`);
+      }
+      
+      // URL格式验证
+      if (config.name === 'NEXT_PUBLIC_BASE_URL') {
+        try {
+          new URL(value.trim());
+          console.log(`✅ ${config.name} 配置正确:`, value.trim());
+        } catch (e) {
+          warnings.push(`⚠️ ${config.name} URL格式可能不正确: ${value}`);
+        }
       }
     }
   }
