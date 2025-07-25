@@ -22,6 +22,7 @@ import { Footer } from '@/components/footer'
 import { NextNameLogo } from '@/components/logo'
 import { LanguageSwitcher } from '@/components/language-currency-switcher'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { ScrollToTop } from '@/components/scroll-to-top'
 import { EnhancedSmartSearchV2 } from '@/components/enhanced-smart-search-v2'
 import { RegistrarLogo } from '@/components/registrar-logos'
 
@@ -244,9 +245,9 @@ export default function DomainPageClient({ domain, pageType = 'domain' }: Domain
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center space-x-3"
           >
-            <div>
-              <NextNameLogo className="text-foreground" />
-            </div>
+            <Link href="/" className="flex items-center">
+              <NextNameLogo className="text-foreground hover:opacity-80 transition-opacity cursor-pointer" />
+            </Link>
           </motion.div>
           <div className="flex items-center space-x-4">
             <LanguageSwitcher currentLocale="zh" />
@@ -446,6 +447,9 @@ export default function DomainPageClient({ domain, pageType = 'domain' }: Domain
       </div>
 
       <Footer />
+
+      {/* 回到顶部按钮 */}
+      <ScrollToTop threshold={400} />
     </div>
   )
 }

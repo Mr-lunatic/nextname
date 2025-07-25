@@ -31,6 +31,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { NextNameLogo } from '@/components/logo'
+import { ScrollToTop } from '@/components/scroll-to-top'
+import Link from 'next/link'
 import dynamic from 'next/dynamic'
 
 import { CardSpotlight, HeroSpotlight, LightSpotlight } from '@/components/ui/framer-spotlight';
@@ -215,9 +217,9 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center"
           >
-            <div>
-              <NextNameLogo className="text-foreground" />
-            </div>
+            <Link href="/" className="flex items-center">
+              <NextNameLogo className="text-foreground hover:opacity-80 transition-opacity cursor-pointer" />
+            </Link>
           </motion.div>
           <div className="flex items-center space-x-4">
             <LanguageSwitcher />
@@ -751,7 +753,9 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
             {/* 品牌信息 */}
             <div className="col-span-1 md:col-span-2">
               <div className="mb-4">
-                <NextNameLogo className="text-foreground" />
+                <Link href="/" className="inline-block">
+                  <NextNameLogo className="text-foreground hover:opacity-80 transition-opacity cursor-pointer" />
+                </Link>
               </div>
               <p className="text-muted-foreground text-sm leading-relaxed max-w-md">
                 {t('footer.brandDescription')}
@@ -796,6 +800,9 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
           </div>
         </div>
       </footer>
+
+      {/* 回到顶部按钮 */}
+      <ScrollToTop threshold={600} />
     </div>
   )
 }

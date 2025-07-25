@@ -30,6 +30,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageSwitcher } from '@/components/language-currency-switcher'
 import { NextNameLogo } from '@/components/logo'
 import { Footer } from '@/components/footer'
+import { ScrollToTop } from '@/components/scroll-to-top'
 
 export default function AboutPage() {
   const { t } = useTranslations()
@@ -277,6 +278,9 @@ export default function AboutPage() {
       </section>
 
       <Footer />
+
+      {/* 回到顶部按钮 */}
+      <ScrollToTop threshold={400} />
     </div>
   )
 }

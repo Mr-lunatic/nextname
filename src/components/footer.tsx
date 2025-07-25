@@ -1,5 +1,6 @@
 "use client";
 
+import Link from 'next/link'
 import { useTranslations } from '@/hooks/useTranslations'
 import { NextNameLogo } from '@/components/logo'
 
@@ -13,7 +14,9 @@ export function Footer() {
           {/* 品牌信息 */}
           <div className="col-span-1 md:col-span-2">
             <div className="mb-4">
-              <NextNameLogo className="text-foreground" />
+              <Link href="/" className="inline-block">
+                <NextNameLogo className="text-foreground hover:opacity-80 transition-opacity cursor-pointer" />
+              </Link>
             </div>
             <p className="text-small leading-relaxed max-w-md" style={{ color: 'var(--color-text-secondary)' }}>
               {t('footer.brandDescription')}

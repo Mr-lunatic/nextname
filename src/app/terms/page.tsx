@@ -12,6 +12,7 @@ import { LanguageSwitcher } from '@/components/language-currency-switcher'
 import { CardSpotlight } from '@/components/ui/framer-spotlight'
 import { NextNameLogo } from '@/components/logo'
 import { Footer } from '@/components/footer'
+import { ScrollToTop } from '@/components/scroll-to-top'
 
 export default function TermsPage() {
   const sections = [
@@ -194,6 +195,9 @@ export default function TermsPage() {
       </div>
 
       <Footer />
+
+      {/* 回到顶部按钮 */}
+      <ScrollToTop threshold={400} />
     </div>
   )
 }

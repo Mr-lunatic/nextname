@@ -15,6 +15,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageSwitcher } from '@/components/language-currency-switcher'
 import { Footer } from '@/components/footer'
 import { TLDListStructuredData } from '@/components/tld-structured-data'
+import { ScrollToTop } from '@/components/scroll-to-top'
 
 export default function TLDsPageClient() {
   const [tlds, setTlds] = useState<TLDDetails[]>([])
@@ -332,6 +333,9 @@ export default function TLDsPageClient() {
       </div>
 
       <Footer />
+
+      {/* 回到顶部按钮 */}
+      <ScrollToTop threshold={400} />
     </div>
   )
 }
