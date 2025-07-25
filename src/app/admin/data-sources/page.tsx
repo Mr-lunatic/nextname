@@ -235,6 +235,12 @@ export default function DataSourcesAdminPage() {
         keySource: urlKey ? 'url' : envKey ? 'env' : 'none'
       });
 
+      // 首先测试认证是否工作
+      console.log('🧪 Testing authentication first...');
+      const authTestResponse = await fetch(`/api/auth-test/?key=${encodeURIComponent(key)}`);
+      const authTestResult = await authTestResponse.json();
+      console.log('🔍 Auth test result:', authTestResult);
+
       const healthUrl = `/api/data-source-status/?key=${encodeURIComponent(key)}`;
       const syncUrl = `/api/sync-status/?detailed=true&key=${encodeURIComponent(key)}`;
 
