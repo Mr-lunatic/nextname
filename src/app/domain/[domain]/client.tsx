@@ -121,7 +121,36 @@ export default function DomainPageClient({ domain, pageType = 'domain' }: Domain
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [pricingPage, setPricingPage] = useState(1)
+  const [pricingData, setPricingData] = useState<any>(null)
+  const [loadingPricing, setLoadingPricing] = useState(false)
   const { t } = useTranslations()
+
+  const fetchPricingData = useCallback(async (domainName: string) => {
+    if (!domainName || loadingPricing) return
+
+    setLoadingPricing(true)
+    try {
+      const tld = domainName.split('.').pop()
+      if (!tld) {
+        throw new Error('Invalid domain format')
+      }
+
+      const response = await fetch(`/api/pricing?domain=${encodeURIComponent(tld)}&order=new&page=1&pageSize=20`)
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      setPricingData(data)
+
+    } catch (error) {
+      console.error('Failed to fetch pricing data:', error)
+      setPricingData(null)
+    } finally {
+      setLoadingPricing(false)
+    }
+  }, [loadingPricing])
 
   const fetchDomainDetail = useCallback(async () => {
     if (!domain) return
@@ -163,9 +192,12 @@ export default function DomainPageClient({ domain, pageType = 'domain' }: Domain
         domain,
         isAvailable: domainData.is_available,
         whoisInfo: domainData.is_available ? null : domainData,
-        prices: mockRegistrarPrices, // 总是显示价格信息，无论域名是否可用
+        prices: [], // 将通过智能数据源获取
         recommendations: []
       })
+
+      // 获取价格数据
+      fetchPricingData(domain)
 
     } catch (err) {
       console.error('❌ Error fetching domain detail:', err)
@@ -184,12 +216,36 @@ export default function DomainPageClient({ domain, pageType = 'domain' }: Domain
     window.location.href = `/search?q=${encodeURIComponent(query)}&type=${type}`
   }
 
-  // Pagination logic (same as search page)
+  // 获取价格数据（智能数据源或兜底数据）
+  let registrarPrices = []
+
+  if (pricingData && pricingData.pricing && pricingData.pricing.length > 0) {
+    // 使用智能数据源的数据
+    registrarPrices = pricingData.pricing.map((item: any) => ({
+      registrar: item.registrar,
+      registrarCode: item.registrarCode,
+      registrarUrl: item.registrarUrl,
+      registrationPrice: item.registrationPrice,
+      renewalPrice: item.renewalPrice,
+      transferPrice: item.transferPrice,
+      currency: item.currency || 'USD',
+      rating: item.rating || 4.0,
+      features: item.features || [],
+      affiliateLink: item.registrarUrl || '#',
+      hasPromo: item.hasPromo,
+      specialOffer: item.hasPromo ? '优惠中' : undefined
+    }))
+  } else {
+    // 兜底数据
+    registrarPrices = mockRegistrarPrices
+  }
+
+  // Pagination logic
   const pageSize = 5
   const startIndex = (pricingPage - 1) * pageSize
   const endIndex = startIndex + pageSize
-  const currentPagePrices = mockRegistrarPrices.slice(startIndex, endIndex)
-  const totalPages = Math.ceil(mockRegistrarPrices.length / pageSize)
+  const currentPagePrices = registrarPrices.slice(startIndex, endIndex)
+  const totalPages = Math.ceil(registrarPrices.length / pageSize)
   const hasNextPage = pricingPage < totalPages
   const hasPrevPage = pricingPage > 1
 
@@ -396,7 +452,7 @@ export default function DomainPageClient({ domain, pageType = 'domain' }: Domain
                   {totalPages > 1 && (
                     <div className="flex items-center justify-between mt-6">
                       <div className="text-sm text-muted-foreground">
-                        显示 {startIndex + 1}-{Math.min(endIndex, mockRegistrarPrices.length)} 共 {mockRegistrarPrices.length} 个注册商
+                        显示 {startIndex + 1}-{Math.min(endIndex, registrarPrices.length)} 共 {registrarPrices.length} 个注册商
                       </div>
                       <div className="flex items-center space-x-2">
                         <Button

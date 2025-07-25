@@ -327,19 +327,39 @@ function SearchPageContent() {
       return <div>域名信息无效</div>
     }
 
-    // Mock registrar prices for available domains with more entries for pagination
-    const mockRegistrarPrices = [
-      {
-        registrar: 'Cloudflare',
-        logo: '/logos/cloudflare.svg',
-        registrationPrice: 8.57,
-        renewalPrice: 8.57,
-        transferPrice: 8.57,
-        currency: 'USD',
-        rating: 4.8,
-        features: ['批发价格', '免费SSL', 'DNSSEC'],
-        affiliateLink: 'https://cloudflare.com'
-      },
+    // 使用智能数据源获取的价格数据，如果没有则使用兜底数据
+    let registrarPrices = []
+
+    if (pricingData && pricingData.pricing && pricingData.pricing.length > 0) {
+      // 使用智能数据源的数据
+      registrarPrices = pricingData.pricing.map((item: any) => ({
+        registrar: item.registrar,
+        registrarCode: item.registrarCode,
+        registrarUrl: item.registrarUrl,
+        registrationPrice: item.registrationPrice,
+        renewalPrice: item.renewalPrice,
+        transferPrice: item.transferPrice,
+        currency: item.currency || 'USD',
+        rating: item.rating || 4.0,
+        features: item.features || [],
+        affiliateLink: item.registrarUrl || '#',
+        hasPromo: item.hasPromo,
+        specialOffer: item.hasPromo ? '优惠中' : undefined
+      }))
+    } else {
+      // 兜底数据
+      registrarPrices = [
+        {
+          registrar: 'Cloudflare',
+          logo: '/logos/cloudflare.svg',
+          registrationPrice: 8.57,
+          renewalPrice: 8.57,
+          transferPrice: 8.57,
+          currency: 'USD',
+          rating: 4.8,
+          features: ['批发价格', '免费SSL', 'DNSSEC'],
+          affiliateLink: 'https://cloudflare.com'
+        },
       {
         registrar: 'Porkbun',
         logo: '/logos/porkbun.svg',
@@ -440,10 +460,11 @@ function SearchPageContent() {
         features: ['隐私保护', '邮箱服务', '网站托管'],
         affiliateLink: 'https://gandi.net'
       }
-    ]
+      ]
+    }
 
     // 应用排序
-    const sortedPrices = [...mockRegistrarPrices].sort((a, b) => {
+    const sortedPrices = [...registrarPrices].sort((a, b) => {
       let priceA: number, priceB: number
 
       switch (priceSortColumn) {
@@ -472,7 +493,7 @@ function SearchPageContent() {
     const startIndex = (pricingPage - 1) * pageSize
     const endIndex = startIndex + pageSize
     const currentPagePrices = sortedPrices.slice(startIndex, endIndex)
-    const totalPages = Math.ceil(mockRegistrarPrices.length / pageSize)
+    const totalPages = Math.ceil(registrarPrices.length / pageSize)
     const hasNextPage = pricingPage < totalPages
     const hasPrevPage = pricingPage > 1
 
@@ -511,9 +532,16 @@ function SearchPageContent() {
           >
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <BarChart3 className="h-6 w-6 text-primary" />
-                  <span>注册商价格对比</span>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <BarChart3 className="h-6 w-6 text-primary" />
+                    <span>注册商价格对比</span>
+                  </div>
+                  {pricingData && (
+                    <div className="text-sm text-muted-foreground">
+                      {pricingData.usesFallback ? '使用兜底数据' : `数据源: ${pricingData.source || '智能选择'}`}
+                    </div>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
