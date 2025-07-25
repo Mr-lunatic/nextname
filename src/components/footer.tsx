@@ -14,7 +14,6 @@ export function Footer() {
           <div className="col-span-1 md:col-span-2">
             <div className="mb-4">
               <NextNameLogo className="text-foreground" />
-              <p className="text-small mt-2" style={{ color: 'var(--color-text-secondary)' }}>Find Your Perfect Domain</p>
             </div>
             <p className="text-small leading-relaxed max-w-md" style={{ color: 'var(--color-text-secondary)' }}>
               {t('footer.brandDescription')}

@@ -106,7 +106,6 @@ export default function TermsPage() {
           >
             <div>
               <NextNameLogo className="text-foreground" />
-              <p className="text-xs text-muted-foreground font-sans">Find Your Perfect Domain</p>
             </div>
           </motion.div>
           <div className="flex items-center space-x-4">

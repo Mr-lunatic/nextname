@@ -217,7 +217,6 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
           >
             <div>
               <NextNameLogo className="text-foreground" />
-              <p className="text-xs text-muted-foreground font-sans">Find Your Perfect Domain</p>
             </div>
           </motion.div>
           <div className="flex items-center space-x-4">
@@ -753,7 +752,6 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
             <div className="col-span-1 md:col-span-2">
               <div className="mb-4">
                 <NextNameLogo className="text-foreground" />
-                <p className="text-sm text-muted-foreground mt-2">Find Your Perfect Domain</p>
               </div>
               <p className="text-muted-foreground text-sm leading-relaxed max-w-md">
                 {t('footer.brandDescription')}

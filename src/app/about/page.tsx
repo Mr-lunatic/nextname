@@ -124,7 +124,6 @@ export default function AboutPage() {
           <Link href="/" className="flex items-center">
             <div>
               <NextNameLogo className="text-foreground" />
-              <p className="text-xs text-muted-foreground font-sans">Find Your Perfect Domain</p>
             </div>
           </Link>
           <div className="flex items-center space-x-4">
