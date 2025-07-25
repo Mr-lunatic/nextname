@@ -57,14 +57,16 @@ function AccessControl({ children }: { children: React.ReactNode }) {
       ].filter(Boolean);
 
       console.log('🔍 Frontend access check:', {
-        providedKey: key ? `${key.substring(0, 4)}...` : 'none',
+        providedKey: key ? `${key.substring(0, 8)}...` : 'none',
         expectedKeysCount: expectedKeys.length,
         keyMatch: key && expectedKeys.includes(key),
-        hasEnvKey: !!process.env.NEXT_PUBLIC_ADMIN_KEY
+        hasEnvKey: !!process.env.NEXT_PUBLIC_ADMIN_KEY,
+        envKeyPrefix: process.env.NEXT_PUBLIC_ADMIN_KEY ? `${process.env.NEXT_PUBLIC_ADMIN_KEY.substring(0, 8)}...` : 'none'
       });
 
       // Check URL parameter
       if (key && expectedKeys.includes(key)) {
+        console.log('✅ Frontend access granted via URL key');
         setIsAuthorized(true);
         setIsChecking(false);
         // Clear failed attempts on successful access
@@ -77,11 +79,13 @@ function AccessControl({ children }: { children: React.ReactNode }) {
       if (typeof window !== 'undefined' &&
           (window.location.hostname === 'localhost' ||
            window.location.hostname === '127.0.0.1')) {
+        console.log('✅ Frontend access granted via localhost');
         setIsAuthorized(true);
         setIsChecking(false);
         return;
       }
 
+      console.log('❌ Frontend access denied');
       // Failed access attempt
       const currentAttempts = parseInt(localStorage.getItem('admin_failed_attempts') || '0') + 1;
       localStorage.setItem('admin_failed_attempts', currentAttempts.toString());
