@@ -205,7 +205,7 @@ export default function DomainPageClient({ domain, pageType = 'domain' }: Domain
     } finally {
       setLoading(false)
     }
-  }, [domain])
+  }, [domain, fetchPricingData])
 
   useEffect(() => {
     fetchDomainDetail()
@@ -387,7 +387,7 @@ export default function DomainPageClient({ domain, pageType = 'domain' }: Domain
                         </tr>
                       </thead>
                       <tbody>
-                        {currentPagePrices.map((price, index) => (
+                        {currentPagePrices.map((price: any, index: number) => (
                           <tr
                             key={price.registrar}
                             className="border-b hover:bg-muted/50"
