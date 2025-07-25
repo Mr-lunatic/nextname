@@ -6,7 +6,7 @@ import { useState, useEffect, Suspense, useCallback, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations } from '@/hooks/useTranslations'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Check, X, ExternalLink, Filter, SortAsc, Search, ShoppingCart, Globe, Eye, Star, BarChart3, TrendingUp, Sparkles } from 'lucide-react'
+import { ArrowLeft, Check, X, ExternalLink, Filter, SortAsc, Search, ShoppingCart, Globe, Eye, Star, BarChart3, TrendingUp, Sparkles, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -55,6 +55,10 @@ function SearchPageContent() {
   const [loadingPricing, setLoadingPricing] = useState(false)
   const [pricingPage, setPricingPage] = useState(1)
 
+  // 价格排序状态
+  const [priceSortColumn, setPriceSortColumn] = useState<'registration' | 'renewal' | 'transfer'>('registration')
+  const [priceSortDirection, setPriceSortDirection] = useState<'asc' | 'desc'>('asc')
+
   const query = searchParams.get('q') || ''
   const type = searchParams.get('type') || 'auto'
 
@@ -79,6 +83,28 @@ function SearchPageContent() {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' })
     }
+  }
+
+  // 价格排序处理函数
+  const handlePriceSort = (column: 'registration' | 'renewal' | 'transfer') => {
+    if (priceSortColumn === column) {
+      // 如果点击的是当前排序列，切换排序方向
+      setPriceSortDirection(priceSortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      // 如果点击的是新列，设置为该列并默认升序
+      setPriceSortColumn(column)
+      setPriceSortDirection('asc')
+    }
+  }
+
+  // 获取排序图标
+  const getPriceSortIcon = (column: 'registration' | 'renewal' | 'transfer') => {
+    if (priceSortColumn !== column) {
+      return <ArrowUpDown className="w-4 h-4 text-gray-400" />
+    }
+    return priceSortDirection === 'asc' ?
+      <ArrowUp className="w-4 h-4 text-primary" /> :
+      <ArrowDown className="w-4 h-4 text-primary" />
   }
 
   const handleBrowseOtherSuffixes = (domain: string) => {
@@ -414,13 +440,38 @@ function SearchPageContent() {
         features: ['隐私保护', '邮箱服务', '网站托管'],
         affiliateLink: 'https://gandi.net'
       }
-    ].sort((a, b) => a.registrationPrice - b.registrationPrice)
+    ]
+
+    // 应用排序
+    const sortedPrices = [...mockRegistrarPrices].sort((a, b) => {
+      let priceA: number, priceB: number
+
+      switch (priceSortColumn) {
+        case 'registration':
+          priceA = a.registrationPrice
+          priceB = b.registrationPrice
+          break
+        case 'renewal':
+          priceA = a.renewalPrice
+          priceB = b.renewalPrice
+          break
+        case 'transfer':
+          priceA = a.transferPrice
+          priceB = b.transferPrice
+          break
+        default:
+          priceA = a.registrationPrice
+          priceB = b.registrationPrice
+      }
+
+      return priceSortDirection === 'asc' ? priceA - priceB : priceB - priceA
+    })
 
     // 分页逻辑
     const pageSize = 5
     const startIndex = (pricingPage - 1) * pageSize
     const endIndex = startIndex + pageSize
-    const currentPagePrices = mockRegistrarPrices.slice(startIndex, endIndex)
+    const currentPagePrices = sortedPrices.slice(startIndex, endIndex)
     const totalPages = Math.ceil(mockRegistrarPrices.length / pageSize)
     const hasNextPage = pricingPage < totalPages
     const hasPrevPage = pricingPage > 1
@@ -471,14 +522,44 @@ function SearchPageContent() {
                   <thead>
                     <tr className="border-b">
                       <th className="text-left py-3 px-4">注册商</th>
-                      <th className="text-center py-3 px-4">首年注册</th>
-                      <th className="text-center py-3 px-4">续费价格</th>
-                      <th className="text-center py-3 px-4">转入价格</th>
+                      <th className="text-center py-3 px-4">
+                        <button
+                          onClick={() => handlePriceSort('registration')}
+                          className="flex items-center justify-center space-x-1 hover:text-primary transition-colors w-full"
+                        >
+                          <span>首年注册</span>
+                          {getPriceSortIcon('registration')}
+                        </button>
+                      </th>
+                      <th className="text-center py-3 px-4">
+                        <button
+                          onClick={() => handlePriceSort('renewal')}
+                          className="flex items-center justify-center space-x-1 hover:text-primary transition-colors w-full"
+                        >
+                          <span>续费价格</span>
+                          {getPriceSortIcon('renewal')}
+                        </button>
+                      </th>
+                      <th className="text-center py-3 px-4">
+                        <button
+                          onClick={() => handlePriceSort('transfer')}
+                          className="flex items-center justify-center space-x-1 hover:text-primary transition-colors w-full"
+                        >
+                          <span>转入价格</span>
+                          {getPriceSortIcon('transfer')}
+                        </button>
+                      </th>
                       <th className="text-center py-3 px-4">操作</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {currentPagePrices.map((price, index) => (
+                    {currentPagePrices.map((price, index) => {
+                      // 计算各列的最低价
+                      const isLowestRegistration = price.registrationPrice === Math.min(...sortedPrices.map(p => p.registrationPrice))
+                      const isLowestRenewal = price.renewalPrice === Math.min(...sortedPrices.map(p => p.renewalPrice))
+                      const isLowestTransfer = price.transferPrice === Math.min(...sortedPrices.map(p => p.transferPrice))
+
+                      return (
                       <tr
                         key={price.registrar}
                         className="border-b hover:bg-muted/50"
@@ -503,20 +584,26 @@ function SearchPageContent() {
                         <td className="text-center py-4 px-4">
                           <div className="font-bold text-lg">
                             ${price.registrationPrice}
-                            {startIndex + index === 0 && (
+                            {isLowestRegistration && (
                               <Badge className="ml-2 bg-green-100 text-green-800">最低价</Badge>
                             )}
                           </div>
                         </td>
                         <td className="text-center py-4 px-4">
-                          <span className="text-muted-foreground">
+                          <div className="font-bold text-lg text-orange-600">
                             ${price.renewalPrice}
-                          </span>
+                            {isLowestRenewal && (
+                              <Badge className="ml-2 bg-green-100 text-green-800">最低价</Badge>
+                            )}
+                          </div>
                         </td>
                         <td className="text-center py-4 px-4">
-                          <span className="text-muted-foreground">
+                          <div className="font-bold text-lg text-blue-600">
                             ${price.transferPrice}
-                          </span>
+                            {isLowestTransfer && (
+                              <Badge className="ml-2 bg-green-100 text-green-800">最低价</Badge>
+                            )}
+                          </div>
                         </td>
                         <td className="text-center py-4 px-4">
                           <Button
@@ -529,7 +616,8 @@ function SearchPageContent() {
                           </Button>
                         </td>
                       </tr>
-                    ))}
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -538,7 +626,7 @@ function SearchPageContent() {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between mt-6 pt-4 border-t">
                   <div className="text-sm text-muted-foreground">
-                    第 {pricingPage} 页，共 {totalPages} 页 (共 {mockRegistrarPrices.length} 个注册商)
+                    第 {pricingPage} 页，共 {totalPages} 页 (共 {sortedPrices.length} 个注册商)
                   </div>
                   <div className="flex items-center space-x-2">
                     <Button
@@ -1202,9 +1290,6 @@ function SearchPageContent() {
       <SuffixResult
         suffix={suffix}
         registrarPrices={[]} // This will use mock data
-        description={`${suffix} is a popular domain extension suitable for various purposes.`}
-        category="Generic"
-        popularity={85}
       />
     )
   }
@@ -1271,9 +1356,9 @@ function SearchPageContent() {
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center space-x-3"
           >
-            <div>
-              <NextNameLogo className="text-foreground" />
-            </div>
+            <Link href="/" className="cursor-pointer">
+              <NextNameLogo className="text-foreground hover:opacity-80 transition-opacity" />
+            </Link>
           </motion.div>
           <div className="flex items-center space-x-4">
             <LanguageSwitcher 
