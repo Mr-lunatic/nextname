@@ -129,6 +129,16 @@ export function checkEnvConfig(): EnvCheckResult {
       missing.push(config.name);
     } else {
       configured.push(config.name);
+      
+      // 特殊检查：URL格式验证
+      if (config.name === 'NEXT_PUBLIC_BASE_URL') {
+        try {
+          new URL(value.trim());
+          console.log(`✅ ${config.name} 配置正确:`, value.trim());
+        } catch (e) {
+          warnings.push(`⚠️ ${config.name} URL格式可能不正确: ${value}`);
+        }
+      }
     }
   }
 
