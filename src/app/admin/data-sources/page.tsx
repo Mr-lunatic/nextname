@@ -235,8 +235,8 @@ export default function DataSourcesAdminPage() {
         keySource: urlKey ? 'url' : envKey ? 'env' : 'none'
       });
 
-      const healthUrl = `/api/data-source-status?key=${encodeURIComponent(key)}`;
-      const syncUrl = `/api/sync-status?detailed=true&key=${encodeURIComponent(key)}`;
+      const healthUrl = `/api/data-source-status/?key=${encodeURIComponent(key)}`;
+      const syncUrl = `/api/sync-status/?detailed=true&key=${encodeURIComponent(key)}`;
 
       console.log('Making API calls to:', { healthUrl, syncUrl });
 
