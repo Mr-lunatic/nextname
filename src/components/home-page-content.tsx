@@ -32,6 +32,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { NextNameLogo } from '@/components/logo'
 import { ScrollToTop } from '@/components/scroll-to-top'
+import { Navigation } from '@/components/navigation'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 
@@ -209,24 +210,7 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-surface-primary)' }}>
-      {/* Header */}
-      <header className="container-magazine py-4 relative z-[10000]">
-        <div className="flex justify-between items-center backdrop-blur-sm">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="flex items-center"
-          >
-            <Link href="/" className="flex items-center">
-              <NextNameLogo className="text-foreground hover:opacity-80 transition-opacity cursor-pointer" />
-            </Link>
-          </motion.div>
-          <div className="flex items-center space-x-4">
-            <LanguageSwitcher />
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
+      <Navigation currentLocale={locale} />
 
       {/* Hero Section */}
       <section className="section-padding pt-2">

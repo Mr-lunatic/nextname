@@ -17,7 +17,7 @@ export default function AdminDebugPage() {
 
   const urlKey = searchParams.get('key');
   const envKey = process.env.NEXT_PUBLIC_ADMIN_KEY;
-  const defaultKey = 'yuming-admin-2025';
+  const primaryKey = '6BJwlY6mhcUIwz6D';  // 当前使用的主要密钥
 
   const debugInfo = {
     environment: {
@@ -28,7 +28,7 @@ export default function AdminDebugPage() {
     keys: {
       urlKey: urlKey || '(未提供)',
       envKey: envKey || '(未设置)',
-      defaultKey: defaultKey,
+      primaryKey: primaryKey,
     },
     localStorage: {
       failedAttempts: typeof window !== 'undefined' ? localStorage.getItem('admin_failed_attempts') || '0' : '0',
@@ -37,8 +37,8 @@ export default function AdminDebugPage() {
   };
 
   const testApiAccess = async () => {
-    const testKey = urlKey || envKey || defaultKey;
-    console.log('Testing API access with key:', testKey);
+    const testKey = urlKey || envKey || primaryKey;
+    console.log('🧪 Testing API access with key:', testKey ? `${testKey.substring(0, 4)}...` : 'none');
 
     try {
       // Test the simple test endpoint first
@@ -210,9 +210,9 @@ export default function AdminDebugPage() {
 
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
               <div>
-                <label className="text-sm font-medium text-gray-500">默认密钥</label>
+                <label className="text-sm font-medium text-gray-500">主要密钥</label>
                 <p className="font-mono">
-                  {showKeys ? debugInfo.keys.defaultKey : '***'}
+                  {showKeys ? debugInfo.keys.primaryKey : '***'}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -220,7 +220,7 @@ export default function AdminDebugPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => copyToClipboard(debugInfo.keys.defaultKey)}
+                  onClick={() => copyToClipboard(debugInfo.keys.primaryKey)}
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
@@ -308,9 +308,9 @@ export default function AdminDebugPage() {
             <Button
               variant="outline"
               className="w-full justify-start"
-              onClick={() => window.location.href = `/admin/data-sources?key=${defaultKey}`}
+              onClick={() => window.location.href = `/admin/data-sources?key=${primaryKey}`}
             >
-              使用默认密钥访问管理面板
+              使用主要密钥访问管理面板
             </Button>
             {envKey && (
               <Button

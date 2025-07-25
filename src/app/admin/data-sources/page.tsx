@@ -53,12 +53,15 @@ function AccessControl({ children }: { children: React.ReactNode }) {
 
       const key = searchParams.get('key');
       const expectedKeys = [
-        'yuming-admin-2025', // Default key
-        process.env.NEXT_PUBLIC_ADMIN_KEY, // Environment variable key
+        process.env.NEXT_PUBLIC_ADMIN_KEY, // 环境变量密钥
       ].filter(Boolean);
 
-      console.log('Checking access with key:', key);
-      console.log('Expected keys:', expectedKeys);
+      console.log('🔍 Frontend access check:', {
+        providedKey: key ? `${key.substring(0, 4)}...` : 'none',
+        expectedKeysCount: expectedKeys.length,
+        keyMatch: key && expectedKeys.includes(key),
+        hasEnvKey: !!process.env.NEXT_PUBLIC_ADMIN_KEY
+      });
 
       // Check URL parameter
       if (key && expectedKeys.includes(key)) {
@@ -154,8 +157,16 @@ function AccessControl({ children }: { children: React.ReactNode }) {
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-sm text-gray-600 mb-2">
-              请联系系统管理员获取访问密钥
+              此页面需要管理员权限才能访问
             </p>
+            <div className="text-xs text-gray-500 mb-4 p-3 bg-gray-50 rounded border-l-4 border-blue-400">
+              <p className="font-medium mb-2">开发者指南：</p>
+              <ul className="text-left space-y-1">
+                <li>• 复制 <code className="bg-gray-200 px-1 rounded">.env.example</code> 为 <code className="bg-gray-200 px-1 rounded">.env</code></li>
+                <li>• 设置 <code className="bg-gray-200 px-1 rounded">NEXT_PUBLIC_ADMIN_KEY</code> 环境变量</li>
+                <li>• 或在开发环境通过 localhost 访问</li>
+              </ul>
+            </div>
             {failedAttempts > 0 && (
               <p className="text-sm text-orange-600 mb-4">
                 失败尝试: {failedAttempts}/5
@@ -202,20 +213,26 @@ export default function DataSourcesAdminPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      // Try multiple key sources
+      // Try multiple key sources for API calls
       const urlKey = searchParams.get('key');
       const envKey = process.env.NEXT_PUBLIC_ADMIN_KEY;
-      const defaultKey = 'yuming-admin-2025';
+      
+      // 优先使用URL中的密钥，然后使用环境变量
+      const key = urlKey || envKey;
 
-      // Use the first available key
-      const key = urlKey || envKey || defaultKey;
+      if (!key) {
+        console.error('❌ No admin key available for API calls');
+        console.error('Please provide a key via URL parameter or set NEXT_PUBLIC_ADMIN_KEY environment variable');
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
 
-      console.log('Using key for API calls:', key ? 'Key provided' : 'No key');
-      console.log('Key details:', {
+      console.log('🔑 API call key selection:', {
         urlKey: urlKey ? 'provided' : 'not provided',
-        envKey: envKey ? 'provided' : 'not provided',
-        defaultKey: defaultKey ? 'provided' : 'not provided',
-        finalKey: key ? `${key.substring(0, 4)}...` : 'none'
+        envKey: envKey ? 'provided' : 'not provided', 
+        finalKey: key ? `${key.substring(0, 4)}...` : 'none',
+        keySource: urlKey ? 'url' : envKey ? 'env' : 'none'
       });
 
       const healthUrl = `/api/data-source-status?key=${key}`;
