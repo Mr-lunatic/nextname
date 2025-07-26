@@ -4,10 +4,10 @@
 # These headers are applied to all pages and resources to enhance security.
 # =================================================================
 /*
-  # Content-Security-Policy (CSP) - Helps prevent XSS attacks
-  # This policy assumes all external API calls are proxied through your own backend.
-  # 'unsafe-eval' is often required for Next.js's dev mode, but try to remove it for production if possible.
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; object-src 'none'; frame-ancestors 'none'; connect-src 'self';
+  # Content-Security-Policy (CSP) - Enhanced security policy
+  # Removed unsafe-eval and unsafe-inline for better security
+  # Added specific domains for Google Fonts and Analytics
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-xyz123' *.googletagmanager.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com; img-src 'self' data: blob: *.google-analytics.com *.googletagmanager.com; font-src 'self' fonts.gstatic.com; object-src 'none'; frame-ancestors 'none'; connect-src 'self' *.google-analytics.com *.googletagmanager.com; base-uri 'self'; form-action 'self';
   
   # HTTP Strict-Transport-Security (HSTS) - Enforces HTTPS
   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
@@ -37,17 +37,57 @@
 # These rules define caching strategies for different types of content.
 # =================================================================
 
-# Cache static assets for a long time (immutable)
+# Cache static assets with CDN optimization
 /_next/static/*
   Cache-Control: public, max-age=31536000, immutable
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
 
-# Cache fonts for a long time (immutable)
+# Enhanced image caching with CDN support
+/images/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  X-Content-Type-Options: nosniff
+  Accept-Ranges: bytes
+
+# Font optimization
 /fonts/*
   Cache-Control: public, max-age=31536000, immutable
+  X-Content-Type-Options: nosniff
+  Access-Control-Allow-Origin: *
 
-# Cache images for a medium duration
-/images/*
+# Logo and icons with longer cache
+/logo/*
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+  X-Content-Type-Options: nosniff
+
+/*.ico
+  Cache-Control: public, max-age=2592000
+  X-Content-Type-Options: nosniff
+
+/*.png
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  X-Content-Type-Options: nosniff
+  Accept-Ranges: bytes
+
+/*.jpg
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  X-Content-Type-Options: nosniff
+  Accept-Ranges: bytes
+
+/*.webp
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  X-Content-Type-Options: nosniff
+  Accept-Ranges: bytes
+
+/*.avif
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  X-Content-Type-Options: nosniff
+  Accept-Ranges: bytes
+
+/*.svg
   Cache-Control: public, max-age=86400
+  X-Content-Type-Options: nosniff
+  Content-Type: image/svg+xml
 
 # Cache API responses with appropriate durations
 /api/tlds

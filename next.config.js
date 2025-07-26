@@ -12,19 +12,81 @@ const nextConfig = {
   // 基础配置，移除所有实验性功能
   trailingSlash: true,
   
-  // 禁用webpack缓存以避免Cloudflare Pages文件大小限制
-  webpack: (config, { dev }) => {
+  // Bundle优化和代码分割
+  webpack: (config, { dev, isServer }) => {
     if (!dev) {
       config.cache = false
     }
+    
+    // Bundle分析
+    if (process.env.ANALYZE === 'true') {
+      const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
+      config.plugins.push(
+        new BundleAnalyzerPlugin({
+          analyzerMode: 'static',
+          openAnalyzer: false,
+        })
+      )
+    }
+    
+    // 优化chunk分割
+    if (!isServer) {
+      config.optimization.splitChunks = {
+        chunks: 'all',
+        cacheGroups: {
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            chunks: 'all',
+            priority: 10
+          },
+          ui: {
+            test: /[\\/]src[\\/]components[\\/]ui[\\/]/,
+            name: 'ui',
+            chunks: 'all',
+            priority: 5
+          },
+          tools: {
+            test: /[\\/]src[\\/]app[\\/]tools[\\/]/,
+            name: 'tools',
+            chunks: 'all',
+            priority: 3
+          }
+        }
+      }
+    }
+    
     return config
   },
   
-  // 图片优化
+  // 图片优化配置
   images: {
     formats: ['image/webp', 'image/avif'],
-    minimumCacheTTL: 60 * 60 * 24 * 7 // 7 days
+    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days for better caching
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.nextname.app',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.jsdelivr.net',
+        pathname: '/npm/**',
+      }
+    ],
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    unoptimized: false
   },
+  
+  // CDN配置
+  assetPrefix: process.env.NODE_ENV === 'production' ? process.env.CDN_URL || '' : '',
+  
+  // 静态资源优化
+  compress: true,
   
   // 完全移除 experimental 字段
   

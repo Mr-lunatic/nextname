@@ -8,14 +8,14 @@ interface EnvConfig {
   required: {
     name: string;
     description: string;
-    category: 'auth' | 'database' | 'api' | 'general';
+    category: 'api' | 'general';
   }[];
   
   // 可选的环境变量
   optional: {
     name: string;
     description: string;
-    category: 'auth' | 'database' | 'api' | 'general';
+    category: 'api' | 'general';
     defaultValue?: string;
   }[];
 }
@@ -29,54 +29,6 @@ const ENV_CONFIG: EnvConfig = {
       category: 'general'
     },
     {
-      name: 'ADMIN_ACCESS_KEY',
-      description: '服务端管理员访问密钥',
-      category: 'auth'
-    },
-    {
-      name: 'NEXT_PUBLIC_ADMIN_KEY',
-      description: '客户端管理员访问密钥',
-      category: 'auth'
-    },
-    {
-      name: 'ALLOWED_IPS',
-      description: '允许访问的IP地址白名单',
-      category: 'auth'
-    },
-    {
-      name: 'DEV_ALLOW_LOCALHOST',
-      description: '开发环境是否允许localhost访问',
-      category: 'auth',
-      defaultValue: 'true'
-    },
-    {
-      name: 'MAX_LOGIN_ATTEMPTS',
-      description: '最大登录尝试次数',
-      category: 'auth',
-      defaultValue: '5'
-    },
-    {
-      name: 'LOCKOUT_DURATION_MINUTES',
-      description: '账户锁定时间(分钟)',
-      category: 'auth',
-      defaultValue: '30'
-    },
-    {
-      name: 'CLOUDFLARE_ACCOUNT_ID',
-      description: 'Cloudflare账户ID',
-      category: 'database'
-    },
-    {
-      name: 'CLOUDFLARE_API_TOKEN',
-      description: 'Cloudflare API令牌',
-      category: 'database'
-    },
-    {
-      name: 'CLOUDFLARE_D1_DATABASE_ID',
-      description: 'Cloudflare D1数据库ID',
-      category: 'database'
-    },
-    {
       name: 'NEXT_PUBLIC_GA_ID',
       description: 'Google Analytics ID',
       category: 'api'
@@ -84,12 +36,6 @@ const ENV_CONFIG: EnvConfig = {
     {
       name: 'DEBUG_VERBOSE_LOGGING',
       description: '是否启用详细日志',
-      category: 'general',
-      defaultValue: 'false'
-    },
-    {
-      name: 'ENABLE_PERFORMANCE_MONITORING',
-      description: '是否启用性能监控',
       category: 'general',
       defaultValue: 'false'
     }
@@ -143,20 +89,9 @@ export function checkEnvConfig(): EnvCheckResult {
     
     const value = process.env[config.name];
     if (!value || value.trim() === '') {
-      if (config.category === 'auth') {
-        warnings.push(`⚠️  建议配置: ${config.name} (${config.description})`);
-      }
       missing.push(config.name);
     } else {
       configured.push(config.name);
-      
-      // 特殊检查
-      if (config.name === 'NEXT_PUBLIC_ADMIN_KEY' && value === 'your-public-admin-key-here-please-change') {
-        warnings.push(`⚠️  请更改默认密钥: ${config.name}`);
-      }
-      if (config.name === 'ADMIN_ACCESS_KEY' && value === 'your-secret-admin-key-here-please-change') {
-        warnings.push(`⚠️  请更改默认密钥: ${config.name}`);
-      }
       
       // URL格式验证
       if (config.name === 'NEXT_PUBLIC_BASE_URL') {
@@ -228,10 +163,7 @@ export function printEnvCheckResult(result: EnvCheckResult, verbose: boolean = f
     console.log('\n✅ 已配置的变量:');
     result.configured.forEach(name => {
       const value = process.env[name];
-      const displayValue = name.includes('KEY') || name.includes('TOKEN') 
-        ? `${value?.substring(0, 4)}...` 
-        : value;
-      console.log(`   ${name}: ${displayValue}`);
+      console.log(`   ${name}: ${value}`);
     });
   }
   
@@ -256,19 +188,15 @@ export function getEnvSetupGuide(): string {
 
 2. 编辑 .env 文件，配置以下关键变量:
 
-   # 管理员访问控制
-   ADMIN_ACCESS_KEY=your-secret-admin-key-here
-   NEXT_PUBLIC_ADMIN_KEY=your-public-admin-key-here
-
    # 应用配置
    NEXT_PUBLIC_BASE_URL=https://your-domain.com
+   
+   # Google Analytics (可选)
+   NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
 
-3. 生成安全密钥:
-   openssl rand -base64 32
+3. 重启应用以应用更改
 
-4. 重启应用以应用更改
-
-💡 提示: 在生产环境中，请确保使用强密钥并定期更换。
+💡 提示: 这些环境变量都是可选的，应用可以在没有它们的情况下正常运行。
 `;
 }
 

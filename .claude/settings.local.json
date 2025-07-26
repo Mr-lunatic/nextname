@@ -47,7 +47,8 @@
       "Bash(true)",
       "Bash(nslookup:*)",
       "Bash(npm run lint)",
-      "Bash(git add .)"
+      "Bash(git add .)",
+      "Bash(npx next:*)"
     ],
     "deny": []
   }

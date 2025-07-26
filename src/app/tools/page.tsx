@@ -1,5 +1,15 @@
 import { Metadata } from 'next'
-import ToolsPageClient from './client'
+import dynamic from 'next/dynamic'
+
+// 动态导入客户端组件，启用代码分割
+const ToolsPageClient = dynamic(() => import('./client-optimized'), {
+  ssr: false,
+  loading: () => (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+    </div>
+  )
+})
 
 export const runtime = 'edge'
 

@@ -2,6 +2,10 @@ import '../styles/globals.css'
 import { Inter, Playfair_Display, JetBrains_Mono } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
 import { TranslationProvider } from '@/contexts/TranslationContext'
+import { ServiceWorkerProvider } from '@/components/service-worker-provider'
+import { PerformanceMonitor } from '@/components/performance-monitor'
+import { ErrorBoundary } from '@/components/error-boundary'
+import { PWAInstallPrompt } from '@/components/pwa-install-prompt'
 import { getLocale } from '@/lib/getLocale'
 import { StructuredData } from '@/components/structured-data'
 import Script from 'next/script'
@@ -29,15 +33,41 @@ const jetbrains = JetBrains_Mono({
 const siteUrl = 'https://nextname.app';
 
 export const metadata: Metadata = {
-  // SEO and Metadata Configuration
+  // SEO and Metadata Configuration - Enhanced
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'NextName - Find Your Perfect Domain',
-    template: '%s | NextName',
+    default: 'NextName - AI-Powered Domain Search & Price Comparison',
+    template: '%s | NextName - Find Your Perfect Domain',
   },
-  description: 'Fast, comprehensive, and accurate domain search tool. Compare 50+ registrar prices, get real-time WHOIS info, discover hidden domain treasures.',
+  description: 'Discover the perfect domain with NextName\'s AI-powered search engine. Compare prices from 50+ registrars, get instant WHOIS data, explore 1000+ TLDs, and access developer tools. Fast, comprehensive, and accurate domain research platform.',
   
-  // Icons
+  // Enhanced Keywords
+  keywords: [
+    'domain search', 'domain name', 'domain registrar', 'domain price comparison',
+    'WHOIS lookup', 'TLD explorer', 'domain availability', 'domain checker',
+    'AI domain suggestions', 'domain tools', 'developer tools', 'domain research',
+    'cheap domains', 'domain registration', 'domain marketplace'
+  ],
+  
+  // Authors and Publishers
+  authors: [{ name: 'NextName Team', url: siteUrl }],
+  creator: 'NextName',
+  publisher: 'NextName',
+  
+  // Geographic and Language
+  alternates: {
+    canonical: '/',
+    languages: {
+      'en': '/',
+      'zh-CN': '/?lang=zh-CN'
+    }
+  },
+  
+  // Category and Classification
+  category: 'Technology',
+  classification: 'Domain Tools',
+  
+  // Enhanced Icons
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: '32x32', type: 'image/x-icon' },
@@ -53,39 +83,86 @@ export const metadata: Metadata = {
     ],
   },
 
-  // Open Graph (for social media previews)
+  // Enhanced Open Graph
   openGraph: {
-    title: 'NextName - Find Your Perfect Domain',
-    description: 'The ultimate tool for domain discovery and price comparison.',
+    title: 'NextName - AI-Powered Domain Search & Price Comparison',
+    description: 'Discover the perfect domain with AI-powered search. Compare prices from 50+ registrars, get instant WHOIS data, explore 1000+ TLDs.',
     url: siteUrl,
     siteName: 'NextName',
     images: [
       {
-        url: '/og-image.png', // Recommended: Create and add an Open Graph image (1200x630px)
+        url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'NextName Logo and a search bar',
+        alt: 'NextName - Domain Search Platform',
+        type: 'image/png',
+      },
+      {
+        url: '/og-image-square.png', // 正方形版本
+        width: 1200,
+        height: 1200,
+        alt: 'NextName Logo',
+        type: 'image/png',
       },
     ],
-    locale: 'en_US', // Default locale
+    locale: 'en_US',
+    alternateLocale: ['zh_CN'],
     type: 'website',
+    countryName: 'United States',
   },
 
-  // Twitter Card (for Twitter previews)
+  // Enhanced Twitter Card
   twitter: {
     card: 'summary_large_image',
-    title: 'NextName - Find Your Perfect Domain',
-    description: 'Fast, comprehensive, and accurate domain search tool.',
-    images: ['/og-image.png'], // Recommended: Use the same OG image
+    title: 'NextName - AI-Powered Domain Search & Price Comparison',
+    description: 'Discover the perfect domain with AI-powered search. Compare prices from 50+ registrars instantly.',
+    images: ['/og-image.png'],
+    creator: '@NextNameApp', // 如果有Twitter账号
+    site: '@NextNameApp',
   },
 
-  // Canonical URL
-  alternates: {
-    canonical: '/',
+  // App-specific metadata
+  applicationName: 'NextName',
+  appleWebApp: {
+    capable: true,
+    title: 'NextName',
+    statusBarStyle: 'default',
+  },
+  
+  // Verification tags (需要时添加)
+  verification: {
+    // google: 'your-google-verification-code',
+    // yandex: 'your-yandex-verification-code',
+    // yahoo: 'your-yahoo-verification-code',
+  },
+
+  // Robots configuration
+  robots: {
+    index: true,
+    follow: true,
+    nocache: false,
+    googleBot: {
+      index: true,
+      follow: true,
+      noimageindex: false,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
 
   // Web App Manifest
   manifest: '/site.webmanifest',
+  
+  // Additional metadata
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'default',
+    'theme-color': '#0080FF',
+    'color-scheme': 'light dark',
+    'format-detection': 'telephone=no',
+  },
 }
 
 export default async function RootLayout({
@@ -119,17 +196,23 @@ export default async function RootLayout({
             </Script>
           </>
         )}
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <TranslationProvider initialLocale={locale}>
-            {children}
-          </TranslationProvider>
-        </ThemeProvider>
+        <ErrorBoundary>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <ServiceWorkerProvider>
+              <TranslationProvider initialLocale={locale}>
+                {children}
+              </TranslationProvider>
+            </ServiceWorkerProvider>
+          </ThemeProvider>
+        </ErrorBoundary>
         <StructuredData />
+        <PerformanceMonitor />
+        <PWAInstallPrompt />
       </body>
     </html>
   )
