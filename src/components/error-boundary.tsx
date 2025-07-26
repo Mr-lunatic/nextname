@@ -103,8 +103,8 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       // 发送到第三方错误监控服务（如 Sentry）
-      if (typeof window !== 'undefined' && window.Sentry) {
-        window.Sentry.captureException(this.state.error, {
+      if (typeof window !== 'undefined' && (window as any).Sentry) {
+        (window as any).Sentry.captureException(this.state.error, {
           tags: {
             errorBoundary: true,
             errorId: errorDetails.errorId
