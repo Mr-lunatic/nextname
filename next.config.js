@@ -11,6 +11,9 @@
 const nextConfig = {
   // 基础配置，移除所有实验性功能
   trailingSlash: true,
+
+  // 明确指定源目录
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
   
   // Bundle优化和代码分割
   webpack: (config, { dev, isServer }) => {

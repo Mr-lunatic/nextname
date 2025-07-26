@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { 
+import {
   Server, Database, Wifi, Globe, Zap, AlertTriangle,
   CheckCircle, XCircle, Clock, RefreshCw, Cpu, HardDrive,
-  Memory, Network, Shield, CloudCog
+  MemoryStick, Network, Shield, CloudCog
 } from 'lucide-react'
 
 interface SystemComponent {
@@ -488,7 +488,7 @@ export function SystemStatusMonitor() {
                       )}
                       {component.metrics.memory !== undefined && (
                         <div className="flex items-center gap-2">
-                          <Memory className="w-4 h-4 text-green-500" />
+                          <MemoryStick className="w-4 h-4 text-green-500" />
                           <span className="text-sm">内存: {component.metrics.memory}%</span>
                         </div>
                       )}

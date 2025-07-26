@@ -24,7 +24,7 @@ export default function PinyinConverterClient() {
   const [copied, setCopied] = useState<string | null>(null)
 
   // 简化的汉字拼音映射表（实际项目中应使用完整的拼音库）
-  const pinyinMap: { [key: string]: string } = {
+  const pinyinMap: { [key: string]: string } = React.useMemo(() => ({
     '你': 'nǐ', '好': 'hǎo', '世': 'shì', '界': 'jiè', '中': 'zhōng', '国': 'guó',
     '人': 'rén', '大': 'dà', '小': 'xiǎo', '天': 'tiān', '地': 'dì', '山': 'shān',
     '水': 'shuǐ', '火': 'huǒ', '木': 'mù', '金': 'jīn', '土': 'tǔ', '日': 'rì',
@@ -45,7 +45,7 @@ export default function PinyinConverterClient() {
     '美': 'měi', '丑': 'chǒu', '香': 'xiāng', '臭': 'chòu', '甜': 'tián', '苦': 'kǔ',
     '酸': 'suān', '辣': 'là', '咸': 'xián', '淡': 'dàn', '热': 'rè', '冷': 'lěng',
     '温': 'wēn', '凉': 'liáng', '干': 'gān', '湿': 'shī', '净': 'jìng', '脏': 'zāng'
-  }
+  }), [])
 
   // 移除声调的辅助函数
   const removeToneHelper = (pinyin: string): string => {
@@ -81,7 +81,7 @@ export default function PinyinConverterClient() {
   }, [pinyinMap])
 
   // 声调转换
-  const toneMap: { [key: string]: string } = {
+  const toneMap: { [key: string]: string } = React.useMemo(() => ({
     'ā': 'a1', 'á': 'a2', 'ǎ': 'a3', 'à': 'a4',
     'ē': 'e1', 'é': 'e2', 'ě': 'e3', 'è': 'e4',
     'ī': 'i1', 'í': 'i2', 'ǐ': 'i3', 'ì': 'i4',
@@ -90,21 +90,21 @@ export default function PinyinConverterClient() {
     'ǖ': 'v1', 'ǘ': 'v2', 'ǚ': 'v3', 'ǜ': 'v4',
     'ń': 'n2', 'ň': 'n3', 'ǹ': 'n4',
     'ḿ': 'm2'
-  }
+  }), [])
 
   // 移除声调
-  const removeTone = (pinyin: string): string => {
+  const removeTone = React.useCallback((pinyin: string): string => {
     return removeToneHelper(pinyin)
-  }
+  }, [])
 
   // 转换为声调数字
-  const toToneNumber = (pinyin: string): string => {
+  const toToneNumber = React.useCallback((pinyin: string): string => {
     let result = pinyin
     for (const [toned, numbered] of Object.entries(toneMap)) {
       result = result.replace(new RegExp(toned, 'g'), numbered)
     }
     return result
-  }
+  }, [toneMap])
 
   // 转换汉字为拼音
   const convertToPinyin = useCallback((text: string) => {

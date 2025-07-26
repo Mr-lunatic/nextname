@@ -25,8 +25,12 @@
     "compression": "^1.7.4",
     "dotenv": "^16.3.1",
     "ioredis": "^5.3.2",
+    "next": "^14.2.30",
     "node-cron": "^3.0.3",
     "pg": "^8.11.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "typescript": "^5.8.3",
     "winston": "^3.11.0"
   },
   "engines": {

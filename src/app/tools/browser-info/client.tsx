@@ -133,7 +133,7 @@ export default function BrowserInfoClient() {
   }
 
   // 收集浏览器信息
-  const collectBrowserInfo = () => {
+  const collectBrowserInfo = React.useCallback(() => {
     const nav = navigator as any
     const screen = window.screen
     const userAgent = nav.userAgent
@@ -172,7 +172,7 @@ export default function BrowserInfoClient() {
 
     info.fingerprint = generateFingerprint(info)
     setBrowserInfo(info)
-  }
+  }, [])
 
   const handleCopy = async (text: string) => {
     try {
