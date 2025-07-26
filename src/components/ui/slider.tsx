@@ -24,16 +24,7 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
       updateValue(e)
     }
 
-    const handleMouseMove = React.useCallback((e: MouseEvent) => {
-      if (!isDragging || disabled) return
-      updateValue(e)
-    }, [isDragging, disabled])
-
-    const handleMouseUp = React.useCallback(() => {
-      setIsDragging(false)
-    }, [])
-
-    const updateValue = (e: MouseEvent | React.MouseEvent) => {
+    const updateValue = React.useCallback((e: MouseEvent | React.MouseEvent) => {
       if (!sliderRef.current) return
 
       const rect = sliderRef.current.getBoundingClientRect()
@@ -41,9 +32,18 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
       const newValue = min + percentage * (max - min)
       const steppedValue = Math.round(newValue / step) * step
       const clampedValue = Math.max(min, Math.min(max, steppedValue))
-      
+
       onValueChange([clampedValue])
-    }
+    }, [min, max, step, onValueChange])
+
+    const handleMouseMove = React.useCallback((e: MouseEvent) => {
+      if (!isDragging || disabled) return
+      updateValue(e)
+    }, [isDragging, disabled, updateValue])
+
+    const handleMouseUp = React.useCallback(() => {
+      setIsDragging(false)
+    }, [])
 
     React.useEffect(() => {
       if (isDragging) {

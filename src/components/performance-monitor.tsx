@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { getCLS, getFID, getFCP, getLCP, getTTFB } from 'web-vitals'
 
 interface VitalsData {
@@ -107,18 +107,18 @@ export function PerformanceMonitor() {
       window.removeEventListener('beforeunload', sendBatchMetrics)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [])
+  }, [collectAdditionalMetrics, getRating, sendBatchMetrics, sendToAnalytics])
 
-  const collectAdditionalMetrics = () => {
+  const collectAdditionalMetrics = useCallback(() => {
     if (!window.performance) return
 
     const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
-    
+
     if (navigation) {
       const metrics = {
         firstByte: navigation.responseStart - navigation.requestStart,
-        domContentLoaded: navigation.domContentLoadedEventEnd - navigation.navigationStart,
-        loadComplete: navigation.loadEventEnd - navigation.navigationStart,
+        domContentLoaded: navigation.domContentLoadedEventEnd - navigation.fetchStart,
+        loadComplete: navigation.loadEventEnd - navigation.fetchStart,
         navigationTime: navigation.loadEventEnd - navigation.fetchStart,
       }
 
@@ -131,7 +131,7 @@ export function PerformanceMonitor() {
 
     // 自定义TTI估算
     estimateTimeToInteractive()
-  }
+  }, [setMetrics, estimateTimeToInteractive])
 
   const collectNavigationMetrics = () => {
     if (!window.performance) return
@@ -144,11 +144,13 @@ export function PerformanceMonitor() {
   }
 
   const estimateTimeToInteractive = () => {
-    // 简化的TTI估算
-    if (window.performance && window.performance.timing) {
-      const timing = window.performance.timing
-      const tti = timing.domInteractive - timing.navigationStart
-      setMetrics(prev => ({ ...prev, timeToInteractive: tti }))
+    // 简化的TTI估算 - 使用现代Performance API
+    if (window.performance) {
+      const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
+      if (navigation) {
+        const tti = navigation.domInteractive - navigation.fetchStart
+        setMetrics(prev => ({ ...prev, timeToInteractive: tti }))
+      }
     }
   }
 

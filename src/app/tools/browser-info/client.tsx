@@ -206,7 +206,7 @@ export default function BrowserInfoClient() {
 
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [])
+  }, [browserInfo, collectBrowserInfo])
 
   if (!browserInfo) {
     return (

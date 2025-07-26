@@ -78,7 +78,7 @@ export default function PinyinConverterClient() {
       map[pinyin.toLowerCase()].push(hanzi)
     })
     return map
-  }, [])
+  }, [pinyinMap])
 
   // 声调转换
   const toneMap: { [key: string]: string } = {
@@ -146,7 +146,7 @@ export default function PinyinConverterClient() {
 
     const separator = options.withSpaces ? ' ' : ''
     setResult(results.join(separator))
-  }, [options])
+  }, [options, pinyinMap, removeTone, toToneNumber])
 
   // 转换拼音为汉字
   const convertToHanzi = useCallback((text: string) => {
@@ -186,7 +186,7 @@ export default function PinyinConverterClient() {
     })
 
     setResult(results.join(''))
-  }, [hanziMap])
+  }, [hanziMap, removeTone])
 
   // 根据模式选择转换函数
   const performConversion = useCallback((text: string) => {
