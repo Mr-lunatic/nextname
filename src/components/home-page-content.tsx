@@ -262,8 +262,9 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
                 <motion.h1 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3, duration: 0.8 }}
+                  transition={{ delay: 0.1, duration: 0.6, ease: "easeOut" }}
                   className="display-title text-gradient-premium"
+                  style={{ willChange: 'transform', backfaceVisibility: 'hidden' }}
                 >
                   {t('hero.title')}
                 </motion.h1>
@@ -496,11 +497,11 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
                 className="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20 rounded-full"
               >
                 <Users className="h-4 w-4 text-purple-600" />
-                <span className="text-sm font-medium text-purple-700 dark:text-purple-300">目标用户</span>
+                <span className="text-sm font-medium text-purple-700 dark:text-purple-300">{t('home.targetAudience.badge')}</span>
               </motion.div>
-              <h2 className="section-title">为不同用户量身定制</h2>
+              <h2 className="section-title">{t('home.targetAudience.title')}</h2>
               <p className="prose-lg max-w-2xl mx-auto">
-                无论您是企业主、开发者还是创作者，NextName都能为您的特定需求提供专业的域名解决方案。
+                {t('home.targetAudience.description')}
               </p>
             </div>
 
@@ -560,11 +561,11 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
                 className="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-orange-100 to-yellow-100 dark:from-orange-900/20 dark:to-yellow-900/20 rounded-full"
               >
                 <Star className="h-4 w-4 text-orange-600" />
-                <span className="text-sm font-medium text-orange-700 dark:text-orange-300">用户评价</span>
+                <span className="text-sm font-medium text-orange-700 dark:text-orange-300">{t('testimonials.badge')}</span>
               </motion.div>
-              <h2 className="section-title">用户怎么说</h2>
+              <h2 className="section-title">{t('testimonials.title')}</h2>
               <p className="prose-lg max-w-2xl mx-auto">
-                听听真实用户的使用体验，了解NextName如何帮助他们解决域名相关问题。
+                {t('testimonials.description')}
               </p>
             </div>
 
@@ -630,11 +631,11 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
                 className="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-gray-100 to-slate-100 dark:from-gray-900/20 dark:to-slate-900/20 rounded-full"
               >
                 <Award className="h-4 w-4 text-gray-600" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">常见问题</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('faq.badge')}</span>
               </motion.div>
-              <h2 className="section-title">常见问题解答</h2>
+              <h2 className="section-title">{t('faq.title')}</h2>
               <p className="prose-lg">
-                快速了解NextName的功能特性和使用方法
+                {t('faq.description')}
               </p>
             </div>
 

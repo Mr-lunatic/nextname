@@ -99,7 +99,7 @@
     --secondary-foreground: 210 40% 98%; /* Increased contrast */
  
     --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 75%; /* Increased from 65.1% to 75% for better readability */
+    --muted-foreground: 215 20.2% 80%; /* Further increased from 75% to 80% for better contrast */
  
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%; /* Increased contrast */
@@ -331,7 +331,12 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    filter: drop-shadow(0 2px 4px hsl(var(--primary) / 0.2));
+    /* 简化阴影效果以提高性能 */
+    filter: drop-shadow(0 1px 2px hsl(var(--primary) / 0.15));
+    /* 添加性能优化 */
+    will-change: transform;
+    backface-visibility: hidden;
+    transform: translateZ(0);
   }
 
   .text-shine {

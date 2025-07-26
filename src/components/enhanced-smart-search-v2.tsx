@@ -324,7 +324,7 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
               <Search className="h-4 w-4 md:h-5 md:w-5" />
             </div>
           </div>
-          <div className="absolute right-1 md:right-2 flex items-center space-x-2">
+          <div className="absolute right-2 md:right-2 flex items-center space-x-2">
             <EnhancedButton
               onClick={() => handleSearch()}
               className="h-8 md:h-10 px-3 md:px-4 rounded-full text-sm md:text-base"
@@ -376,13 +376,13 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
                   <div className="flex-shrink-0">
                     {getSuggestionIcon(suggestion)}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 md:gap-3">
+                  <div className="flex-1 min-w-0 flex items-center justify-between">
+                    <div className="flex items-center gap-2 md:gap-3 min-w-0">
                       <span className="font-medium text-sm text-foreground truncate">{suggestion.label}</span>
                       {suggestion.popular && <Star className="h-3 w-3 text-yellow-500 flex-shrink-0" />}
                     </div>
                     {suggestion.description && (
-                      <div className="text-xs md:text-sm text-muted-foreground mt-1 line-clamp-2">
+                      <div className="text-xs md:text-sm text-muted-foreground ml-2 flex-shrink-0">
                         {suggestion.description}
                       </div>
                     )}

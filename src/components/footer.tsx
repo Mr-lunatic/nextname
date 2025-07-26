@@ -25,23 +25,23 @@ export function Footer() {
           
           {/* 产品功能 */}
           <div>
-            <h4 className="text-h3 mb-4" style={{ color: 'var(--color-text-primary)' }}>产品功能</h4>
+            <h4 className="text-h3 mb-4" style={{ color: 'var(--color-text-primary)' }}>{t('footer.productFeatures')}</h4>
             <ul className="space-y-2 text-small" style={{ color: 'var(--color-text-secondary)' }}>
-              <li>域名可用性查询</li>
-              <li>价格对比分析</li>
-              <li>WHOIS信息查询</li>
-              <li>智能域名推荐</li>
+              <li>{t('footer.features.0')}</li>
+              <li>{t('footer.features.1')}</li>
+              <li>{t('footer.features.2')}</li>
+              <li>{t('footer.features.3')}</li>
             </ul>
           </div>
           
           {/* 帮助支持 */}
           <div>
-            <h4 className="font-semibold mb-4">帮助支持</h4>
+            <h4 className="font-semibold mb-4">{t('footer.helpSupport')}</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="/privacy" className="hover:text-primary transition-colors">隐私政策</a></li>
-              <li><a href="/terms" className="hover:text-primary transition-colors">服务条款</a></li>
-              <li><a href="/about" className="hover:text-primary transition-colors">关于我们</a></li>
-              <li><a href="mailto:support@nextname.app" className="hover:text-primary transition-colors">联系我们</a></li>
+              <li><a href="/privacy" className="hover:text-primary transition-colors">{t('footer.links.0')}</a></li>
+              <li><a href="/terms" className="hover:text-primary transition-colors">{t('footer.links.1')}</a></li>
+              <li><a href="/about" className="hover:text-primary transition-colors">{t('footer.links.2')}</a></li>
+              <li><a href="mailto:support@nextname.app" className="hover:text-primary transition-colors">{t('footer.links.3')}</a></li>
             </ul>
           </div>
         </div>

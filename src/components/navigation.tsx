@@ -81,6 +81,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   const { t } = useTranslations()
   const [isToolsHovered, setIsToolsHovered] = React.useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
+  const [isMobileToolsExpanded, setIsMobileToolsExpanded] = React.useState(false)
 
   // 工具分类配置 - 使用国际化
   const toolCategories = [
@@ -143,7 +144,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
   return (
     <header className={`backdrop-blur relative z-50 ${className}`} style={{ borderBottom: '1px solid var(--color-border-default)', backgroundColor: 'var(--color-surface-secondary)' }}>
-      <div className="container mx-auto px-4 py-4">
+      <div className="container mx-auto px-4 py-2 md:py-4">
         <div className="flex items-center justify-between">
           {/* Logo 和主导航 */}
           <div className="flex items-center space-x-8">
@@ -245,39 +246,51 @@ export const Navigation: React.FC<NavigationProps> = ({
             <div className="p-4 space-y-4">
               {/* 移动端工具菜单 */}
               <div>
-                <Link
-                  href="/tools"
-                  className="flex items-center space-x-2 text-foreground hover:text-primary transition-colors py-2"
-                  onClick={() => setIsMobileMenuOpen(false)}
+                <button
+                  onClick={() => setIsMobileToolsExpanded(!isMobileToolsExpanded)}
+                  className="flex items-center justify-between w-full text-foreground hover:text-primary transition-colors py-2"
                 >
-                  <Wrench className="w-4 h-4" />
-                  <span>{t('common.toolbox')}</span>
-                </Link>
+                  <div className="flex items-center space-x-2">
+                    <Wrench className="w-4 h-4" />
+                    <span>{t('common.toolbox')}</span>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${isMobileToolsExpanded ? 'rotate-180' : ''}`} />
+                </button>
                 
-                {/* 移动端工具分类 */}
-                <div className="ml-6 mt-2 space-y-3">
-                  {toolCategories.map((category, categoryIndex) => (
-                    <div key={category.title}>
-                      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                        <category.icon className="w-3 h-3 inline mr-1" />
-                        {category.title}
+                {/* 移动端工具分类 - 折叠式 */}
+                {isMobileToolsExpanded && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="ml-6 mt-2 space-y-3 overflow-hidden"
+                  >
+                    {toolCategories.map((category, categoryIndex) => (
+                      <div key={category.title}>
+                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                          <category.icon className="w-3 h-3 inline mr-1" />
+                          {category.title}
+                        </div>
+                        <div className="space-y-1">
+                          {category.tools.map((tool) => (
+                            <Link
+                              key={tool.href}
+                              href={tool.href}
+                              onClick={() => {
+                                setIsMobileMenuOpen(false)
+                                setIsMobileToolsExpanded(false)
+                              }}
+                              className="block py-2 px-2 text-sm rounded hover:bg-accent hover:text-accent-foreground transition-colors"
+                            >
+                              <div className="font-medium">{tool.name}</div>
+                              <div className="text-xs text-muted-foreground">{tool.description}</div>
+                            </Link>
+                          ))}
+                        </div>
                       </div>
-                      <div className="space-y-1">
-                        {category.tools.map((tool) => (
-                          <Link
-                            key={tool.href}
-                            href={tool.href}
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className="block py-2 px-2 text-sm rounded hover:bg-accent hover:text-accent-foreground transition-colors"
-                          >
-                            <div className="font-medium">{tool.name}</div>
-                            <div className="text-xs text-muted-foreground">{tool.description}</div>
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </motion.div>
+                )}
               </div>
               
               {/* 移动端设置 */}
