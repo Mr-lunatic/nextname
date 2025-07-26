@@ -1,5 +1,6 @@
 {
   "common": {
+    "toolbox": "Toolbox",
     "search": "Search",
     "searchPlaceholder": "Enter domain, prefix, or suffix to start",
     "loading": "Loading...",
@@ -30,13 +31,73 @@
     "autoDetect": "Auto Detect",
     "fullDomain": "Full Domain",
     "domainPrefix": "Domain Prefix",
-    "domainSuffix": "Domain Suffix"
+    "domainSuffix": "Domain Suffix",
+    "recentSearch": "Recent Search",
+    "suggestions": "Suggestions",
+    "searchSuggestions": "Search Suggestions",
+    "install": "Install",
+    "installApp": "Install App",
+    "later": "Later"
+  },
+  "navigation": {
+    "allTools": "All Tools",
+    "categories": {
+      "encoding": "Encoding",
+      "image": "Image Tools",
+      "hash": "Encryption & Hash",
+      "text": "Text Processing",
+      "color": "Color Tools",
+      "system": "System Tools"
+    },
+    "tools": {
+      "base64": "Base64 Converter",
+      "urlEncoder": "URL Encoder",
+      "jsonFormatter": "JSON Formatter",
+      "jwtDecoder": "JWT Decoder",
+      "imageConverter": "Image Converter",
+      "imageEditor": "Image Editor",
+      "qrCode": "QR Code Tool",
+      "colorPicker": "Color Picker",
+      "hashGenerator": "Hash Generator",
+      "passwordGenerator": "Password Generator",
+      "uuidGenerator": "UUID Generator",
+      "textDiff": "Text Diff",
+      "textReplace": "Text Replace",
+      "timestamp": "Timestamp Converter",
+      "regexTester": "Regex Tester",
+      "cronExpression": "Cron Expression",
+      "pinyinConverter": "Pinyin Converter",
+      "colorConverter": "Color Converter",
+      "browserInfo": "Browser Info"
+    },
+    "descriptions": {
+      "base64": "Text to Base64 encoding conversion",
+      "urlEncoder": "URL encoding and decoding conversion",
+      "jsonFormatter": "Format and validate JSON",
+      "jwtDecoder": "Decode and verify JWT tokens",
+      "imageConverter": "Convert image formats",
+      "imageEditor": "Resize and format images",
+      "qrCode": "Generate and parse QR codes",
+      "colorPicker": "Extract colors from images",
+      "hashGenerator": "Supports MD5, SHA1, SHA256, etc.",
+      "passwordGenerator": "Generate secure random passwords",
+      "uuidGenerator": "Generate UUID identifiers",
+      "textDiff": "Compare differences between two texts",
+      "textReplace": "Search and replace text content",
+      "timestamp": "Convert between timestamps and dates",
+      "regexTester": "Test and validate regular expressions",
+      "cronExpression": "Generate and parse Cron expressions",
+      "pinyinConverter": "Chinese to Pinyin conversion tool",
+      "colorConverter": "Color format conversion",
+      "browserInfo": "Detect browser info and generate fingerprints"
+    }
   },
   "header": {
     "brandName": "NextName",
     "tagline": "Find Your Perfect Domain",
     "switchLanguage": "Switch Language",
-    "switchTheme": "Switch Theme"
+    "switchTheme": "Switch Theme",
+    "settings": "Settings"
   },
   "hero": {
     "badge": "Fast · Comprehensive · Accurate Domain Search Tool",
@@ -75,6 +136,15 @@
     "willCheckAvailability": "will check domain availability",
     "willCheckTlds": "will check available TLDs",
     "willShowPriceComparison": "will show price comparison",
+    "inputFullDomain": "Enter full domain - Check WHOIS info and registration status",
+    "inputDomainPrefix": "Enter domain prefix - Batch check availability for multiple suffixes", 
+    "inputDomainSuffix": "Enter domain suffix - Compare registrar prices",
+    "fullDomainQuery": "Full domain query - Check if domain is available",
+    "domainPrefixSearch": "Domain prefix search - Find domains starting with this",
+    "domainSuffixSearch": "Domain suffix search - View price comparison for this suffix",
+    "popularTld": "Popular",
+    "domainSuffix": "domain suffix",
+    "recentSearches": "Recent Searches",
     "grouping": {
       "popular": "🔥 Popular Extensions",
       "tech": "⚡ Tech Innovation",
@@ -308,5 +378,12 @@
   "domain": {
     "loadingDetails": "Loading domain details...",
     "loadingFailed": "Failed to load domain information"
+  },
+  "pwa": {
+    "installDescription": "Install to your device for a better experience:",
+    "offlineAccess": "Offline access", 
+    "fasterLaunch": "Faster launch",
+    "installNow": "Install Now",
+    "installGuide": "Install Guide"
   }
 }

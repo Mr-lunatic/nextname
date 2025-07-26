@@ -83,38 +83,38 @@
  
   .dark {
     --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --foreground: 210 40% 98%; /* Increased contrast */
  
     --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card-foreground: 210 40% 98%; /* Increased contrast */
  
     --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover-foreground: 210 40% 98%; /* Increased contrast */
  
-    /* NextName Dark Theme */
-    --primary: 214 100% 60%;  /* Lighter blue for dark mode */
-    --primary-foreground: 210 40% 98%;
+    /* NextName Dark Theme - Enhanced contrast */
+    --primary: 214 100% 65%;  /* Increased brightness for better contrast */
+    --primary-foreground: 222.2 84% 4.9%; /* Dark text on light blue */
  
     --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary-foreground: 210 40% 98%; /* Increased contrast */
  
     --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted-foreground: 215 20.2% 75%; /* Increased from 65.1% to 75% for better readability */
  
     --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent-foreground: 210 40% 98%; /* Increased contrast */
  
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 84% 65%; /* Increased brightness */
     --destructive-foreground: 210 40% 98%;
  
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 214 100% 60%;
+    --border: 217.2 32.6% 25%; /* Increased from 17.5% to 25% for better visibility */
+    --input: 217.2 32.6% 20%; /* Slightly lighter for better form visibility */
+    --ring: 214 100% 65%; /* Match primary color */
 
-    /* Enhanced Dark Mode Surfaces */
+    /* Enhanced Dark Mode Surfaces with better contrast */
     --surface-primary: 222.2 84% 4.9%;
-    --surface-secondary: 217.2 32.6% 17.5%;
-    --surface-tertiary: 215 27.9% 16.9%;
+    --surface-secondary: 217.2 32.6% 20%; /* Increased from 17.5% to 20% */
+    --surface-tertiary: 215 27.9% 22%; /* Increased from 16.9% to 22% */
     --surface-glass: 0 0 0;
   }
 }
@@ -925,4 +925,66 @@ html {
 
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--primary));
+}
+
+/* Line clamp utilities for mobile optimization */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+/* Mobile touch improvements */
+.touch-pan-y {
+  touch-action: pan-y;
+}
+
+.touch-pan-x {
+  touch-action: pan-x;
+}
+
+/* Enhanced mobile tap targets */
+.tap-highlight-none {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tap-highlight {
+  -webkit-tap-highlight-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Mobile-friendly scrollbars */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: var(--surface-secondary);
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--muted-foreground);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-foreground);
 }

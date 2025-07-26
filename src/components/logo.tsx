@@ -11,7 +11,7 @@ interface LogoProps {
   size?: 'small' | 'medium' | 'large' | 'xlarge'
 }
 
-// 基于您提供的SVG文件的Logo组件
+// 基于您提供的SVG文件的Logo组件 - 增强深色模式对比度
 export const BrandLogo: React.FC<LogoProps> = ({
   className = '',
   width,
@@ -41,7 +41,7 @@ export const BrandLogo: React.FC<LogoProps> = ({
   const finalWidth = width || sizeConfig.width
   const finalHeight = height || sizeConfig.height
 
-  // Fallback SVG logo if image fails to load
+  // Fallback SVG logo with enhanced dark mode contrast
   const FallbackLogo = () => (
     <svg
       width={finalWidth}
@@ -52,20 +52,39 @@ export const BrandLogo: React.FC<LogoProps> = ({
       className={className}
     >
       <defs>
-        <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#3B82F6" />
-          <stop offset="100%" stopColor="#8B5CF6" />
+        {/* Enhanced gradients for better contrast */}
+        <linearGradient id="logoGradient-light" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#2563EB" />
+          <stop offset="100%" stopColor="#7C3AED" />
+        </linearGradient>
+        <linearGradient id="logoGradient-dark" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#60A5FA" />
+          <stop offset="100%" stopColor="#A78BFA" />
         </linearGradient>
       </defs>
-      <circle cx="23" cy="23" r="20" fill="url(#logoGradient)" opacity="0.1" />
+      
+      {/* Adaptive background circle */}
+      <circle 
+        cx="23" 
+        cy="23" 
+        r="20" 
+        fill="url(#logoGradient-light)" 
+        opacity="0.1" 
+        className="dark:fill-[url(#logoGradient-dark)] dark:opacity-0.15"
+      />
+      
+      {/* Enhanced logo path with better dark mode visibility */}
       <path
         d="M15 33V13L23 27V13M23 27L31 13V33"
-        stroke="url(#logoGradient)"
+        stroke="url(#logoGradient-light)"
         strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
         fill="none"
+        className="dark:stroke-[url(#logoGradient-dark)]"
       />
+      
+      {/* Enhanced text with better contrast */}
       <text
         x="50"
         y="30"
@@ -73,13 +92,14 @@ export const BrandLogo: React.FC<LogoProps> = ({
         fontSize="18"
         fontWeight="600"
         fill="currentColor"
+        className="fill-gray-900 dark:fill-gray-100"
       >
         NextName
       </text>
     </svg>
   )
 
-  // 如果是icon变体，只显示图形部分
+  // 如果是icon变体，只显示图形部分 - 增强对比度
   if (variant === 'icon') {
     return (
       <div className={`inline-flex items-center ${className}`}>
@@ -91,19 +111,31 @@ export const BrandLogo: React.FC<LogoProps> = ({
           xmlns="http://www.w3.org/2000/svg"
         >
           <defs>
-            <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#3B82F6" />
-              <stop offset="100%" stopColor="#8B5CF6" />
+            <linearGradient id="iconGradient-light" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#2563EB" />
+              <stop offset="100%" stopColor="#7C3AED" />
+            </linearGradient>
+            <linearGradient id="iconGradient-dark" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#60A5FA" />
+              <stop offset="100%" stopColor="#A78BFA" />
             </linearGradient>
           </defs>
-          <circle cx="23" cy="23" r="20" fill="url(#iconGradient)" opacity="0.1" />
+          <circle 
+            cx="23" 
+            cy="23" 
+            r="20" 
+            fill="url(#iconGradient-light)" 
+            opacity="0.1" 
+            className="dark:fill-[url(#iconGradient-dark)] dark:opacity-0.15"
+          />
           <path
             d="M15 33V13L23 27V13M23 27L31 13V33"
-            stroke="url(#iconGradient)"
+            stroke="url(#iconGradient-light)"
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
             fill="none"
+            className="dark:stroke-[url(#iconGradient-dark)]"
           />
         </svg>
       </div>
@@ -125,7 +157,7 @@ export const BrandLogo: React.FC<LogoProps> = ({
   )
 }
 
-// 响应式Logo组件 - 自动适配不同屏幕尺寸
+// 响应式Logo组件 - 自动适配不同屏幕尺寸 - 增强适配性
 export const ResponsiveBrandLogo: React.FC<{
   className?: string;
   useWebP?: boolean;
@@ -133,8 +165,17 @@ export const ResponsiveBrandLogo: React.FC<{
 }> = ({ className = '', useWebP = false, theme = 'auto' }) => {
   return (
     <div className={className}>
-      {/* 桌面端大logo */}
-      <div className="hidden lg:block">
+      {/* 桌面端大logo - 增强显示 */}
+      <div className="hidden xl:block">
+        <BrandLogo 
+          size="xlarge"
+          variant="full" 
+          theme={theme}
+          useWebP={useWebP} 
+        />
+      </div>
+      {/* 桌面端中等logo */}
+      <div className="hidden lg:block xl:hidden">
         <BrandLogo 
           size="large"
           variant="full" 
@@ -151,11 +192,11 @@ export const ResponsiveBrandLogo: React.FC<{
           useWebP={useWebP} 
         />
       </div>
-      {/* 移动端小logo - 仅显示图标 */}
+      {/* 移动端小logo - 显示完整logo但尺寸较小 */}
       <div className="block md:hidden">
         <BrandLogo 
           size="small"
-          variant="icon" 
+          variant="full" 
           theme={theme}
           useWebP={useWebP} 
         />

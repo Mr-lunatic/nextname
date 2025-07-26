@@ -1,5 +1,6 @@
 {
   "common": {
+    "toolbox": "工具箱",
     "search": "搜索",
     "searchPlaceholder": "输入域名、前缀、后缀开始",
     "loading": "加载中...",
@@ -30,13 +31,73 @@
     "autoDetect": "自动检测",
     "fullDomain": "完整域名",
     "domainPrefix": "域名前缀",
-    "domainSuffix": "域名后缀"
+    "domainSuffix": "域名后缀",
+    "recentSearch": "最近搜索",
+    "suggestions": "建议",
+    "searchSuggestions": "搜索建议",
+    "install": "安装",
+    "installApp": "安装应用",
+    "later": "稍后"
+  },
+  "navigation": {
+    "allTools": "所有工具",
+    "categories": {
+      "encoding": "编码转换",
+      "image": "图片工具",
+      "hash": "加密哈希",
+      "text": "文本处理",
+      "color": "颜色工具",
+      "system": "系统工具"
+    },
+    "tools": {
+      "base64": "Base64 转换器",
+      "urlEncoder": "URL 编解码",
+      "jsonFormatter": "JSON 格式化",
+      "jwtDecoder": "JWT 解析器",
+      "imageConverter": "图片转换器",
+      "imageEditor": "图片编辑器",
+      "qrCode": "二维码工具",
+      "colorPicker": "颜色取色器",
+      "hashGenerator": "哈希值生成",
+      "passwordGenerator": "密码生成器",
+      "uuidGenerator": "UUID 生成器",
+      "textDiff": "文本差异比较",
+      "textReplace": "文本搜索替换",
+      "timestamp": "时间戳转换",
+      "regexTester": "正则表达式",
+      "cronExpression": "Cron 表达式",
+      "pinyinConverter": "汉字拼音转换",
+      "colorConverter": "颜色转换器",
+      "browserInfo": "浏览器信息"
+    },
+    "descriptions": {
+      "base64": "文本与Base64编码互转",
+      "urlEncoder": "URL编码与解码转换",
+      "jsonFormatter": "格式化和验证JSON",
+      "jwtDecoder": "解码和验证JWT令牌",
+      "imageConverter": "转换图片格式",
+      "imageEditor": "调整图片大小和格式",
+      "qrCode": "生成和解析二维码",
+      "colorPicker": "从图片中提取颜色",
+      "hashGenerator": "支持MD5、SHA1、SHA256等",
+      "passwordGenerator": "生成安全的随机密码",
+      "uuidGenerator": "生成UUID标识符",
+      "textDiff": "比较两段文本的差异",
+      "textReplace": "搜索和替换文本内容",
+      "timestamp": "时间戳与日期互转",
+      "regexTester": "测试和验证正则表达式",
+      "cronExpression": "生成和解析Cron表达式",
+      "pinyinConverter": "汉字转拼音工具",
+      "colorConverter": "颜色格式互转",
+      "browserInfo": "检测浏览器信息和生成浏览器指纹"
+    }
   },
   "header": {
     "brandName": "NextName",
     "tagline": "Find Your Perfect Domain",
     "switchLanguage": "切换语言",
-    "switchTheme": "切换主题"
+    "switchTheme": "切换主题",
+    "settings": "设置"  
   },
   "hero": {
     "badge": "快·全·准的域名查询工具",
@@ -75,6 +136,15 @@
     "willCheckAvailability": "将检查域名可用性",
     "willCheckTlds": "将查询可用后缀",
     "willShowPriceComparison": "将显示价格对比",
+    "inputFullDomain": "输入完整域名 - 检查WHOIS信息和注册状态", 
+    "inputDomainPrefix": "输入域名前缀 - 批量检索多个后缀的可注册性",
+    "inputDomainSuffix": "输入域名后缀 - 批量对比各注册商的价格信息",
+    "fullDomainQuery": "完整域名查询 - 检查域名是否可注册",
+    "domainPrefixSearch": "域名前缀搜索 - 查找以此开头的域名",
+    "domainSuffixSearch": "域名后缀搜索 - 查看此后缀的价格对比",
+    "popularTld": "热门",
+    "domainSuffix": "域名后缀",
+    "recentSearches": "最近搜索",
     "grouping": {
       "popular": "🔥 热门后缀",
       "tech": "⚡ 科技创新", 
@@ -308,5 +378,12 @@
   "domain": {
     "loadingDetails": "正在加载域名详情...",
     "loadingFailed": "域名信息加载失败"
+  },
+  "pwa": {
+    "installDescription": "安装到您的设备，享受更好的体验：",
+    "offlineAccess": "离线访问",
+    "fasterLaunch": "更快启动", 
+    "installNow": "立即安装",
+    "installGuide": "安装指南"
   }
 }

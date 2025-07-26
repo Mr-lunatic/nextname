@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Download, X, Smartphone, Monitor, Chrome } from 'lucide-react'
+import { useTranslations } from '@/hooks/useTranslations'
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[]
@@ -76,8 +77,8 @@ export function PWAInstallPrompt() {
       setDeferredPrompt(null)
       
       // 发送安装事件到分析服务
-      if (typeof gtag !== 'undefined') {
-        gtag('event', 'pwa_install', {
+      if (typeof window !== 'undefined' && 'gtag' in window) {
+        (window as any).gtag('event', 'pwa_install', {
           event_category: 'PWA',
           event_label: platform,
         })
@@ -128,8 +129,8 @@ export function PWAInstallPrompt() {
         console.log('PWA: User accepted the install prompt')
         
         // 发送接受事件到分析服务
-        if (typeof gtag !== 'undefined') {
-          gtag('event', 'pwa_install_accepted', {
+        if (typeof window !== 'undefined' && 'gtag' in window) {
+          (window as any).gtag('event', 'pwa_install_accepted', {
             event_category: 'PWA',
             event_label: platform,
           })
@@ -158,8 +159,8 @@ export function PWAInstallPrompt() {
     localStorage.setItem('pwa-install-dismissed', dismissedUntil.toString())
     
     // 发送关闭事件到分析服务
-    if (typeof gtag !== 'undefined') {
-      gtag('event', 'pwa_install_dismissed', {
+    if (typeof window !== 'undefined' && 'gtag' in window) {
+      (window as any).gtag('event', 'pwa_install_dismissed', {
         event_category: 'PWA',
         event_label: platform,
       })
@@ -198,7 +199,7 @@ export function PWAInstallPrompt() {
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center">
               <Download className="w-5 h-5 mr-2 text-blue-600" />
-              安装 NextName
+              {t('common.installApp')}
             </CardTitle>
             <Button 
               variant="ghost" 
@@ -213,17 +214,17 @@ export function PWAInstallPrompt() {
         <CardContent className="pt-0">
           <div className="space-y-3">
             <p className="text-sm text-gray-600 dark:text-gray-300">
-              安装到您的设备，享受更好的体验：
+              {t('pwa.installDescription')}
             </p>
             
             <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
               <div className="flex items-center">
                 {platform === 'mobile' ? <Smartphone className="w-3 h-3 mr-1" /> : <Monitor className="w-3 h-3 mr-1" />}
-                <span>离线访问</span>
+                <span>{t('pwa.offlineAccess')}</span>
               </div>
               <div className="flex items-center">
                 <Chrome className="w-3 h-3 mr-1" />
-                <span>更快启动</span>
+                <span>{t('pwa.fasterLaunch')}</span>
               </div>
             </div>
             
@@ -234,7 +235,7 @@ export function PWAInstallPrompt() {
                 size="sm"
               >
                 <Download className="w-4 h-4 mr-2" />
-                {canInstall ? '立即安装' : '安装指南'}
+                {canInstall ? t('pwa.installNow') : t('pwa.installGuide')}
               </Button>
               
               <Button 
@@ -242,7 +243,7 @@ export function PWAInstallPrompt() {
                 size="sm" 
                 onClick={handleDismiss}
               >
-                稍后
+                                {t('common.later')}
               </Button>
             </div>
           </div>

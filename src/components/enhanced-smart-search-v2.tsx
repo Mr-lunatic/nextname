@@ -9,22 +9,32 @@ import { Button } from '@/components/ui/button'
 import { EnhancedButton } from '@/components/ui/enhanced-button'
 import { Card, CardContent } from '@/components/ui/card'
 
-type SearchType = 'auto' | 'domain' | 'prefix' | 'suffix'
+// Type definitions for better type safety
+export type SearchType = 'auto' | 'domain' | 'prefix' | 'suffix'
 
-interface SearchSuggestion {
-  type: 'domain' | 'tld' | 'keyword' | 'recent' | 'prefix' | 'suffix'
+export type SuggestionType = 'domain' | 'tld' | 'keyword' | 'recent' | 'prefix' | 'suffix'
+
+export interface SearchSuggestion {
+  type: SuggestionType
   value: string
   label: string
   description?: string
   popular?: boolean
 }
 
-interface EnhancedSmartSearchV2Props {
+export interface EnhancedSmartSearchV2Props {
   onSearch: (query: string, type: SearchType) => void
   placeholder?: string
 }
 
-const popularTLDs = [
+export interface PopularTLD {
+  value: string
+  label: string
+  description: string
+  popular: boolean
+}
+
+const popularTLDs: PopularTLD[] = [
   { value: '.com', label: '.com', description: 'Commercial', popular: true },
   { value: '.net', label: '.net', description: 'Network', popular: true },
   { value: '.org', label: '.org', description: 'Organization', popular: true },
@@ -39,7 +49,7 @@ const popularTLDs = [
   { value: '.tech', label: '.tech', description: 'Technology', popular: false },
 ]
 
-const keywordSuggestions = [
+const keywordSuggestions: readonly string[] = [
   'google', 'microsoft', 'apple', 'amazon', 'facebook', 'twitter', 'instagram',
   'youtube', 'linkedin', 'github', 'stackoverflow', 'wikipedia', 'reddit',
   'netflix', 'spotify', 'discord', 'slack', 'zoom', 'adobe', 'nvidia'
@@ -56,20 +66,20 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
   const [isOpen, setIsOpen] = useState(false)
   const [recentSearches, setRecentSearches] = useState<string[]>([])
 
-  // Initialize prefetching on mount - TEMPORARILY DISABLED to fix infinite loop
+  // Initialize prefetching on mount
   useEffect(() => {
-    // Start prefetching popular domains after a short delay
+    // Start prefetching TLD list after a short delay
     const timer = setTimeout(() => {
-      // preFetchHotDomains() // DISABLED: causing infinite API calls
       preFetchTldList() // Keep TLD prefetch as it's less intensive
     }, 1000)
 
     return () => clearTimeout(timer)
   }, [preFetchTldList])
 
-  // Load recent searches from localStorage (now using the hook)
+  // Load recent searches using the hook
   useEffect(() => {
     // Recent searches are now handled by useSearchHistory hook
+    // This effect can be removed if no additional logic is needed
   }, [])
 
   const detectSearchType = useCallback((input: string): SearchType => {
@@ -101,7 +111,7 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
         type: 'recent',
         value: item,
         label: item,
-        description: '最近搜索'
+        description: t('common.recentSearch')
       }))
 
       // Usage examples to guide users
@@ -110,19 +120,19 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
           type: 'domain',
           value: 'nextname.app',
           label: 'nextname.app',
-          description: '输入完整域名 - 检查WHOIS信息和注册状态'
+          description: t('search.inputFullDomain')
         },
         {
           type: 'prefix',
           value: 'nextname',
           label: 'nextname',
-          description: '输入域名前缀 - 批量检索多个后缀的可注册性'
+          description: t('search.inputDomainPrefix')
         },
         {
           type: 'suffix',
           value: '.app',
           label: '.app',
-          description: '输入域名后缀 - 批量对比各注册商的价格信息'
+          description: t('search.inputDomainSuffix')
         }
       ]
 
@@ -138,19 +148,19 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
         type: 'domain',
         value: query.includes('.') ? query : `${query}.com`,
         label: query.includes('.') ? query : `${query}.com`,
-        description: '完整域名查询 - 检查域名是否可注册'
+        description: t('search.fullDomainQuery')
       },
       {
         type: 'keyword',
         value: query.replace(/^\.+/, ''),
         label: query.replace(/^\.+/, ''),
-        description: '域名前缀搜索 - 查找以此开头的域名'
+        description: t('search.domainPrefixSearch')
       },
       {
         type: 'tld',
         value: query.startsWith('.') ? query : `.${query}`,
         label: query.startsWith('.') ? query : `.${query}`,
-        description: '域名后缀搜索 - 查看此后缀的价格对比'
+        description: t('search.domainSuffixSearch')
       }
     ]
     
@@ -164,7 +174,7 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
         type: 'recent' as const,
         value: item,
         label: item,
-        description: '最近搜索'
+        description: t('common.recentSearch')
       }))
     
     allSuggestions.push(...historyMatches)
@@ -177,7 +187,7 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
         type: 'tld' as const,
         value: tld.value,
         label: tld.label,
-        description: `热门 ${tld.value} 域名后缀`,
+        description: `${t('search.popularTld')} ${tld.value} ${t('search.domainSuffix')}`,
         popular: true
       }))
       
@@ -292,7 +302,7 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
                   setIsOpen(false)
                 }
               }}
-              className="w-full h-14 pl-12 pr-32 text-lg rounded-full border-2 transition-all duration-300 focus:outline-none"
+              className="w-full h-12 md:h-14 pl-10 md:pl-12 pr-24 md:pr-32 text-base md:text-lg rounded-full border-2 transition-all duration-300 focus:outline-none"
               style={{
                 backgroundColor: 'var(--color-surface-secondary)',
                 borderColor: 'var(--color-border-default)',
@@ -310,27 +320,28 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
               }}
               autoComplete="off"
             />
-            <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground pointer-events-none">
-              <Search className="h-5 w-5" />
+            <div className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground pointer-events-none">
+              <Search className="h-4 w-4 md:h-5 md:w-5" />
             </div>
           </div>
-          <div className="absolute right-2 flex items-center space-x-2">
+          <div className="absolute right-1 md:right-2 flex items-center space-x-2">
             <EnhancedButton
               onClick={() => handleSearch()}
-              className="h-10 rounded-full"
+              className="h-8 md:h-10 px-3 md:px-4 rounded-full text-sm md:text-base"
               disabled={!query.trim()}
               variant="primary"
-              size="md"
+              size="sm"
             >
-              {t('common.search')}
+              <span className="hidden sm:inline">{t('common.search')}</span>
+              <Search className="h-4 w-4 sm:hidden" />
             </EnhancedButton>
           </div>
         </div>
         
-        {/* Suggestions dropdown */}
+        {/* Suggestions dropdown - 移动端优化 */}
         {isOpen && suggestions.length > 0 && (
           <div
-            className="absolute top-full left-0 right-0 mt-2 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto"
+            className="absolute top-full left-0 right-0 mt-2 rounded-lg shadow-lg z-50 max-h-64 md:max-h-80 overflow-y-auto"
             style={{
               backgroundColor: 'var(--color-surface-secondary)',
               border: '1px solid var(--color-border-default)'
@@ -338,15 +349,15 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
           >
             {recentSearches.length > 0 && query === '' && (
               <div className="border-b">
-                <div className="px-3 py-2 text-xs font-medium text-muted-foreground">Recent Searches</div>
+                <div className="px-3 py-2 text-xs font-medium text-muted-foreground">{t('search.recentSearches')}</div>
                 {suggestions.filter(s => s.type === 'recent').map((suggestion) => (
                   <div
                     key={suggestion.value}
                     onClick={() => handleSuggestionSelect(suggestion)}
-                    className="flex items-center gap-2 px-3 py-2 hover:bg-secondary cursor-pointer"
+                    className="flex items-center gap-2 px-3 py-3 md:py-2 hover:bg-secondary cursor-pointer active:bg-secondary/80 transition-colors"
                   >
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span>{suggestion.label}</span>
+                    <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="truncate">{suggestion.label}</span>
                   </div>
                 ))}
               </div>
@@ -354,28 +365,30 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
             
             <div>
               <div className="px-3 py-2 text-xs font-bold text-muted-foreground">
-                {query ? "Suggestions" : "搜索建议"}
+                {query ? t('common.suggestions') : t('common.searchSuggestions')}
               </div>
               {suggestions.filter(s => s.type !== 'recent').map((suggestion) => (
                 <div
                   key={suggestion.value}
                   onClick={() => handleSuggestionSelect(suggestion)}
-                  className="flex items-center gap-4 px-4 py-3 hover:bg-secondary cursor-pointer transition-colors"
+                  className="flex items-center gap-3 md:gap-4 px-3 md:px-4 py-3 md:py-3 hover:bg-secondary cursor-pointer transition-colors active:bg-secondary/80"
                 >
                   <div className="flex-shrink-0">
                     {getSuggestionIcon(suggestion)}
                   </div>
-                  <div className="flex-1 min-w-0 flex items-center gap-3">
-                    <span className="font-medium text-sm text-foreground">{suggestion.label}</span>
-                    {suggestion.popular && <Star className="h-3 w-3 text-yellow-500" />}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 md:gap-3">
+                      <span className="font-medium text-sm text-foreground truncate">{suggestion.label}</span>
+                      {suggestion.popular && <Star className="h-3 w-3 text-yellow-500 flex-shrink-0" />}
+                    </div>
                     {suggestion.description && (
-                      <span className="text-sm text-muted-foreground ml-1">
-                        · {suggestion.description}
-                      </span>
+                      <div className="text-xs md:text-sm text-muted-foreground mt-1 line-clamp-2">
+                        {suggestion.description}
+                      </div>
                     )}
                   </div>
                 </div>
-              ))}
+              ))}}
             </div>
           </div>
         )}
