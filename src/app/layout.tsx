@@ -206,13 +206,13 @@ export default async function RootLayout({
             <ServiceWorkerProvider>
               <TranslationProvider initialLocale={locale}>
                 {children}
+                <PerformanceMonitor />
+                <PWAInstallPrompt />
               </TranslationProvider>
             </ServiceWorkerProvider>
           </ThemeProvider>
         </ErrorBoundary>
         <StructuredData />
-        <PerformanceMonitor />
-        <PWAInstallPrompt />
       </body>
     </html>
   )
