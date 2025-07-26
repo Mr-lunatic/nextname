@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { WifiOff, RotateCcw, Home, Search } from 'lucide-react'
 
+export const runtime = 'edge'
+
 export default function OfflinePage() {
   useEffect(() => {
     document.title = '离线模式 - NextName'
