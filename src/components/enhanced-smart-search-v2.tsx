@@ -388,7 +388,7 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
                     )}
                   </div>
                 </div>
-              ))}}
+              ))}
             </div>
           </div>
         )}
