@@ -194,7 +194,7 @@ export function EnhancedSmartSearchV2({ onSearch, placeholder }: EnhancedSmartSe
     allSuggestions.push(...tldMatches)
 
     return allSuggestions.slice(0, 8)
-  }, [query, history]) // Updated dependency
+  }, [query, history, t]) // Updated dependency to include t
 
   const handleInputChange = (value: string) => {
     setQuery(value)

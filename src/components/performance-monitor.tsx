@@ -45,6 +45,87 @@ export function PerformanceMonitor() {
 
   const [isVisible, setIsVisible] = useState(false)
 
+  // 定义所有函数
+  const getRating = useCallback((metric: string, value: number): 'good' | 'needs-improvement' | 'poor' => {
+    const thresholds = {
+      CLS: { good: 0.1, poor: 0.25 },
+      FID: { good: 100, poor: 300 },
+      FCP: { good: 1800, poor: 3000 },
+      LCP: { good: 2500, poor: 4000 },
+      TTFB: { good: 800, poor: 1800 }
+    }
+
+    const threshold = thresholds[metric as keyof typeof thresholds]
+    if (!threshold) return 'good'
+
+    if (value <= threshold.good) return 'good'
+    if (value <= threshold.poor) return 'needs-improvement'
+    return 'poor'
+  }, [])
+
+  const sendToAnalytics = useCallback((metric: string, value: number, rating: string) => {
+    // 这里可以发送到你的分析服务
+    console.log(`Performance metric: ${metric} = ${value} (${rating})`)
+  }, [])
+
+  const sendBatchMetrics = useCallback(() => {
+    // 批量发送所有指标
+    const allMetrics = { ...vitals, ...metrics }
+    console.log('Batch metrics:', allMetrics)
+  }, [vitals, metrics])
+
+  const estimateTimeToInteractive = useCallback(() => {
+    if (!window.performance) return
+
+    try {
+      const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
+      if (navigation && navigation.loadEventEnd) {
+        const tti = navigation.loadEventEnd - navigation.fetchStart
+        setMetrics(prev => ({ ...prev, timeToInteractive: tti }))
+      }
+    } catch (error) {
+      console.warn('Failed to estimate TTI:', error)
+    }
+  }, [])
+
+  const collectAdditionalMetrics = useCallback(() => {
+    if (!window.performance) return
+
+    const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
+
+    if (navigation) {
+      const metrics = {
+        firstByte: navigation.responseStart - navigation.requestStart,
+        domContentLoaded: navigation.domContentLoadedEventEnd - navigation.fetchStart,
+        loadComplete: navigation.loadEventEnd - navigation.fetchStart,
+        navigationTime: navigation.loadEventEnd - navigation.fetchStart,
+      }
+
+      setMetrics(prev => ({ ...prev, ...metrics }))
+    }
+
+    // 资源计数
+    const resources = performance.getEntriesByType('resource')
+    setMetrics(prev => ({ ...prev, resourceCount: resources.length }))
+
+    // 自定义TTI估算
+    estimateTimeToInteractive()
+  }, [estimateTimeToInteractive])
+
+  const collectNavigationMetrics = useCallback(() => {
+    if (!window.performance) return
+
+    try {
+      const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
+      if (navigation) {
+        const navTime = navigation.loadEventEnd - navigation.fetchStart
+        setMetrics(prev => ({ ...prev, navigationTime: navTime }))
+      }
+    } catch (error) {
+      console.warn('Failed to collect navigation metrics:', error)
+    }
+  }, [])
+
   useEffect(() => {
     // 严格限制：只在开发环境或明确开启时显示
     const showMetrics = process.env.NODE_ENV === 'development' && (
@@ -107,123 +188,7 @@ export function PerformanceMonitor() {
       window.removeEventListener('beforeunload', sendBatchMetrics)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [collectAdditionalMetrics, getRating, sendBatchMetrics, sendToAnalytics])
-
-  const collectAdditionalMetrics = useCallback(() => {
-    if (!window.performance) return
-
-    const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
-
-    if (navigation) {
-      const metrics = {
-        firstByte: navigation.responseStart - navigation.requestStart,
-        domContentLoaded: navigation.domContentLoadedEventEnd - navigation.fetchStart,
-        loadComplete: navigation.loadEventEnd - navigation.fetchStart,
-        navigationTime: navigation.loadEventEnd - navigation.fetchStart,
-      }
-
-      setMetrics(prev => ({ ...prev, ...metrics }))
-    }
-
-    // 资源计数
-    const resources = performance.getEntriesByType('resource')
-    setMetrics(prev => ({ ...prev, resourceCount: resources.length }))
-
-    // 自定义TTI估算
-    estimateTimeToInteractive()
-  }, [setMetrics, estimateTimeToInteractive])
-
-  const collectNavigationMetrics = () => {
-    if (!window.performance) return
-
-    const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
-    if (navigation) {
-      const navTime = navigation.loadEventEnd - navigation.fetchStart
-      setMetrics(prev => ({ ...prev, navigationTime: navTime }))
-    }
-  }
-
-  const estimateTimeToInteractive = () => {
-    // 简化的TTI估算 - 使用现代Performance API
-    if (window.performance) {
-      const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
-      if (navigation) {
-        const tti = navigation.domInteractive - navigation.fetchStart
-        setMetrics(prev => ({ ...prev, timeToInteractive: tti }))
-      }
-    }
-  }
-
-  const sendToAnalytics = (metricName: string, value: number, rating: string) => {
-    // 发送到Google Analytics
-    if (typeof gtag !== 'undefined') {
-      gtag('event', 'web_vitals', {
-        event_category: 'Performance',
-        event_label: metricName,
-        value: Math.round(value),
-        custom_parameter_1: rating,
-        non_interaction: true,
-      })
-    }
-
-    // 发送到自定义分析端点
-    if (navigator.sendBeacon) {
-      const data = JSON.stringify({
-        metric: metricName,
-        value: value,
-        rating: rating,
-        url: window.location.href,
-        userAgent: navigator.userAgent,
-        timestamp: Date.now(),
-      })
-
-      navigator.sendBeacon('/api/analytics/vitals', data)
-    }
-
-    // 在控制台输出（开发环境）
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`📊 ${metricName}:`, {
-        value: Math.round(value),
-        rating,
-        threshold: getThreshold(metricName)
-      })
-    }
-  }
-
-  const sendBatchMetrics = () => {
-    const allMetrics = { ...vitals, ...metrics }
-    
-    if (navigator.sendBeacon) {
-      const data = JSON.stringify({
-        type: 'batch_metrics',
-        metrics: allMetrics,
-        url: window.location.href,
-        timestamp: Date.now(),
-      })
-
-      navigator.sendBeacon('/api/analytics/batch', data)
-    }
-  }
-
-  const getThreshold = (metric: string) => {
-    const thresholds = {
-      CLS: { good: 0.1, poor: 0.25 },
-      FID: { good: 100, poor: 300 },
-      FCP: { good: 1800, poor: 3000 },
-      LCP: { good: 2500, poor: 4000 },
-      TTFB: { good: 800, poor: 1800 },
-    }
-    return thresholds[metric] || null
-  }
-
-  const getRating = (metric: string, value: number) => {
-    const threshold = getThreshold(metric)
-    if (!threshold) return 'unknown'
-
-    if (value <= threshold.good) return 'good'
-    if (value <= threshold.poor) return 'needs-improvement'
-    return 'poor'
-  }
+  }, [collectAdditionalMetrics, getRating, sendBatchMetrics, sendToAnalytics, collectNavigationMetrics])
 
   const getStatusColor = (rating: string) => {
     switch (rating) {
@@ -319,7 +284,7 @@ export function PerformanceMonitor() {
   }
 
   function calculateGrade() {
-    const scores = []
+    const scores: number[] = []
     
     // 基于Core Web Vitals计算分数
     Object.entries(vitals).forEach(([key, value]) => {
