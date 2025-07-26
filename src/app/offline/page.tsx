@@ -1,20 +1,16 @@
-import { Metadata } from 'next'
+'use client'
+
 import Link from 'next/link'
+import { useEffect } from 'react'
 import { Navigation } from '@/components/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { WifiOff, RotateCcw, Home, Search } from 'lucide-react'
 
-export const metadata: Metadata = {
-  title: '离线模式 - NextName',
-  description: '您当前处于离线状态，部分功能可能无法使用。',
-  robots: {
-    index: false,
-    follow: false,
-  },
-}
-
 export default function OfflinePage() {
+  useEffect(() => {
+    document.title = '离线模式 - NextName'
+  }, [])
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <Navigation />
