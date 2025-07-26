@@ -1,18 +1,23 @@
-'use client'
-
+import { Metadata } from 'next'
 import Link from 'next/link'
-import { useEffect } from 'react'
 import { Navigation } from '@/components/navigation'
+import { RefreshButton } from '@/components/refresh-button'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { WifiOff, RotateCcw, Home, Search } from 'lucide-react'
+import { WifiOff, Home, Search } from 'lucide-react'
 
 export const runtime = 'edge'
 
+export const metadata: Metadata = {
+  title: '离线模式 - NextName',
+  description: '您当前处于离线状态，部分功能可能无法使用。',
+  robots: {
+    index: false,
+    follow: false,
+  },
+}
+
 export default function OfflinePage() {
-  useEffect(() => {
-    document.title = '离线模式 - NextName'
-  }, [])
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <Navigation />
@@ -69,14 +74,7 @@ export default function OfflinePage() {
         </div>
 
         <div className="text-center space-y-4">
-          <Button 
-            onClick={() => window.location.reload()} 
-            className="mr-4"
-            size="lg"
-          >
-            <RotateCcw className="w-4 h-4 mr-2" />
-            重试连接
-          </Button>
+          <RefreshButton />
           
           <Link href="/">
             <Button variant="outline" size="lg">
