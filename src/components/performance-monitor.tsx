@@ -59,27 +59,27 @@ export function PerformanceMonitor() {
     // 收集Web Vitals
     getCLS((metric) => {
       setVitals(prev => ({ ...prev, CLS: metric.value }))
-      sendToAnalytics('CLS', metric.value, metric.rating)
+      sendToAnalytics('CLS', metric.value, getRating('CLS', metric.value))
     })
 
     getFID((metric) => {
       setVitals(prev => ({ ...prev, FID: metric.value }))
-      sendToAnalytics('FID', metric.value, metric.rating)
+      sendToAnalytics('FID', metric.value, getRating('FID', metric.value))
     })
 
     getFCP((metric) => {
       setVitals(prev => ({ ...prev, FCP: metric.value }))
-      sendToAnalytics('FCP', metric.value, metric.rating)
+      sendToAnalytics('FCP', metric.value, getRating('FCP', metric.value))
     })
 
     getLCP((metric) => {
       setVitals(prev => ({ ...prev, LCP: metric.value }))
-      sendToAnalytics('LCP', metric.value, metric.rating)
+      sendToAnalytics('LCP', metric.value, getRating('LCP', metric.value))
     })
 
     getTTFB((metric) => {
       setVitals(prev => ({ ...prev, TTFB: metric.value }))
-      sendToAnalytics('TTFB', metric.value, metric.rating)
+      sendToAnalytics('TTFB', metric.value, getRating('TTFB', metric.value))
     })
 
     // 收集其他性能指标
