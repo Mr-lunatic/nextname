@@ -284,7 +284,11 @@ export function SuffixResult({ suffix, registrarPrices = [] }: SuffixResultProps
                             <div className="font-bold text-lg">
                               {formatPrice(registrar.registrationPrice, registrar.currency)}
                               {isLowestRegistration && (
-                                <Badge className="ml-2 bg-green-100 text-green-800">最低价</Badge>
+                                <Badge className="ml-2 bg-green-100 text-green-800">
+                                  {/* 移动端隐藏图标，只显示文字 */}
+                                  <span className="sm:hidden w-1 h-1 bg-green-800 rounded-full mr-1"></span>
+                                  最低价
+                                </Badge>
                               )}
                             </div>
                           </td>
@@ -292,7 +296,11 @@ export function SuffixResult({ suffix, registrarPrices = [] }: SuffixResultProps
                             <div className="font-bold text-lg text-orange-600">
                               {formatPrice(registrar.renewalPrice, registrar.currency)}
                               {isLowestRenewal && (
-                                <Badge className="ml-2 bg-green-100 text-green-800">最低价</Badge>
+                                <Badge className="ml-2 bg-green-100 text-green-800">
+                                  {/* 移动端隐藏图标，只显示文字 */}
+                                  <span className="sm:hidden w-1 h-1 bg-green-800 rounded-full mr-1"></span>
+                                  最低价
+                                </Badge>
                               )}
                             </div>
                           </td>
@@ -300,7 +308,11 @@ export function SuffixResult({ suffix, registrarPrices = [] }: SuffixResultProps
                             <div className="font-bold text-lg text-blue-600">
                               {formatPrice(registrar.transferPrice, registrar.currency)}
                               {isLowestTransfer && (
-                                <Badge className="ml-2 bg-green-100 text-green-800">最低价</Badge>
+                                <Badge className="ml-2 bg-green-100 text-green-800">
+                                  {/* 移动端隐藏图标，只显示文字 */}
+                                  <span className="sm:hidden w-1 h-1 bg-green-800 rounded-full mr-1"></span>
+                                  最低价
+                                </Badge>
                               )}
                             </div>
                           </td>

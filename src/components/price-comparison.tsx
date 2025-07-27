@@ -217,7 +217,11 @@ export function PriceComparison({ domain, onClose }: PriceComparisonProps) {
                               (sortBy === 'transfer' && isLowestTransfer)
                             ) && (
                               <Badge className="text-xs">
-                                <Award className="w-3 h-3 mr-1" />
+                                {/* 移动端隐藏图标，只显示文字 */}
+                                <span className="hidden sm:inline">
+                                  <Award className="w-3 h-3 mr-1" />
+                                </span>
+                                <span className="sm:hidden w-1 h-1 bg-current rounded-full mr-1"></span>
                                 最低价
                               </Badge>
                             )}

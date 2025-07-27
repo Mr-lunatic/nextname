@@ -109,8 +109,9 @@ export function OtherExtensionsCheck({ domain }: OtherExtensionsCheckProps) {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {extensionsData.slice(0, 8).map((item, index) => (
+      {/* Web端：4*2布局，移动端：2*4布局，只显示7个TLD */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {extensionsData.slice(0, 7).map((item, index) => (
           <motion.div
             key={item.domain}
             initial={{ opacity: 0, scale: 0.9 }}
