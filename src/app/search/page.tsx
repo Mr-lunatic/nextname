@@ -24,6 +24,7 @@ import Image from 'next/image'
 import { LanguageSwitcher } from '@/components/language-currency-switcher'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Footer } from '@/components/footer'
+import { ScrollToTop } from '@/components/scroll-to-top'
 import { trackDomainSearch, trackWhoisQuery } from '@/lib/analytics'
 import { getRegistrarOfficialUrl } from '@/lib/registrar-urls'
 import '@/styles/search-table.css'
@@ -1462,6 +1463,9 @@ function SearchPageContent() {
       </div>
 
       <Footer />
+      
+      {/* 返回顶部按钮 */}
+      <ScrollToTop threshold={400} />
     </div>
   )
 }

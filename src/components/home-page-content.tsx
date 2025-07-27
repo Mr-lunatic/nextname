@@ -114,99 +114,56 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
     }
   ]
 
-  // 目标受众
+  // 目标受众 - 使用翻译
   const targetAudiences = [
     {
       icon: Building,
-      title: "企业用户",
-      scenario: "公司品牌保护、官网域名选择",
-      service: "批量域名查询、品牌域名监控、企业级价格方案",
+      title: t('home.targetAudience.enterprise.title'),
+      scenario: t('home.targetAudience.enterprise.scenario'),
+      service: t('home.targetAudience.enterprise.service'),
       color: "bg-blue-50 dark:bg-blue-900/20 border-blue-200"
     },
     {
       icon: Code,
-      title: "开发者",
-      scenario: "项目域名选择、API集成需求",
-      service: "技术域名推荐、开发者友好的查询接口、快速部署方案",
+      title: t('home.targetAudience.developer.title'),
+      scenario: t('home.targetAudience.developer.scenario'),
+      service: t('home.targetAudience.developer.service'),
       color: "bg-green-50 dark:bg-green-900/20 border-green-200"
     },
     {
       icon: Palette,
-      title: "设计师/创作者",
-      scenario: "个人品牌建设、作品展示网站",
-      service: "创意域名建议、个性化后缀推荐、美观简洁的查询体验",
+      title: t('home.targetAudience.creator.title'),
+      scenario: t('home.targetAudience.creator.scenario'),
+      service: t('home.targetAudience.creator.service'),
       color: "bg-purple-50 dark:bg-purple-900/20 border-purple-200"
     },
     {
       icon: ShoppingBag,
-      title: "电商卖家",
-      scenario: "店铺域名注册、多渠道品牌布局",
-      service: "商业域名优化建议、多后缀保护方案、快速注册通道",
+      title: t('home.targetAudience.ecommerce.title'),
+      scenario: t('home.targetAudience.ecommerce.scenario'),
+      service: t('home.targetAudience.ecommerce.service'),
       color: "bg-orange-50 dark:bg-orange-900/20 border-orange-200"
     }
   ]
 
-  // 用户评价
-  const testimonials = [
-    {
-      content: "NextName让我在几分钟内就找到了完美的域名，价格对比功能非常实用，为公司节省了不少成本。",
-      author: "张明",
-      title: "科技公司CEO",
-      avatar: "👨‍💼"
-    },
-    {
-      content: "作为开发者，我需要经常为项目注册域名。NextName的搜索功能很智能，能快速理解我的需求。",
-      author: "李小雨",
-      title: "全栈开发工程师",
-      avatar: "👩‍💻"
-    },
-    {
-      content: "界面简洁，功能强大，最重要的是完全免费。现在是我域名查询的首选工具。",
-      author: "王设计",
-      title: "UI/UX设计师",
-      avatar: "🎨"
-    },
-    {
-      content: "WHOIS信息查询很详细，帮我避免了购买有问题历史的域名，服务很专业。",
-      author: "陈店长",
-      title: "电商运营",
-      avatar: "🛒"
-    },
-    {
-      content: "价格对比功能太棒了！帮我找到了比其他平台便宜30%的域名注册方案。",
-      author: "刘创业",
-      title: "初创公司创始人",
-      avatar: "🚀"
-    }
-  ]
+  // 用户评价 - 使用翻译
+  const testimonials = t('testimonials.reviews', { returnObjects: true }) as Array<{
+    content: string,
+    author: string,
+    title: string
+  }>
 
-  // FAQ数据
-  const faqs = [
-    {
-      question: "NextName是否完全免费使用？",
-      answer: "是的，NextName的所有查询功能都完全免费。我们不收取任何查询费用，也不要求用户注册账号。我们通过与注册商的合作获得收入，为用户提供免费服务。"
-    },
-    {
-      question: "价格对比的数据多久更新一次？",
-      answer: "我们的价格数据每小时自动更新，确保您看到的都是最新的市场价格。对于热门域名后缀，我们甚至会更频繁地更新价格信息。"
-    },
-    {
-      question: "支持哪些类型的域名查询？",
-      answer: "NextName支持关键词搜索、前缀搜索、后缀查询和完整域名查询。我们的智能引擎会自动识别您的查询类型，提供最相关的结果。"
-    },
-    {
-      question: "WHOIS信息的准确性如何保证？",
-      answer: "我们直接从官方WHOIS数据库获取信息，确保数据的准确性和实时性。所有WHOIS查询都是实时进行的，不使用缓存数据。"
-    },
-    {
-      question: "可以批量查询多个域名吗？",
-      answer: "目前我们支持单个域名查询，批量查询功能正在开发中。您可以通过我们的搜索功能快速查询多个相关域名。"
-    },
-    {
-      question: "如何确保推荐的注册商可靠？",
-      answer: "我们只与ICANN认证的正规注册商合作，所有推荐的注册商都经过严格筛选，具有良好的服务记录和用户评价。"
-    }
-  ]
+  // 添加头像
+  const testimonialsWithAvatars = testimonials.map((item, index) => ({
+    ...item,
+    avatar: ["👨‍💼", "👩‍💻", "🎨", "🛒", "🚀"][index] || "👤"
+  }))
+
+  // FAQ数据 - 使用翻译
+  const faqs = t('faq.questions', { returnObjects: true }) as Array<{
+    question: string,
+    answer: string
+  }>
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-surface-primary)' }}>
@@ -573,17 +530,17 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
             <div className="relative">
               <motion.div 
                 className="flex space-x-6"
-                animate={{ x: [0, -100 * testimonials.length] }}
+                animate={{ x: [0, -100 * testimonialsWithAvatars.length] }}
                 transition={{
                   x: {
                     repeat: Infinity,
                     repeatType: "loop",
-                    duration: testimonials.length * 8,
+                    duration: testimonialsWithAvatars.length * 8,
                     ease: "linear",
                   },
                 }}
               >
-                {[...testimonials, ...testimonials].map((testimonial, index) => (
+                {[...testimonialsWithAvatars, ...testimonialsWithAvatars].map((testimonial, index) => (
                   <motion.div
                     key={index}
                     className="flex-shrink-0 w-80"

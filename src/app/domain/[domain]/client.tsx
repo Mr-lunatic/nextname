@@ -331,9 +331,9 @@ export default function DomainPageClient({ domain, pageType = 'domain' }: Domain
             >
               <Card className={`border-l-4 ${detail.isAvailable ? 'border-l-green-500' : 'border-l-red-500'}`}>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold tracking-tight text-2xl font-mono">{detail.domain}</h3>
-                    <div className="flex items-center space-x-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <h3 className="font-semibold tracking-tight text-xl sm:text-2xl font-mono break-words break-all max-w-full overflow-hidden">{detail.domain}</h3>
+                    <div className="flex items-center space-x-2 flex-shrink-0">
                       <Badge
                         className={`text-lg px-4 py-2 ${
                           detail.isAvailable
