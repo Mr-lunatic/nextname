@@ -15,37 +15,37 @@ export interface WhoisResult {
   error?: string
 }
 
-// 使用稳定的免费WHOIS API服务 - 按准确性排序
+// 使用稳定的WHOIS API服务 - 按用户指定优先级排序
 const WHOIS_API_SERVICES = [
-  // Who.cx API - 专业WHOIS服务，准确性最高，优先使用
-  {
-    name: 'whocx',
-    url: (domain: string) => `https://who.cx/api/price?domain=${domain}`,
-    headers: {},
-    parser: 'whocx'
-  },
-  // RDAP.info 服务 - 支持部分ccTLD，准确性较高
+  // RDAP.info 服务 - 最高优先级，支持多种TLD的RDAP协议
   {
     name: 'rdap_info',
     url: (domain: string) => `https://rdap.info/domain/${domain}`,
     headers: { 'Accept': 'application/rdap+json' },
     parser: 'rdap'
   },
-  // WhoisFreaks API - 有免费额度，中等准确性
+  // Who.cx API - 第二优先级，专业WHOIS服务
+  {
+    name: 'whocx',
+    url: (domain: string) => `https://who.cx/api/price?domain=${domain}`,
+    headers: {},
+    parser: 'whocx'
+  },
+  // WhoisFreaks API - 第三优先级，有免费额度
   {
     name: 'whoisfreaks',
     url: (domain: string) => `https://api.whoisfreaks.com/v1.0/whois?domainName=${domain}`,
     headers: {},
     parser: 'whoisfreaks'
   },
-  // IP2WHOIS API - 免费但准确性一般
+  // IP2WHOIS API - 第四优先级，免费服务
   {
     name: 'ip2whois',
     url: (domain: string) => `https://www.whoisxmlapi.com/whoisserver/WhoisService?domainName=${domain}&outputFormat=JSON`,
     headers: {},
     parser: 'whoisxml'
   },
-  // WhoisJS API - 备用（准确性较低，经常不稳定）
+  // WhoisJS API - 最低优先级备用
   {
     name: 'whoisjs',
     url: (domain: string) => `https://api.whoisjs.com/${domain}`,

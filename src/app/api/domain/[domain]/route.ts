@@ -83,8 +83,15 @@ const FALLBACK_RDAP_SERVERS: { [key: string]: string[] } = {
   'si': ['https://rdap.register.si/'],
   'cz': ['https://rdap.nic.cz/'],
   
-  // 特别注意：.cn域名没有RDAP支持，将使用WHOIS协议
-  'cn': [], // Empty array - will use WHOIS instead
+  // 特别注意：.cn域名RDAP支持情况复杂
+  // 虽然ICANN要求gTLD支持RDAP，但.cn是ccTLD，由CNNIC自主管理
+  // 尝试可能的中国RDAP服务器
+  'cn': [
+    'https://restwhois.ngtld.cn/',
+    'https://rdap.teleinfo.cn/', 
+    'https://rdap.cnnic.cn/',
+    'https://rdap.cnnic.net.cn/'
+  ],
   
   // Business TLDs
   'company': ['https://rdap.nic.company/'],

@@ -1,17 +1,9 @@
-// WHOIS服务器配置 - 用于不支持RDAP的TLD
+// WHOIS服务器配置 - 用于完全不支持RDAP的TLD
 export const WHOIS_SERVERS: { [key: string]: string } = {
-  // 中国域名
-  'cn': 'whois.cnnic.cn',
-  'com.cn': 'whois.cnnic.cn',
-  'net.cn': 'whois.cnnic.cn',
-  'org.cn': 'whois.cnnic.cn',
-  'gov.cn': 'whois.cnnic.cn',
-  'edu.cn': 'whois.cnnic.cn',
-  
-  // 德国域名
+  // 德国域名 - 已知不支持RDAP
   'de': 'whois.denic.de',
   
-  // 其他流行TLD
+  // 其他确认不支持RDAP的流行TLD
   'io': 'whois.nic.io',
   'co': 'whois.nic.co',
   'me': 'whois.nic.me',
@@ -21,7 +13,7 @@ export const WHOIS_SERVERS: { [key: string]: string } = {
   'sh': 'whois.nic.sh',
   'gg': 'whois.nic.gg',
   
-  // 亚洲域名
+  // 亚洲域名 - 需要验证RDAP支持
   'jp': 'whois.jprs.jp',
   'kr': 'whois.kr',
   'in': 'whois.registry.in',
