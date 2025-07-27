@@ -1119,11 +1119,8 @@ export async function GET(
           registry_domain_id: null,
           last_update_of_whois_database: new Date().toISOString(),
           fallback_method: whoisResult.fallback_method,
-          whois_raw: whoisResult.whois_text // 保留原始WHOIS文本用于调试
-        }
-        
-        if (whoisResult.error) {
-          responseData.error = whoisResult.error
+          whois_raw: whoisResult.whois_text, // 保留原始WHOIS文本用于调试
+          ...(whoisResult.error && { error: whoisResult.error }) // 条件性添加error属性
         }
         
         console.log(`✅ WHOIS query completed for ${domain}: ${whoisResult.is_available ? 'available' : 'registered'}`)
