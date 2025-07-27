@@ -662,6 +662,89 @@ async function verifyDomainOnline(domain: string): Promise<boolean> {
   }
 }
 
+// Who.cx API查询函数 - 当RDAP不支持时的备用查询
+async function queryWhoCxAPI(domain: string) {
+  try {
+    console.log(`🔍 Trying Who.cx API for ${domain}`)
+    
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 8000)
+    
+    const response = await fetch(`https://who.cx/api/price?domain=${domain}`, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'NextName-Domain-Search/1.0'
+      }
+    })
+    
+    clearTimeout(timeout)
+    
+    if (!response.ok) {
+      throw new Error(`Who.cx API returned ${response.status}`)
+    }
+    
+    const data = await response.json()
+    console.log(`📋 Who.cx API response for ${domain}:`, data)
+    
+    if (data.code === 200 && data.domain === domain) {
+      // 有价格信息说明域名可注册
+      if (data.new || data.renew) {
+        return {
+          domain,
+          is_available: true,
+          registrar: undefined,
+          registrar_iana_id: null,
+          registrar_whois_server: null,
+          registrar_url: null,
+          created_date: null,
+          updated_date: null,
+          expiry_date: null,
+          status: ['available'],
+          name_servers: [],
+          dnssec: 'unknown',
+          registrar_abuse_contact_email: null,
+          registrar_abuse_contact_phone: null,
+          registry_domain_id: null,
+          last_update_of_whois_database: new Date().toISOString(),
+          fallback_method: 'Who.cx Price API (available for registration)',
+          pricing: {
+            new: data.new,
+            renew: data.renew,
+            currency: data.currency,
+            currency_symbol: data.currency_symbol
+          }
+        }
+      } else {
+        // 没有价格信息，可能已注册
+        return {
+          domain,
+          is_available: false,
+          registrar: 'Unknown (detected via Who.cx)',
+          registrar_iana_id: null,
+          registrar_whois_server: null,
+          registrar_url: null,
+          created_date: null,
+          updated_date: null,
+          expiry_date: null,
+          status: ['registered (inferred)'],
+          name_servers: [],
+          dnssec: 'unknown',
+          registrar_abuse_contact_email: null,
+          registrar_abuse_contact_phone: null,
+          registry_domain_id: null,
+          last_update_of_whois_database: new Date().toISOString(),
+          fallback_method: 'Who.cx Price API (no pricing - likely registered)'
+        }
+      }
+    }
+    
+    return null // API调用失败
+  } catch (error) {
+    console.error(`❌ Who.cx API failed for ${domain}:`, error)
+    return null
+  }
+}
+
 // Fallback function for when RDAP fails - especially important for CN domains
 async function getFallbackResponse(domain: string) {
   const tld = getTLD(domain)
@@ -817,11 +900,22 @@ export async function GET(
         
       } catch (error) {
         console.error(`❌ WHOIS query failed for ${domain}:`, error)
-        // Fallback to enhanced verification
-        const fallbackData = await getFallbackResponse(domain)
-        responseData = {
-          ...fallbackData,
-          fallback_reason: 'WHOIS query failed'
+        
+        // Try Who.cx API as backup for WHOIS failures
+        console.log(`⚠️  WHOIS failed for ${domain}, trying Who.cx API as backup`)
+        const whoCxResult = await queryWhoCxAPI(domain)
+        
+        if (whoCxResult) {
+          console.log(`✅ Who.cx API success for ${domain}: ${whoCxResult.is_available ? 'available' : 'registered'}`)
+          responseData = whoCxResult
+        } else {
+          // Both WHOIS and Who.cx failed, use enhanced fallback
+          console.log(`⚠️  Both WHOIS and Who.cx failed for ${domain}, using enhanced fallback verification`)
+          const fallbackData = await getFallbackResponse(domain)
+          responseData = {
+            ...fallbackData,
+            fallback_reason: 'WHOIS query failed, Who.cx also failed'
+          }
         }
       }
     } else {
@@ -846,12 +940,21 @@ export async function GET(
         responseData = parseRdapResponse(rdapResult.rdapData, domain)
         console.log(`✅ RDAP success for ${domain}: ${responseData.registrar}`)
       } else {
-        // RDAP failed, use enhanced fallback
-        console.log(`⚠️  RDAP failed for ${domain}, using enhanced fallback verification`)
-        const fallbackData = await getFallbackResponse(domain)
-        responseData = {
-          ...fallbackData,
-          fallback_reason: rdapResult.error
+        // RDAP failed, try Who.cx API as backup
+        console.log(`⚠️  RDAP failed for ${domain}, trying Who.cx API as backup`)
+        
+        const whoCxResult = await queryWhoCxAPI(domain)
+        if (whoCxResult) {
+          console.log(`✅ Who.cx API success for ${domain}: ${whoCxResult.is_available ? 'available' : 'registered'}`)
+          responseData = whoCxResult
+        } else {
+          // Both RDAP and Who.cx failed, use enhanced fallback
+          console.log(`⚠️  Both RDAP and Who.cx failed for ${domain}, using enhanced fallback verification`)
+          const fallbackData = await getFallbackResponse(domain)
+          responseData = {
+            ...fallbackData,
+            fallback_reason: `RDAP failed: ${rdapResult.error}, Who.cx also failed`
+          }
         }
       }
     }

@@ -15,30 +15,37 @@ export interface WhoisResult {
   error?: string
 }
 
-// 使用稳定的免费WHOIS API服务
+// 使用稳定的免费WHOIS API服务 - 按准确性排序
 const WHOIS_API_SERVICES = [
-  // IP2WHOIS API - 免费，较稳定
+  // Who.cx API - 专业WHOIS服务，准确性最高，优先使用
   {
-    name: 'ip2whois',
-    url: (domain: string) => `https://www.whoisxmlapi.com/whoisserver/WhoisService?domainName=${domain}&outputFormat=JSON`,
+    name: 'whocx',
+    url: (domain: string) => `https://who.cx/api/price?domain=${domain}`,
     headers: {},
-    parser: 'whoisxml'
+    parser: 'whocx'
   },
-  // WhoisFreaks API - 有免费额度
-  {
-    name: 'whoisfreaks',
-    url: (domain: string) => `https://api.whoisfreaks.com/v1.0/whois?domainName=${domain}`,
-    headers: {},
-    parser: 'whoisfreaks'
-  },
-  // RDAP.info 服务 - 支持部分ccTLD
+  // RDAP.info 服务 - 支持部分ccTLD，准确性较高
   {
     name: 'rdap_info',
     url: (domain: string) => `https://rdap.info/domain/${domain}`,
     headers: { 'Accept': 'application/rdap+json' },
     parser: 'rdap'
   },
-  // WhoisJS API - 备用（经常不稳定）
+  // WhoisFreaks API - 有免费额度，中等准确性
+  {
+    name: 'whoisfreaks',
+    url: (domain: string) => `https://api.whoisfreaks.com/v1.0/whois?domainName=${domain}`,
+    headers: {},
+    parser: 'whoisfreaks'
+  },
+  // IP2WHOIS API - 免费但准确性一般
+  {
+    name: 'ip2whois',
+    url: (domain: string) => `https://www.whoisxmlapi.com/whoisserver/WhoisService?domainName=${domain}&outputFormat=JSON`,
+    headers: {},
+    parser: 'whoisxml'
+  },
+  // WhoisJS API - 备用（准确性较低，经常不稳定）
   {
     name: 'whoisjs',
     url: (domain: string) => `https://api.whoisjs.com/${domain}`,
@@ -53,6 +60,50 @@ function parseWhoisResponse(data: any, parser: string, domain: string): WhoisRes
     console.log(`🔍 Parsing ${parser} response for ${domain}:`, JSON.stringify(data, null, 2))
     
     switch (parser) {
+      case 'whocx':
+        // Who.cx API解析器 - 通过价格API判断域名状态
+        console.log(`📋 Who.cx result for ${domain}:`, { 
+          code: data.code,
+          domain: data.domain,
+          hasPrice: !!(data.new || data.renew)
+        })
+        
+        if (data.code === 200 && data.domain === domain) {
+          // 如果API返回价格信息，说明域名可注册
+          if (data.new || data.renew) {
+            return {
+              domain,
+              is_available: true,
+              registrar: undefined,
+              fallback_method: 'Who.cx Price API (domain available for registration)'
+            }
+          } else {
+            // 没有价格信息可能意味着已注册或其他状态
+            return {
+              domain,
+              is_available: false,
+              registrar: 'Unknown (detected via Who.cx)',
+              fallback_method: 'Who.cx Price API (no pricing - likely registered)'
+            }
+          }
+        }
+        
+        // 如果price API失败，尝试直接WHOIS查询
+        if (data.code !== 200) {
+          console.log(`📋 Who.cx price failed, trying alternative WHOIS detection for ${domain}`)
+          // 对于.cn域名，如果price API失败，推断为已注册（保守策略）
+          const tld = domain.split('.').pop()?.toLowerCase()
+          if (tld === 'cn') {
+            return {
+              domain,
+              is_available: false,
+              registrar: 'CN Registry (Who.cx indirect detection)',
+              fallback_method: 'Who.cx conservative detection for CN domain'
+            }
+          }
+        }
+        break
+        
       case 'whoisxml':
         // WhoisXML API解析器
         if (data.DomainInfo) {
@@ -219,82 +270,7 @@ export async function queryWhois(domain: string): Promise<WhoisResult> {
   
   console.log(`🔍 Querying WHOIS for ${domain} (TLD: ${tld})`)
   
-  // 特殊处理.cn域名 - 直接进行HTTP验证，因为WHOIS API支持不佳
-  if (tld === 'cn') {
-    console.log(`🇨🇳 CN domain detected: ${domain} - using enhanced HTTP verification`)
-    
-    try {
-      // 并行测试多个协议和常见子域
-      const testUrls = [
-        `https://${domain}`,
-        `http://${domain}`,
-        `https://www.${domain}`,
-        `http://www.${domain}`
-      ]
-      
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 5000)
-      
-      const promises = testUrls.map(async (url) => {
-        try {
-          const response = await fetch(url, {
-            method: 'HEAD',
-            signal: controller.signal,
-            redirect: 'follow'
-          })
-          return { url, status: response.status, success: true }
-        } catch (error) {
-          return { url, error: error instanceof Error ? error.message : 'Unknown error', success: false }
-        }
-      })
-      
-      const results = await Promise.allSettled(promises)
-      clearTimeout(timeout)
-      
-      // 如果任何URL返回成功响应，域名已注册
-      const hasSuccessfulResponse = results.some(result => 
-        result.status === 'fulfilled' && result.value.success
-      )
-      
-      if (hasSuccessfulResponse) {
-        console.log(`✅ CN domain ${domain} verified as registered via HTTP`)
-        return {
-          domain,
-          is_available: false,
-          registrar: 'CN Registry (HTTP verified)',
-          fallback_method: 'CN HTTP verification - multiple protocols',
-          status: ['clientTransferProhibited (inferred)']
-        }
-      } else {
-        console.log(`🤔 CN domain ${domain} - no HTTP response, checking with conservative heuristics`)
-        
-        // 对于.cn域名，使用更保守的启发式判断
-        const [name] = domain.split('.')
-        const isLikelyRegistered = 
-          name.length <= 4 || // 短域名通常已注册
-          /^(baidu|tencent|alibaba|qq|sina|sohu|163|126|taobao|tmall|jd|douban|weibo|zhihu|ctrip|dianping|meituan|pinduoduo|xiaomi|huawei|oppo|vivo|lenovo|haier|gree|midea|bank|icbc|ccb|abc|boc|cmb|citic|ping|an|china|beijing|shanghai|guangzhou|shenzhen|hangzhou|nanjing|chengdu|wuhan|xian|tianjin|qingdao|dalian|harbin|gov|edu|org|com|net|info|news|blog|shop|mall|store|app|tech|game|music|movie|book|food|travel|hotel|car|house|job|love|life|health|sport|art|photo|video|live|tv|radio)$/.test(name.toLowerCase())
-        
-        return {
-          domain,
-          is_available: !isLikelyRegistered,
-          registrar: isLikelyRegistered ? 'CN Registry (heuristic)' : undefined,
-          fallback_method: 'CN conservative heuristic analysis'
-        }
-      }
-    } catch (error) {
-      console.error(`❌ CN HTTP verification failed for ${domain}:`, error)
-      // 对于.cn域名，出错时保守假设已注册
-      return {
-        domain,
-        is_available: false,
-        registrar: 'CN Registry (verification failed)',
-        fallback_method: 'CN conservative fallback',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      }
-    }
-  }
-  
-  // 其他域名使用WHOIS API
+  // 直接使用WHOIS API，优先who.cx API确保最高准确性
   for (const service of WHOIS_API_SERVICES) {
     try {
       console.log(`📡 Trying ${service.name} for ${domain}`)
