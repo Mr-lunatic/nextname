@@ -15,28 +15,35 @@ export interface WhoisResult {
   error?: string
 }
 
-// 使用第三方WHOIS API服务作为代理
+// 使用稳定的免费WHOIS API服务
 const WHOIS_API_SERVICES = [
-  // WhoisXML API (需要API key，但提供免费额度)
+  // WhoisJS API - 免费，无需API key
   {
-    name: 'whoisjson',
-    url: (domain: string) => `https://whoisjson.com/api/v1/whois?domain=${domain}`,
+    name: 'whoisjs',
+    url: (domain: string) => `https://api.whoisjs.com/${domain}`,
     headers: {},
-    parser: 'whoisjson'
+    parser: 'whoisjs'
   },
-  // Whois.com API
+  // IP-API WHOIS服务 - 免费
   {
-    name: 'whois_com',
-    url: (domain: string) => `https://api.whois.com/whois/${domain}`,
+    name: 'ipapi_whois',
+    url: (domain: string) => `https://whois.as207111.net/api/whois?domain=${domain}`,
     headers: {},
-    parser: 'whois_com'
+    parser: 'generic'
   },
-  // 备用RDAP代理服务
+  // 备用RDAP代理服务（免费）
   {
     name: 'rdap_proxy',
     url: (domain: string) => `https://rdap.db.ripe.net/domain/${domain}`,
     headers: { 'Accept': 'application/rdap+json' },
     parser: 'rdap'
+  },
+  // 另一个免费WHOIS API
+  {
+    name: 'whoisfreaks',
+    url: (domain: string) => `https://api.whoisfreaks.com/v1.0/whois?domainName=${domain}`,
+    headers: {},
+    parser: 'whoisfreaks'
   }
 ]
 
@@ -44,36 +51,54 @@ const WHOIS_API_SERVICES = [
 function parseWhoisResponse(data: any, parser: string, domain: string): WhoisResult {
   try {
     switch (parser) {
-      case 'whoisjson':
+      case 'whoisjs':
         if (data.status === 'success' && data.result) {
           const result = data.result
           return {
             domain,
             is_available: !result.registered,
-            whois_text: result.whois_raw,
-            registrar: result.registrar?.name,
-            created_date: result.dates?.created,
-            expiry_date: result.dates?.expiry,
-            updated_date: result.dates?.updated,
-            name_servers: result.nameservers,
+            whois_text: result.raw,
+            registrar: result.registrar,
+            created_date: result.created_date,
+            expiry_date: result.expiry_date,
+            updated_date: result.updated_date,
+            name_servers: result.name_servers,
             status: result.status ? [result.status] : [],
-            fallback_method: 'WhoisJSON API'
+            fallback_method: 'WhoisJS API (Free)'
           }
         }
         break
         
-      case 'whois_com':
-        if (data.domain_name) {
+      case 'generic':
+        // 通用解析器，处理简单的JSON响应
+        if (data.domain || data.domain_name) {
           return {
             domain,
-            is_available: false,
-            registrar: data.registrar,
-            created_date: data.creation_date,
+            is_available: data.available === true || data.status === 'available',
+            registrar: data.registrar || data.registrar_name,
+            created_date: data.created_date || data.creation_date,
+            expiry_date: data.expiry_date || data.expiration_date,
+            updated_date: data.updated_date || data.last_updated,
+            name_servers: data.name_servers || data.nameservers,
+            status: data.status ? [data.status] : [],
+            fallback_method: 'Generic WHOIS API (Free)'
+          }
+        }
+        break
+        
+      case 'whoisfreaks':
+        if (data.whois_raw || data.domain_name) {
+          return {
+            domain,
+            is_available: data.domain_registered === false,
+            whois_text: data.whois_raw,
+            registrar: data.domain_registrar?.registrar_name,
+            created_date: data.create_date,
             expiry_date: data.registry_expiry_date,
             updated_date: data.updated_date,
             name_servers: data.name_servers,
-            status: data.status,
-            fallback_method: 'Whois.com API'
+            status: data.domain_status,
+            fallback_method: 'WhoisFreaks API (Free)'
           }
         }
         break
@@ -95,7 +120,7 @@ function parseWhoisResponse(data: any, parser: string, domain: string): WhoisRes
             updated_date: events.find((e: any) => e.eventAction === 'last changed')?.eventDate,
             name_servers: (data.nameservers || []).map((ns: any) => ns.ldhName),
             status: data.status || [],
-            fallback_method: 'RDAP Proxy'
+            fallback_method: 'RDAP Proxy (Free)'
           }
         }
         break
