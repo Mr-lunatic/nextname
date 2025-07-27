@@ -1068,6 +1068,20 @@ function SearchPageContent() {
 
         {/* 移动端卡片布局 */}
         <div className="lg:hidden space-y-3">
+          {/* 移动端分页信息 */}
+          {pagination && (
+            <div className="text-center text-sm text-muted-foreground bg-muted/30 rounded-lg py-2 px-4">
+              <div className="flex flex-col gap-1">
+                <div>
+                  显示第 {((pagination.current_page - 1) * pagination.per_page) + 1} - {Math.min(pagination.current_page * pagination.per_page, pagination.total_items)} 项，共 {pagination.total_items} 项
+                </div>
+                <div className="text-xs">
+                  第 {pagination.current_page} 页，共 {pagination.total_pages} 页
+                </div>
+              </div>
+            </div>
+          )}
+          
           <AnimatePresence>
             {sortedResults.map((item: any, index: number) => (
               <motion.div
@@ -1151,7 +1165,7 @@ function SearchPageContent() {
                         {item.is_available ? (
                           <Button
                             size="sm"
-                            className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                            className="flex-1 h-8 text-xs bg-green-600 hover:bg-green-700 text-white"
                             onClick={() => {
                               if (item.top_registrars && item.top_registrars[0]) {
                                 // 构建注册商URL
@@ -1189,18 +1203,29 @@ function SearchPageContent() {
                             立即注册
                           </Button>
                         ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="flex-1"
-                            onClick={() => {
-                              // WHOIS查询 - 跳转到域名详情页
-                              window.location.href = `/domain/${encodeURIComponent(item.domain)}`
-                            }}
-                          >
-                            <Eye className="w-4 h-4 mr-1" />
-                            查看WHOIS
-                          </Button>
+                          <div className="flex gap-2 flex-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1 h-8 text-xs"
+                              onClick={() => {
+                                // WHOIS查询 - 跳转到域名详情页
+                                window.location.href = `/domain/${encodeURIComponent(item.domain)}`
+                              }}
+                            >
+                              <Eye className="w-3 h-3 mr-1" />
+                              已注册
+                            </Button>
+                            {/* 到期时间按钮占位，可根据需要添加 */}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 px-2 text-xs text-muted-foreground"
+                              disabled
+                            >
+                              到期时间
+                            </Button>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -1267,7 +1292,19 @@ function SearchPageContent() {
 
         {/* Pagination Controls */}
         {pagination && pagination.total_pages > 1 && (
-          <div className="flex items-center justify-center space-x-2 mt-8">
+          <div className="space-y-4 mt-8">
+            {/* 桌面端分页信息 */}
+            <div className="hidden lg:flex items-center justify-between text-sm text-muted-foreground bg-muted/30 rounded-lg py-2 px-4">
+              <div>
+                显示第 {((pagination.current_page - 1) * pagination.per_page) + 1} - {Math.min(pagination.current_page * pagination.per_page, pagination.total_items)} 项，共 {pagination.total_items} 项
+              </div>
+              <div>
+                第 {pagination.current_page} 页，共 {pagination.total_pages} 页
+              </div>
+            </div>
+            
+            {/* 分页按钮 */}
+            <div className="flex items-center justify-center space-x-2">
             <Button
               variant="outline"
               size="sm"
@@ -1303,6 +1340,7 @@ function SearchPageContent() {
             >
               下一页
             </Button>
+            </div>
           </div>
         )}
       </motion.div>

@@ -15,7 +15,7 @@ export function OtherExtensionsCheck({ domain }: OtherExtensionsCheckProps) {
   const [loading, setLoading] = useState(true)
 
   // 使用 useMemo 来避免 commonExtensions 在每次渲染时都改变
-  const commonExtensions = useMemo(() => ['.com', '.cn', '.net', '.org', '.io', '.co', '.me'], [])
+  const commonExtensions = useMemo(() => ['.com', '.net', '.org', '.cn', '.io', '.ai', '.co'], [])
 
   const domainPrefix = useMemo(() => {
     if (!domain || typeof domain !== 'string') {
@@ -109,8 +109,8 @@ export function OtherExtensionsCheck({ domain }: OtherExtensionsCheckProps) {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        {extensionsData.map((item, index) => (
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {extensionsData.slice(0, 8).map((item, index) => (
           <motion.div
             key={item.domain}
             initial={{ opacity: 0, scale: 0.9 }}
@@ -119,10 +119,10 @@ export function OtherExtensionsCheck({ domain }: OtherExtensionsCheckProps) {
             className={`
               relative p-3 rounded-lg border transition-all duration-200 cursor-pointer
               ${item.current 
-                ? 'bg-primary/10 border-primary/30 ring-2 ring-primary/20' 
+                ? 'bg-primary/10 border-primary/30 ring-2 ring-primary/20 dark:bg-primary/5 dark:border-primary/40' 
                 : item.available 
-                  ? 'bg-green-50 border-green-200 hover:bg-green-100 hover:border-green-300' 
-                  : 'bg-red-50 border-red-200 hover:bg-red-100 hover:border-red-300'
+                  ? 'bg-green-50 border-green-200 hover:bg-green-100 hover:border-green-300 dark:bg-green-900/20 dark:border-green-700 dark:hover:bg-green-900/30' 
+                  : 'bg-red-50 border-red-200 hover:bg-red-100 hover:border-red-300 dark:bg-red-900/20 dark:border-red-700 dark:hover:bg-red-900/30'
               }
             `}
             onClick={() => {
@@ -133,21 +133,21 @@ export function OtherExtensionsCheck({ domain }: OtherExtensionsCheckProps) {
           >
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
-                <div className="font-mono text-sm font-medium truncate">
+                <div className="font-mono text-sm font-medium truncate text-foreground dark:text-foreground">
                   {item.domain}
                 </div>
                 <div className="flex items-center mt-1">
                   {item.current ? (
-                    <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
+                    <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30 dark:bg-primary/5 dark:text-primary">
                       当前域名
                     </Badge>
                   ) : item.available ? (
-                    <Badge className="text-xs bg-green-100 text-green-800 border-green-200">
+                    <Badge className="text-xs bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-600">
                       <Check className="w-3 h-3 mr-1" />
                       可注册
                     </Badge>
                   ) : (
-                    <Badge variant="secondary" className="text-xs bg-red-100 text-red-800 border-red-200">
+                    <Badge variant="secondary" className="text-xs bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-600">
                       <X className="w-3 h-3 mr-1" />
                       已注册
                     </Badge>
@@ -155,7 +155,7 @@ export function OtherExtensionsCheck({ domain }: OtherExtensionsCheckProps) {
                 </div>
               </div>
               {!item.current && (
-                <ExternalLink className="w-4 h-4 text-muted-foreground ml-2 flex-shrink-0" />
+                <ExternalLink className="w-4 h-4 text-muted-foreground dark:text-muted-foreground ml-2 flex-shrink-0" />
               )}
             </div>
           </motion.div>
@@ -167,7 +167,7 @@ export function OtherExtensionsCheck({ domain }: OtherExtensionsCheckProps) {
           variant="outline" 
           size="sm"
           onClick={handleViewMore}
-          className="text-sm"
+          className="text-sm dark:border-border dark:text-foreground dark:hover:bg-accent"
         >
           查看更多后缀
         </Button>
