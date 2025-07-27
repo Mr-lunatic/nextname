@@ -152,11 +152,17 @@ export async function queryWhois(domain: string): Promise<WhoisResult> {
       const controller = new AbortController()
       const timeout = setTimeout(() => controller.abort(), 8000) // 8秒超时
       
+      const headers: HeadersInit = {
+        'User-Agent': 'NextName-Domain-Search/1.0'
+      }
+      
+      // Only add Accept header if it exists
+      if (service.headers.Accept) {
+        headers.Accept = service.headers.Accept
+      }
+      
       const response = await fetch(service.url(domain), {
-        headers: {
-          'User-Agent': 'NextName-Domain-Search/1.0',
-          ...service.headers
-        },
+        headers,
         signal: controller.signal
       })
       

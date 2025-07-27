@@ -66,5 +66,5 @@ export function getWhoisServer(tld: string): string | null {
 
 // 获取TLD的WHOIS查询超时时间
 export function getWhoisTimeout(tld: string): number {
-  return WHOIS_TIMEOUTS[tld] || WHOIS_TIMEOUTS.default
+  return WHOIS_TIMEOUTS[tld as keyof typeof WHOIS_TIMEOUTS] || WHOIS_TIMEOUTS.default
 }
