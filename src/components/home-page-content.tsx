@@ -564,7 +564,6 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><a href="/privacy" className="hover:text-primary transition-colors">隐私政策</a></li>
                 <li><a href="/terms" className="hover:text-primary transition-colors">服务条款</a></li>
-                <li><a href="mailto:support@nextname.app" className="hover:text-primary transition-colors">联系我们</a></li>
               </ul>
             </div>
           </div>

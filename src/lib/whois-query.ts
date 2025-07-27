@@ -50,10 +50,13 @@ const WHOIS_API_SERVICES = [
 // 解析不同API服务的响应
 function parseWhoisResponse(data: any, parser: string, domain: string): WhoisResult {
   try {
+    console.log(`🔍 Parsing ${parser} response for ${domain}:`, JSON.stringify(data, null, 2))
+    
     switch (parser) {
       case 'whoisjs':
         if (data.status === 'success' && data.result) {
           const result = data.result
+          console.log(`📋 WhoisJS result for ${domain}:`, { registered: result.registered, registrar: result.registrar })
           return {
             domain,
             is_available: !result.registered,
@@ -67,10 +70,37 @@ function parseWhoisResponse(data: any, parser: string, domain: string): WhoisRes
             fallback_method: 'WhoisJS API (Free)'
           }
         }
+        // 特殊处理：如果API返回错误但有原始WHOIS数据，尝试解析
+        if (data.result && data.result.raw) {
+          const rawText = data.result.raw.toLowerCase()
+          const isRegistered = rawText.includes('registrar:') || 
+                              rawText.includes('registry domain id:') || 
+                              rawText.includes('domain name:') ||
+                              rawText.includes('注册商：') ||
+                              rawText.includes('域名状态：')
+          
+          console.log(`📋 WhoisJS raw text analysis for ${domain}: registered=${isRegistered}`)
+          
+          return {
+            domain,
+            is_available: !isRegistered,
+            whois_text: data.result.raw,
+            registrar: 'Parsed from raw WHOIS',
+            fallback_method: 'WhoisJS API (Raw text analysis)'
+          }
+        }
         break
         
       case 'generic':
         // 通用解析器，处理简单的JSON响应
+        console.log(`📋 Generic parser data for ${domain}:`, { 
+          available: data.available, 
+          status: data.status,
+          domain: data.domain,
+          domain_name: data.domain_name,
+          whois_raw: data.whois_raw ? 'present' : 'missing'
+        })
+        
         if (data.domain || data.domain_name) {
           return {
             domain,
@@ -82,6 +112,29 @@ function parseWhoisResponse(data: any, parser: string, domain: string): WhoisRes
             name_servers: data.name_servers || data.nameservers,
             status: data.status ? [data.status] : [],
             fallback_method: 'Generic WHOIS API (Free)'
+          }
+        }
+        
+        // 特殊处理：如果有原始WHOIS文本但没有结构化数据
+        if (data.whois_raw || data.raw) {
+          const rawText = (data.whois_raw || data.raw).toLowerCase()
+          const isRegistered = rawText.includes('registrar:') || 
+                              rawText.includes('registry domain id:') || 
+                              rawText.includes('domain name:') ||
+                              rawText.includes('注册商：') ||
+                              rawText.includes('域名状态：') ||
+                              rawText.includes('registrant:') ||
+                              rawText.includes('creation date:') ||
+                              !rawText.includes('no matching query')
+          
+          console.log(`📋 Generic raw text analysis for ${domain}: registered=${isRegistered}`)
+          
+          return {
+            domain,
+            is_available: !isRegistered,
+            whois_text: data.whois_raw || data.raw,
+            registrar: 'Parsed from raw WHOIS',
+            fallback_method: 'Generic WHOIS API (Raw text analysis)'
           }
         }
         break
