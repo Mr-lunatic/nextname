@@ -1064,7 +1064,7 @@ export async function GET(
     let ttl: number
     if (responseData.is_available) {
       ttl = 5 * 60 * 1000 // 5min for available domains (they might get registered)
-    } else if (responseData.fallback_method) {
+    } else if ('fallback_method' in responseData && responseData.fallback_method) {
       ttl = 2 * 60 * 1000 // 2min for fallback results (less reliable)
     } else {
       ttl = 30 * 60 * 1000 // 30min for registered domains with RDAP data
