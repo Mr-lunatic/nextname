@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { domainCache, CacheKeys } from '@/lib/cache'
+import { shouldUseWhois, getWhoisServer } from '@/lib/whois-servers'
+import { queryWhois } from '@/lib/whois-query'
 
 // Configure Edge Runtime for Cloudflare Pages
 export const runtime = 'edge'
@@ -1079,6 +1081,7 @@ export async function GET(
 
   try {
     console.log(`🔍 Processing domain: ${domain}`)
+    const tld = getTLD(domain)
     
     // Check cache first
     const cacheKey = CacheKeys.domain(domain)
@@ -1089,33 +1092,80 @@ export async function GET(
       return NextResponse.json(cachedResult)
     }
     
-    // Query RDAP (no artificial delay)
-    const rdapResult = await queryRDAP(domain)
-    
     let responseData
     
-    if (rdapResult.available === true) {
-      // Domain is available
-      responseData = {
-        domain,
-        is_available: true,
-        registrar: null,
-        created_date: null,
-        expiry_date: null,
-        status: [],
-        name_servers: []
+    // 选择查询方法：WHOIS vs RDAP
+    if (shouldUseWhois(tld)) {
+      console.log(`📋 Using WHOIS protocol for ${domain} (TLD: ${tld})`)
+      
+      try {
+        const whoisResult = await queryWhois(domain)
+        
+        responseData = {
+          domain,
+          is_available: whoisResult.is_available,
+          registrar: whoisResult.registrar,
+          registrar_iana_id: null,
+          registrar_whois_server: getWhoisServer(tld),
+          registrar_url: null,
+          created_date: whoisResult.created_date,
+          updated_date: whoisResult.updated_date,
+          expiry_date: whoisResult.expiry_date,
+          status: whoisResult.status || [],
+          name_servers: whoisResult.name_servers || [],
+          dnssec: 'unknown',
+          registrar_abuse_contact_email: null,
+          registrar_abuse_contact_phone: null,
+          registry_domain_id: null,
+          last_update_of_whois_database: new Date().toISOString(),
+          fallback_method: whoisResult.fallback_method,
+          whois_raw: whoisResult.whois_text // 保留原始WHOIS文本用于调试
+        }
+        
+        if (whoisResult.error) {
+          responseData.error = whoisResult.error
+        }
+        
+        console.log(`✅ WHOIS query completed for ${domain}: ${whoisResult.is_available ? 'available' : 'registered'}`)
+        
+      } catch (error) {
+        console.error(`❌ WHOIS query failed for ${domain}:`, error)
+        // Fallback to enhanced verification
+        const fallbackData = await getFallbackResponse(domain)
+        responseData = {
+          ...fallbackData,
+          fallback_reason: 'WHOIS query failed'
+        }
       }
-    } else if (rdapResult.available === false && rdapResult.rdapData) {
-      // Domain is registered, parse RDAP data
-      responseData = parseRdapResponse(rdapResult.rdapData, domain)
-      console.log(`✅ RDAP success for ${domain}: ${responseData.registrar}`)
     } else {
-      // RDAP failed, use enhanced fallback
-      console.log(`⚠️  RDAP failed for ${domain}, using enhanced fallback verification`)
-      const fallbackData = await getFallbackResponse(domain)
-      responseData = {
-        ...fallbackData,
-        fallback_reason: rdapResult.error
+      // 使用RDAP协议
+      console.log(`🔗 Using RDAP protocol for ${domain} (TLD: ${tld})`)
+      
+      const rdapResult = await queryRDAP(domain)
+      
+      if (rdapResult.available === true) {
+        // Domain is available
+        responseData = {
+          domain,
+          is_available: true,
+          registrar: null,
+          created_date: null,
+          expiry_date: null,
+          status: [],
+          name_servers: []
+        }
+      } else if (rdapResult.available === false && rdapResult.rdapData) {
+        // Domain is registered, parse RDAP data
+        responseData = parseRdapResponse(rdapResult.rdapData, domain)
+        console.log(`✅ RDAP success for ${domain}: ${responseData.registrar}`)
+      } else {
+        // RDAP failed, use enhanced fallback
+        console.log(`⚠️  RDAP failed for ${domain}, using enhanced fallback verification`)
+        const fallbackData = await getFallbackResponse(domain)
+        responseData = {
+          ...fallbackData,
+          fallback_reason: rdapResult.error
+        }
       }
     }
     
