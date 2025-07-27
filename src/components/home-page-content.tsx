@@ -15,12 +15,7 @@ import {
   CheckCircle,
   BarChart3,
   Lightbulb,
-  Building,
-  Code,
-  Palette,
-  ShoppingBag,
   ArrowRight,
-  Users,
   Award,
   ChevronDown
 } from 'lucide-react'
@@ -114,78 +109,34 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
     }
   ]
 
-  // 目标受众 - 使用翻译
-  const targetAudiences = [
-    {
-      icon: Building,
-      title: t('home.targetAudience.enterprise.title'),
-      scenario: t('home.targetAudience.enterprise.scenario'),
-      service: t('home.targetAudience.enterprise.service'),
-      color: "bg-blue-50 dark:bg-blue-900/20 border-blue-200"
-    },
-    {
-      icon: Code,
-      title: t('home.targetAudience.developer.title'),
-      scenario: t('home.targetAudience.developer.scenario'),
-      service: t('home.targetAudience.developer.service'),
-      color: "bg-green-50 dark:bg-green-900/20 border-green-200"
-    },
-    {
-      icon: Palette,
-      title: t('home.targetAudience.creator.title'),
-      scenario: t('home.targetAudience.creator.scenario'),
-      service: t('home.targetAudience.creator.service'),
-      color: "bg-purple-50 dark:bg-purple-900/20 border-purple-200"
-    },
-    {
-      icon: ShoppingBag,
-      title: t('home.targetAudience.ecommerce.title'),
-      scenario: t('home.targetAudience.ecommerce.scenario'),
-      service: t('home.targetAudience.ecommerce.service'),
-      color: "bg-orange-50 dark:bg-orange-900/20 border-orange-200"
-    }
-  ]
 
-  // 用户评价 - 使用翻译，带安全检查
-  const testimonialData = t('testimonials.reviews', { returnObjects: true as any })
-  const testimonials = Array.isArray(testimonialData) ? testimonialData : [
-    {
-      content: "NextName让我在几分钟内就找到了完美的域名，价格对比功能非常实用，为公司节省了不少成本。",
-      author: "张明",
-      title: "科技公司CEO"
-    },
-    {
-      content: "作为开发者，我需要经常为项目注册域名。NextName的搜索功能很智能，能快速理解我的需求。",
-      author: "李小雨",
-      title: "全栈开发工程师"
-    },
-    {
-      content: "界面简洁，功能强大，最重要的是完全免费。现在是我域名查询的首选工具。",
-      author: "王设计",
-      title: "UI/UX设计师"
-    }
-  ]
 
-  // 添加头像
-  const testimonialsWithAvatars = testimonials.map((item, index) => ({
-    ...item,
-    avatar: ["👨‍💼", "👩‍💻", "🎨", "🛒", "🚀"][index] || "👤"
-  }))
-
-  // FAQ数据 - 使用翻译，带安全检查
+  // FAQ数据 - 使用翻译，带安全检查，扩展到5-6个问题
   const faqData = t('faq.questions', { returnObjects: true as any })
   const faqs = Array.isArray(faqData) ? faqData : [
     {
-      question: "NextName是否完全免费使用？",
-      answer: "是的，NextName的所有查询功能都完全免费。我们不收取任何查询费用，也不要求用户注册账号。我们通过与注册商的合作获得收入，为用户提供免费服务。"
+      question: t('faq.questions.0.question') || "NextName是否完全免费使用？",
+      answer: t('faq.questions.0.answer') || "是的，NextName的所有查询功能都完全免费。我们不收取任何查询费用，也不要求用户注册账号。我们通过与注册商的合作获得收入，为用户提供免费服务。"
     },
     {
-      question: "价格对比的数据多久更新一次？",
-      answer: "我们的价格数据每小时自动更新，确保您看到的都是最新的市场价格。对于热门域名后缀，我们甚至会更频繁地更新价格信息。"
+      question: t('faq.questions.1.question') || "价格对比的数据多久更新一次？",
+      answer: t('faq.questions.1.answer') || "我们的价格数据每小时自动更新，确保您看到的都是最新的市场价格。对于热门域名后缀，我们甚至会更频繁地更新价格信息。"
     },
     {
-      question: "支持哪些类型的域名查询？",
-      answer: "NextName支持关键词搜索、前缀搜索、后缀查询和完整域名查询。我们的智能引擎会自动识别您的查询类型，提供最相关的结果。"
+      question: t('faq.questions.2.question') || "支持哪些类型的域名查询？",
+      answer: t('faq.questions.2.answer') || "NextName支持关键词搜索、前缀搜索、后缀查询和完整域名查询。我们的智能引擎会自动识别您的查询类型，提供最相关的结果。"
+    },
+    {
+      question: t('faq.questions.3.question') || "域名价格数据的准确性如何保证？",
+      answer: t('faq.questions.3.answer') || "我们直接对接50+主流注册商的API，实时获取最新价格信息。所有价格数据都经过验证，确保准确性。同时我们会标注数据更新时间，让您了解信息的时效性。"
+    },
+    {
+      question: t('faq.questions.4.question') || "如何选择合适的域名注册商？",
+      answer: t('faq.questions.4.answer') || "选择注册商时需要考虑价格、服务质量、续费成本、技术支持等因素。我们的价格对比表会显示各注册商的特色功能，如免费SSL、WHOIS隐私保护等，帮助您做出最佳选择。"
+    },
+    {
+      question: t('faq.questions.5.question') || "NextName是否会保存我的搜索记录？",
+      answer: t('faq.questions.5.answer') || "我们非常重视用户隐私。NextName不会保存您的个人搜索记录，所有查询都是匿名进行的。我们只会统计总体使用数据来改进服务质量。"
     }
   ]
 
@@ -461,139 +412,6 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
         </div>
       </section>
 
-      {/* 面向受众 */}
-      <section className="section-padding bg-background">
-        <div className="container-magazine">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            className="text-center space-y-12"
-          >
-            <div className="space-y-6">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2 }}
-                className="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20 rounded-full"
-              >
-                <Users className="h-4 w-4 text-purple-600" />
-                <span className="text-sm font-medium text-purple-700 dark:text-purple-300">{t('home.targetAudience.badge')}</span>
-              </motion.div>
-              <h2 className="section-title">{t('home.targetAudience.title')}</h2>
-              <p className="prose-lg max-w-2xl mx-auto">
-                {t('home.targetAudience.description')}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {targetAudiences.map((audience, index) => (
-                <motion.div
-                  key={audience.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.1 * index }}
-                >
-                  <CardSpotlight>
-                    <Card className={`h-full p-6 border-2 ${audience.color} hover:shadow-lg transition-all duration-300`}>
-                      <div className="space-y-4">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-xl flex items-center justify-center shadow-sm">
-                            <audience.icon className="h-6 w-6 text-primary" />
-                          </div>
-                          <h3 className="font-bold text-lg">{audience.title}</h3>
-                        </div>
-                        
-                        <div className="space-y-3">
-                          <div>
-                            <h4 className="font-medium text-sm text-muted-foreground mb-1">使用场景</h4>
-                            <p className="text-sm">{audience.scenario}</p>
-                          </div>
-                          
-                          <div>
-                            <h4 className="font-medium text-sm text-muted-foreground mb-1">我们提供</h4>
-                            <p className="text-sm text-primary">{audience.service}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  </CardSpotlight>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* 用户评价 */}
-      <section className="section-padding bg-muted/30 overflow-hidden">
-        <div className="container-magazine">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-            className="text-center space-y-12"
-          >
-            <div className="space-y-6">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2 }}
-                className="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-orange-100 to-yellow-100 dark:from-orange-900/20 dark:to-yellow-900/20 rounded-full"
-              >
-                <Star className="h-4 w-4 text-orange-600" />
-                <span className="text-sm font-medium text-orange-700 dark:text-orange-300">{t('testimonials.badge')}</span>
-              </motion.div>
-              <h2 className="section-title">{t('testimonials.title')}</h2>
-              <p className="prose-lg max-w-2xl mx-auto">
-                {t('testimonials.description')}
-              </p>
-            </div>
-
-            {/* 滚动评价 */}
-            <div className="relative">
-              <motion.div 
-                className="flex space-x-6"
-                animate={{ x: [0, -100 * testimonialsWithAvatars.length] }}
-                transition={{
-                  x: {
-                    repeat: Infinity,
-                    repeatType: "loop",
-                    duration: testimonialsWithAvatars.length * 8,
-                    ease: "linear",
-                  },
-                }}
-              >
-                {[...testimonialsWithAvatars, ...testimonialsWithAvatars].map((testimonial, index) => (
-                  <motion.div
-                    key={index}
-                    className="flex-shrink-0 w-80"
-                    whileHover={{ scale: 1.02 }}
-                  >
-                    <CardSpotlight>
-                      <Card className="h-full p-6 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
-                        <div className="space-y-4">
-                          <blockquote className="text-sm leading-relaxed">
-                            {testimonial.content}
-                          </blockquote>
-                          
-                          <div className="flex items-center space-x-3 pt-2 border-t border-border/50">
-                            <div className="text-2xl">{testimonial.avatar}</div>
-                            <div className="text-left">
-                              <div className="font-semibold text-sm">{testimonial.author}</div>
-                              <div className="text-xs text-muted-foreground">{testimonial.title}</div>
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-                    </CardSpotlight>
-                  </motion.div>
-                ))}
-              </motion.div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
 
       {/* FAQ */}
       <section className="section-padding bg-background">

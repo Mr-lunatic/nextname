@@ -319,6 +319,22 @@
       {
         "question": "How often is price comparison data updated?",
         "answer": "Our price data is automatically updated every hour to ensure you see the latest market prices. For popular domain extensions, we update price information even more frequently."
+      },
+      {
+        "question": "What types of domain queries are supported?",
+        "answer": "NextName supports keyword search, prefix search, suffix queries, and complete domain queries. Our intelligent engine automatically recognizes your query type and provides the most relevant results."
+      },
+      {
+        "question": "How is the accuracy of domain price data guaranteed?",
+        "answer": "We directly integrate with APIs from 50+ mainstream registrars to get real-time latest price information. All price data is verified to ensure accuracy. We also mark data update times so you can understand the timeliness of information."
+      },
+      {
+        "question": "How to choose the right domain registrar?",
+        "answer": "When choosing a registrar, you need to consider factors such as price, service quality, renewal costs, and technical support. Our price comparison table shows the special features of each registrar, such as free SSL and WHOIS privacy protection, to help you make the best choice."
+      },
+      {
+        "question": "Does NextName save my search records?",
+        "answer": "We highly value user privacy. NextName does not save your personal search records, and all queries are conducted anonymously. We only collect overall usage statistics to improve service quality."
       }
     ]
   },
