@@ -230,14 +230,8 @@ const FALLBACK_RDAP_SERVERS: { [key: string]: string[] } = {
     'https://rdap.identitydigital.services/rdap/'
   ],
   'cn': [
-    'https://rdap.cnnic.cn/',
-    'https://rdap.nic.cn/',
-    'https://restwhois.ngtld.cn/',
-    'https://rdap.teleinfo.cn/',
-    'https://rdap.identitydigital.services/rdap/',
-    // Additional fallback patterns for CN
-    'https://whois.cnnic.cn/rdap/',
-    'https://registry.cn/rdap/'
+    // CN domains do not have working RDAP servers - IANA doesn't list any
+    // Will fallback to HTTP verification and conservative heuristics
   ],
   'nl': [
     'https://rdap.sidn.nl/',
@@ -580,6 +574,12 @@ async function getRdapServer(domain: string): Promise<string[]> {
   const tld = getTLD(domain)
   const servers: string[] = []
   
+  // Special handling for CN domains - they don't have working RDAP
+  if (tld === 'cn') {
+    console.log(`🇨🇳 CN domain detected: ${domain} - skipping RDAP, will use HTTP verification`)
+    return [] // Return empty array to skip RDAP entirely for CN domains
+  }
+  
   try {
     // Try to get official RDAP server from IANA bootstrap
     const bootstrap = await getRdapBootstrap()
@@ -614,8 +614,8 @@ async function getRdapServer(domain: string): Promise<string[]> {
     })
   }
   
-  // If no servers found, generate comprehensive patterns
-  if (servers.length === 0) {
+  // If no servers found, generate comprehensive patterns (except for CN)
+  if (servers.length === 0 && tld !== 'cn') {
     const patterns = generateRdapServerPatterns(tld)
     patterns.forEach(pattern => {
       if (!servers.includes(pattern)) {
@@ -638,6 +638,16 @@ async function getRdapServer(domain: string): Promise<string[]> {
 // Enhanced RDAP query with intelligent retry and error handling
 async function queryRDAP(domain: string): Promise<any> {
   const tld = getTLD(domain)
+  
+  // Special handling for CN domains - skip RDAP entirely
+  if (tld === 'cn') {
+    console.log(`🇨🇳 CN domain ${domain} - skipping RDAP, will use fallback verification`)
+    return {
+      available: null,
+      error: 'CN domains do not support RDAP protocol',
+      fallback: true
+    }
+  }
   
   // Check if we have cached working servers for this TLD
   let rdapServers = workingRdapServers.get(tld)
@@ -960,9 +970,58 @@ async function verifyDomainOnline(domain: string): Promise<boolean> {
   }
 }
 
-// Fallback function for when RDAP fails
+// Fallback function for when RDAP fails - especially important for CN domains
 async function getFallbackResponse(domain: string) {
-  // Try online verification first
+  const tld = getTLD(domain)
+  
+  // For CN domains, be more conservative since RDAP often fails
+  if (tld === 'cn') {
+    console.log(`🇨🇳 CN domain detected: ${domain} - using enhanced verification`)
+    
+    // Try online verification first
+    const isOnline = await verifyDomainOnline(domain)
+    
+    if (isOnline) {
+      return {
+        domain,
+        is_available: false,
+        registrar: 'Unknown (CN domain - RDAP unavailable)',
+        registrar_iana_id: null,
+        registrar_whois_server: null,
+        registrar_url: null,
+        created_date: null,
+        updated_date: null,
+        expiry_date: null,
+        status: ['CN domain - verified via HTTP'],
+        name_servers: [],
+        dnssec: 'unknown',
+        registrar_abuse_contact_email: null,
+        registrar_abuse_contact_phone: null,
+        registry_domain_id: null,
+        last_update_of_whois_database: new Date().toISOString(),
+        fallback_method: 'CN HTTP verification'
+      }
+    }
+    
+    // For CN domains, if HTTP verification fails, be conservative and assume registered
+    // This is because CN RDAP is unreliable, better to be conservative
+    const [name] = domain.split('.')
+    const isVeryLikelyAvailable = name.length > 15 && // Very long names
+      !/^(test|demo|example|www|mail|app|api|admin|blog|shop|home|info|news|support|help|contact|china|beijing|shanghai|guangzhou|shenzhen|hangzhou|nanjing|chengdu|wuhan|xian|tianjin|qingdao|dalian|harbin|changchun|shijiazhuang|taiyuan|hohhot|shenyang|jinan|zhengzhou|wuhan|changsha|nanning|haikou|chongqing|kunming|guiyang|lhasa|lanzhou|xining|yinchuan|urumqi)$/.test(name.toLowerCase())
+    
+    return {
+      domain,
+      is_available: isVeryLikelyAvailable,
+      registrar: isVeryLikelyAvailable ? null : 'Unknown (CN domain - RDAP unavailable)',
+      created_date: null,
+      expiry_date: null,
+      status: isVeryLikelyAvailable ? [] : ['CN domain - conservative guess (likely registered)'],
+      name_servers: [],
+      fallback_method: 'CN conservative heuristic'
+    }
+  }
+  
+  // For other domains, try online verification first
   const isOnline = await verifyDomainOnline(domain)
   
   if (isOnline) {
@@ -987,7 +1046,7 @@ async function getFallbackResponse(domain: string) {
     }
   }
   
-  // Use enhanced heuristic as last resort
+  // Use enhanced heuristic as last resort for non-CN domains
   const [name] = domain.split('.')
   const likelyRegistered = name.length <= 3 || // Very short names are usually taken
     /^(test|demo|example|www|mail|app|api|admin|blog|shop|home|info|news|support|help|contact)$/.test(name.toLowerCase())
