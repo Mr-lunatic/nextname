@@ -146,12 +146,25 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
     }
   ]
 
-  // 用户评价 - 使用翻译
-  const testimonials = (t('testimonials.reviews', { returnObjects: true as any }) as unknown) as Array<{
-    content: string,
-    author: string,
-    title: string
-  }>
+  // 用户评价 - 使用翻译，带安全检查
+  const testimonialData = t('testimonials.reviews', { returnObjects: true as any })
+  const testimonials = Array.isArray(testimonialData) ? testimonialData : [
+    {
+      content: "NextName让我在几分钟内就找到了完美的域名，价格对比功能非常实用，为公司节省了不少成本。",
+      author: "张明",
+      title: "科技公司CEO"
+    },
+    {
+      content: "作为开发者，我需要经常为项目注册域名。NextName的搜索功能很智能，能快速理解我的需求。",
+      author: "李小雨",
+      title: "全栈开发工程师"
+    },
+    {
+      content: "界面简洁，功能强大，最重要的是完全免费。现在是我域名查询的首选工具。",
+      author: "王设计",
+      title: "UI/UX设计师"
+    }
+  ]
 
   // 添加头像
   const testimonialsWithAvatars = testimonials.map((item, index) => ({
@@ -159,11 +172,22 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
     avatar: ["👨‍💼", "👩‍💻", "🎨", "🛒", "🚀"][index] || "👤"
   }))
 
-  // FAQ数据 - 使用翻译
-  const faqs = (t('faq.questions', { returnObjects: true as any }) as unknown) as Array<{
-    question: string,
-    answer: string
-  }>
+  // FAQ数据 - 使用翻译，带安全检查
+  const faqData = t('faq.questions', { returnObjects: true as any })
+  const faqs = Array.isArray(faqData) ? faqData : [
+    {
+      question: "NextName是否完全免费使用？",
+      answer: "是的，NextName的所有查询功能都完全免费。我们不收取任何查询费用，也不要求用户注册账号。我们通过与注册商的合作获得收入，为用户提供免费服务。"
+    },
+    {
+      question: "价格对比的数据多久更新一次？",
+      answer: "我们的价格数据每小时自动更新，确保您看到的都是最新的市场价格。对于热门域名后缀，我们甚至会更频繁地更新价格信息。"
+    },
+    {
+      question: "支持哪些类型的域名查询？",
+      answer: "NextName支持关键词搜索、前缀搜索、后缀查询和完整域名查询。我们的智能引擎会自动识别您的查询类型，提供最相关的结果。"
+    }
+  ]
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-surface-primary)' }}>
