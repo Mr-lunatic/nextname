@@ -33,389 +33,79 @@ let failedRdapServers: Map<string, Set<string>> = new Map()
 let failedServerCacheTime: Map<string, number> = new Map()
 const FAILED_SERVER_CACHE_DURATION = 30 * 60 * 1000 // 30 minutes
 
-// Enhanced fallback RDAP servers with more providers
+// Enhanced fallback RDAP servers using IANA bootstrap data
 const FALLBACK_RDAP_SERVERS: { [key: string]: string[] } = {
-  // Major gTLDs with multiple providers
-  'com': [
-    'https://rdap.verisign.com/com/v1/',
-    'https://rdap.nic.com/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/com/'
-  ],
-  'net': [
-    'https://rdap.verisign.com/net/v1/',
-    'https://rdap.nic.net/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/net/'
-  ],
-  'org': [
-    'https://rdap.publicinterestregistry.org/',
-    'https://rdap.nic.org/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.afilias.info/rdap/afilias/'
-  ],
-  'info': [
-    'https://rdap.afilias.info/rdap/afilias/',
-    'https://rdap.nic.info/',
-    'https://rdap.identitydigital.services/rdap/'
-  ],
-  'biz': [
-    'https://rdap.afilias.info/rdap/afilias/',
-    'https://rdap.nic.biz/',
-    'https://rdap.identitydigital.services/rdap/'
-  ],
-  'name': [
-    'https://rdap.afilias.info/rdap/afilias/',
-    'https://rdap.nic.name/',
-    'https://rdap.identitydigital.services/rdap/'
-  ],
+  // Major gTLDs (from IANA bootstrap)
+  'com': ['https://rdap.verisign.com/com/v1/'],
+  'net': ['https://rdap.verisign.com/net/v1/'],
+  'org': ['https://rdap.publicinterestregistry.org/rdap/'],
+  'info': ['https://rdap.identitydigital.services/rdap/'],
+  'biz': ['https://rdap.nic.biz/'],
+  'name': ['https://tld-rdap.verisign.com/name/v1/'],
   
-  // Popular new gTLDs with enhanced coverage
-  'io': [
-    'https://rdap.nic.io/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/io/'
-  ],
-  'ai': [
-    'https://rdap.nic.ai/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/ai/'
-  ],
-  'co': [
-    'https://rdap.nic.co/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/co/'
-  ],
-  'me': [
-    'https://rdap.nic.me/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/me/'
-  ],
-  'tv': [
-    'https://rdap.nic.tv/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/tv/'
-  ],
-  'cc': [
-    'https://rdap.nic.cc/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/cc/'
-  ],
-  'ly': [
-    'https://rdap.nic.ly/',
-    'https://rdap.identitydigital.services/rdap/'
-  ],
-  'sh': [
-    'https://rdap.nic.sh/',
-    'https://rdap.identitydigital.services/rdap/'
-  ],
-  'gg': [
-    'https://rdap.nic.gg/',
-    'https://rdap.identitydigital.services/rdap/'
-  ],
+  // Popular new gTLDs (from IANA bootstrap)
+  'io': ['https://rdap.nic.io/'],
+  'ai': ['https://rdap.nic.ai/'],
+  'co': ['https://rdap.nic.co/'],
+  'me': ['https://rdap.nic.me/'],
+  'tv': ['https://rdap.nic.tv/'],
+  'cc': ['https://rdap.nic.cc/'],
+  'ly': ['https://rdap.nic.ly/'],
+  'sh': ['https://rdap.nic.sh/'],
+  'gg': ['https://rdap.nic.gg/'],
   
-  // Tech TLDs
-  'tech': [
-    'https://rdap.nic.tech/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/tech/'
-  ],
-  'online': [
-    'https://rdap.nic.online/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/online/'
-  ],
-  'site': [
-    'https://rdap.nic.site/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/site/'
-  ],
-  'website': [
-    'https://rdap.nic.website/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/website/'
-  ],
-  'app': [
-    'https://rdap.nic.google/',
-    'https://rdap.google.com/',
-    'https://rdap.identitydigital.services/rdap/'
-  ],
-  'dev': [
-    'https://rdap.nic.google/',
-    'https://rdap.google.com/',
-    'https://rdap.identitydigital.services/rdap/'
-  ],
-  'page': [
-    'https://rdap.nic.google/',
-    'https://rdap.google.com/',
-    'https://rdap.identitydigital.services/rdap/'
-  ],
-  'how': [
-    'https://rdap.nic.google/',
-    'https://rdap.google.com/',
-    'https://rdap.identitydigital.services/rdap/'
-  ],
+  // Google TLDs (from IANA bootstrap)
+  'app': ['https://pubapi.registry.google/rdap/'],
+  'dev': ['https://pubapi.registry.google/rdap/'],
+  'page': ['https://pubapi.registry.google/rdap/'],
+  'how': ['https://pubapi.registry.google/rdap/'],
+  'google': ['https://pubapi.registry.google/rdap/'],
+  
+  // Country TLDs (from IANA bootstrap)
+  'uk': ['https://rdap.nominet.uk/uk/'],
+  'de': ['https://rdap.denic.de/'],
+  'nl': ['https://rdap.sidn.nl/'],
+  'fr': ['https://rdap.nic.fr/'],
+  'it': ['https://rdap.nic.it/'],
+  'be': ['https://rdap.dns.be/'],
+  'eu': ['https://rdap.eu/'],
+  'ca': ['https://rdap.ca.fury.ca/rdap/'],
+  'au': ['https://rdap.auda.org.au/'],
+  'jp': ['https://rdap.jprs.jp/'],
+  'kr': ['https://rdap.kr/'],
+  'in': ['https://rdap.nixiregistry.in/rdap/'],
+  'br': ['https://rdap.registro.br/'],
+  'mx': ['https://rdap.mx/'],
+  'ru': ['https://rdap.tcinet.ru/'],
+  'pl': ['https://rdap.dns.pl/'],
+  'fi': ['https://rdap.fi/rdap/rdap/'],
+  'no': ['https://rdap.norid.no/'],
+  'si': ['https://rdap.register.si/'],
+  'cz': ['https://rdap.nic.cz/'],
+  
+  // 特别注意：.cn域名没有RDAP支持，将使用WHOIS协议
+  'cn': [], // Empty array - will use WHOIS instead
   
   // Business TLDs
-  'company': [
-    'https://rdap.nic.company/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/company/'
-  ],
-  'business': [
-    'https://rdap.nic.business/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/business/'
-  ],
-  'services': [
-    'https://rdap.nic.services/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/services/'
-  ],
-  'shop': [
-    'https://rdap.nic.shop/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/shop/'
-  ],
-  'store': [
-    'https://rdap.nic.store/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/store/'
-  ],
+  'company': ['https://rdap.nic.company/'],
+  'business': ['https://rdap.nic.business/'],
+  'services': ['https://rdap.nic.services/'],
+  'shop': ['https://rdap.nic.shop/'],
+  'store': ['https://rdap.nic.store/'],
+  
+  // Tech TLDs
+  'tech': ['https://rdap.nic.tech/'],
+  'online': ['https://rdap.nic.online/'],
+  'site': ['https://rdap.nic.site/'],
+  'website': ['https://rdap.nic.website/'],
   
   // Creative TLDs
-  'design': [
-    'https://rdap.nic.design/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/design/'
-  ],
-  'art': [
-    'https://rdap.nic.art/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/art/'
-  ],
-  'studio': [
-    'https://rdap.nic.studio/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/studio/'
-  ],
-  'photography': [
-    'https://rdap.nic.photography/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/photography/'
-  ],
-  'blog': [
-    'https://rdap.nic.blog/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/blog/'
-  ],
-  'news': [
-    'https://rdap.nic.news/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/news/'
-  ],
-  'media': [
-    'https://rdap.nic.media/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/media/'
-  ],
-  
-  // Country TLDs with RDAP
-  'uk': [
-    'https://rdap.nominet.uk/',
-    'https://rdap.nic.uk/',
-    'https://rdap.identitydigital.services/rdap/'
-  ],
-  'de': [
-    'https://rdap.denic.de/',
-    'https://rdap.nic.de/',
-    'https://rdap.identitydigital.services/rdap/'
-  ],
-  'cn': [
-    // CN domains do not have working RDAP servers - IANA doesn't list any
-    // Will fallback to HTTP verification and conservative heuristics
-  ],
-  'nl': [
-    'https://rdap.sidn.nl/',
-    'https://rdap.nic.nl/',
-    'https://rdap.identitydigital.services/rdap/'
-  ],
-  'fr': [
-    'https://rdap.nic.fr/',
-    'https://rdap.identitydigital.services/rdap/'
-  ],
-  'it': [
-    'https://rdap.nic.it/',
-    'https://rdap.identitydigital.services/rdap/'
-  ],
-  'be': [
-    'https://rdap.dns.be/',
-    'https://rdap.nic.be/',
-    'https://rdap.identitydigital.services/rdap/'
-  ],
-  'eu': [
-    'https://rdap.eu/',
-    'https://rdap.nic.eu/',
-    'https://rdap.identitydigital.services/rdap/'
-  ],
-  'ca': [
-    'https://rdap.ca/',
-    'https://rdap.nic.ca/',
-    'https://rdap.identitydigital.services/rdap/'
-  ],
-  'au': [
-    'https://rdap.auda.org.au/',
-    'https://rdap.nic.au/',
-    'https://rdap.identitydigital.services/rdap/'
-  ],
-  'jp': [
-    'https://rdap.jprs.jp/',
-    'https://rdap.nic.jp/',
-    'https://rdap.identitydigital.services/rdap/'
-  ],
-  'kr': [
-    'https://rdap.kr/',
-    'https://rdap.nic.kr/',
-    'https://rdap.identitydigital.services/rdap/'
-  ],
-  'in': [
-    'https://rdap.registry.in/',
-    'https://rdap.nic.in/',
-    'https://rdap.identitydigital.services/rdap/'
-  ],
-  'ru': [
-    'https://rdap.tcinet.ru/',
-    'https://rdap.nic.ru/',
-    'https://rdap.identitydigital.services/rdap/'
-  ],
-  'br': [
-    'https://rdap.registro.br/',
-    'https://rdap.nic.br/',
-    'https://rdap.identitydigital.services/rdap/'
-  ],
-  'mx': [
-    'https://rdap.mx/',
-    'https://rdap.nic.mx/',
-    'https://rdap.identitydigital.services/rdap/'
-  ],
-  
-  // Generic new TLDs
-  'top': [
-    'https://rdap.nic.top/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/top/'
-  ],
-  'xyz': [
-    'https://rdap.nic.xyz/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/xyz/'
-  ],
-  'click': [
-    'https://rdap.nic.click/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/click/'
-  ],
-  'link': [
-    'https://rdap.uniregistry.net/',
-    'https://rdap.nic.link/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/link/'
-  ],
-  'club': [
-    'https://rdap.nic.club/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/club/'
-  ],
-  
-  // Financial TLDs
-  'finance': [
-    'https://rdap.nic.finance/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/finance/'
-  ],
-  'money': [
-    'https://rdap.nic.money/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/money/'
-  ],
-  'crypto': [
-    'https://rdap.nic.crypto/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/crypto/'
-  ],
-  
-  // Entertainment TLDs
-  'games': [
-    'https://rdap.nic.games/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/games/'
-  ],
-  'fun': [
-    'https://rdap.nic.fun/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/fun/'
-  ],
-  'live': [
-    'https://rdap.nic.live/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/live/'
-  ],
-  'stream': [
-    'https://rdap.nic.stream/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/stream/'
-  ],
-  
-  // Health TLDs
-  'health': [
-    'https://rdap.nic.health/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/health/'
-  ],
-  'care': [
-    'https://rdap.nic.care/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/care/'
-  ],
-  'fitness': [
-    'https://rdap.nic.fitness/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/fitness/'
-  ],
-  
-  // Education TLDs
-  'education': [
-    'https://rdap.nic.education/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/education/'
-  ],
-  'academy': [
-    'https://rdap.nic.academy/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/academy/'
-  ],
-  'school': [
-    'https://rdap.nic.school/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/school/'
-  ],
-  
-  // Travel TLDs
-  'travel': [
-    'https://rdap.nic.travel/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/travel/'
-  ],
-  'hotel': [
-    'https://rdap.nic.hotel/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/hotel/'
-  ],
-  'restaurant': [
-    'https://rdap.nic.restaurant/',
-    'https://rdap.identitydigital.services/rdap/',
-    'https://rdap.centralnic.com/restaurant/'
-  ]
+  'design': ['https://rdap.nic.design/'],
+  'art': ['https://rdap.centralnic.com/art/'],
+  'studio': ['https://rdap.nic.studio/'],
+  'blog': ['https://rdap.blog.fury.ca/rdap/'],
+  'news': ['https://rdap.nic.news/'],
+  'media': ['https://rdap.nic.media/']
 }
 
 // Function to get all supported TLDs from IANA bootstrap
