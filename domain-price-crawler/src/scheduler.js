@@ -1,5 +1,6 @@
 const cron = require('node-cron');
 const { executeCrawl, isInCrawlWindow } = require('./services/crawler');
+const { executeEnhancedCrawl } = require('./services/enhanced-crawler');
 const { cleanupOldData } = require('./services/database');
 const { syncToCloudflareD1 } = require('./sync/cloudflare-sync');
 const { systemLogger, logger } = require('./utils/logger');
@@ -9,7 +10,7 @@ const { CRAWL_CONFIG } = require('./config/constants');
 let isRunning = false;
 let currentCrawlPromise = null;
 
-// 主采集任务
+// 主采集任务 - 使用增强的采集引擎
 const dailyCrawlTask = async () => {
   if (isRunning) {
     logger.warn('⚠️ Crawl already running, skipping this execution');
@@ -24,27 +25,26 @@ const dailyCrawlTask = async () => {
   isRunning = true;
   
   try {
-    logger.info('🚀 Starting scheduled crawl...');
+    logger.info('🚀 Starting enhanced scheduled crawl...');
     
-    const results = await executeCrawl({
-      interval: CRAWL_CONFIG.REQUEST_INTERVAL,
+    const results = await executeEnhancedCrawl({
       onProgress: (completed, total, current, result) => {
-        // 每100个任务报告一次进度
-        if (completed % 100 === 0) {
+        // 每50个任务报告一次进度
+        if (completed % 50 === 0) {
           logger.info(`📊 Crawl progress: ${completed}/${total} (${(completed/total*100).toFixed(1)}%)`);
         }
       }
     });
     
-    logger.info('✅ Scheduled crawl completed:', {
+    logger.info('✅ Enhanced scheduled crawl completed:', {
       completed: results.completed,
       failed: results.failed,
-      successRate: results.successRate,
+      successRate: results.successRate || ((results.completed / results.totalTasks) * 100).toFixed(1),
       duration: `${(results.duration / 1000 / 60).toFixed(1)}min`
     });
     
   } catch (error) {
-    logger.error('❌ Scheduled crawl failed:', error.message);
+    logger.error('❌ Enhanced scheduled crawl failed:', error.message);
   } finally {
     isRunning = false;
   }
@@ -99,24 +99,41 @@ const healthCheckTask = async () => {
   }
 };
 
-// 启动调度器
+// 启动调度器 - 使用优化的时间窗口
 const startScheduler = () => {
   systemLogger.startup();
   
-  // 每日凌晨2点开始采集
-  cron.schedule('0 2 * * *', dailyCrawlTask, {
+  // 每日凌晨1点开始采集 (扩展窗口)
+  cron.schedule('0 1 * * *', dailyCrawlTask, {
     scheduled: true,
     timezone: "Asia/Shanghai"
   });
   
-  // 每日凌晨1点清理数据
-  cron.schedule('0 1 * * *', cleanupTask, {
+  // 高频采集 - 每2小时执行一次超高价值TLD
+  cron.schedule('0 */2 * * *', async () => {
+    if (!isRunning && isInCrawlWindow()) {
+      logger.info('🎯 Starting high-priority TLD crawl...');
+      try {
+        await executeEnhancedCrawl({
+          customTlds: ['com', 'net', 'org', 'io', 'ai']
+        });
+      } catch (error) {
+        logger.error('❌ High-priority crawl failed:', error.message);
+      }
+    }
+  }, {
+    scheduled: true,
+    timezone: "Asia/Shanghai"
+  });
+  
+  // 每日凌晨12点清理数据
+  cron.schedule('0 0 * * *', cleanupTask, {
     scheduled: true,
     timezone: "Asia/Shanghai"
   });
 
-  // 每日早上7点同步到Cloudflare D1
-  cron.schedule('0 7 * * *', syncTask, {
+  // 每日早上8点同步到Cloudflare D1
+  cron.schedule('0 8 * * *', syncTask, {
     scheduled: true,
     timezone: "Asia/Shanghai"
   });
@@ -128,13 +145,14 @@ const startScheduler = () => {
   });
   
   systemLogger.scheduleStart({
-    crawl: '0 2 * * * (Asia/Shanghai)',
-    cleanup: '0 1 * * * (Asia/Shanghai)',
-    sync: '0 7 * * * (Asia/Shanghai)',
+    crawl: '0 1 * * * (Asia/Shanghai)',
+    highPriority: '0 */2 * * * (Asia/Shanghai)',
+    cleanup: '0 0 * * * (Asia/Shanghai)',
+    sync: '0 8 * * * (Asia/Shanghai)',
     healthCheck: '0 * * * * (Asia/Shanghai)'
   });
   
-  logger.info('⏰ Scheduler started successfully');
+  logger.info('⏰ Enhanced scheduler started successfully');
   
   // 立即执行一次健康检查
   setTimeout(healthCheckTask, 5000);
@@ -156,19 +174,27 @@ const stopScheduler = () => {
   logger.info('🛑 Scheduler stopped');
 };
 
-// 手动触发采集
+// 手动触发采集 - 支持增强模式
 const triggerManualCrawl = async (options = {}) => {
   if (isRunning) {
     throw new Error('Crawl already running');
   }
   
-  logger.info('🔧 Manual crawl triggered');
+  const { enhanced = true, customTlds = null } = options;
+  
+  logger.info(`🔧 Manual crawl triggered (enhanced: ${enhanced})`);
   
   isRunning = true;
-  currentCrawlPromise = executeCrawl(options);
   
   try {
-    const results = await currentCrawlPromise;
+    let results;
+    if (enhanced) {
+      currentCrawlPromise = executeEnhancedCrawl({ customTlds });
+    } else {
+      currentCrawlPromise = executeCrawl(options);
+    }
+    
+    results = await currentCrawlPromise;
     return results;
   } finally {
     isRunning = false;

@@ -26,103 +26,400 @@ let workingRdapServers: Map<string, string[]> = new Map()
 let rdapServerCacheTime: Map<string, number> = new Map()
 const RDAP_SERVER_CACHE_DURATION = 6 * 60 * 60 * 1000 // 6 hours
 
-// Comprehensive fallback RDAP servers (synchronized with search API)
+// Cache for failed servers (to avoid repeated attempts)
+let failedRdapServers: Map<string, Set<string>> = new Map()
+let failedServerCacheTime: Map<string, number> = new Map()
+const FAILED_SERVER_CACHE_DURATION = 30 * 60 * 1000 // 30 minutes
+
+// Enhanced fallback RDAP servers with more providers
 const FALLBACK_RDAP_SERVERS: { [key: string]: string[] } = {
-  // Major gTLDs
-  'com': ['https://rdap.verisign.com/com/v1/', 'https://rdap.nic.com/'],
-  'net': ['https://rdap.verisign.com/net/v1/', 'https://rdap.nic.net/'],
-  'org': ['https://rdap.publicinterestregistry.org/', 'https://rdap.nic.org/'],
-  'info': ['https://rdap.afilias.info/rdap/afilias/', 'https://rdap.nic.info/'],
-  'biz': ['https://rdap.afilias.info/rdap/afilias/', 'https://rdap.nic.biz/'],
-  'name': ['https://rdap.afilias.info/rdap/afilias/', 'https://rdap.nic.name/'],
+  // Major gTLDs with multiple providers
+  'com': [
+    'https://rdap.verisign.com/com/v1/',
+    'https://rdap.nic.com/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/com/'
+  ],
+  'net': [
+    'https://rdap.verisign.com/net/v1/',
+    'https://rdap.nic.net/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/net/'
+  ],
+  'org': [
+    'https://rdap.publicinterestregistry.org/',
+    'https://rdap.nic.org/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.afilias.info/rdap/afilias/'
+  ],
+  'info': [
+    'https://rdap.afilias.info/rdap/afilias/',
+    'https://rdap.nic.info/',
+    'https://rdap.identitydigital.services/rdap/'
+  ],
+  'biz': [
+    'https://rdap.afilias.info/rdap/afilias/',
+    'https://rdap.nic.biz/',
+    'https://rdap.identitydigital.services/rdap/'
+  ],
+  'name': [
+    'https://rdap.afilias.info/rdap/afilias/',
+    'https://rdap.nic.name/',
+    'https://rdap.identitydigital.services/rdap/'
+  ],
   
-  // Popular new gTLDs
-  'io': ['https://rdap.nic.io/', 'https://rdap.nic.io/'],
-  'ai': ['https://rdap.nic.ai/', 'https://rdap.nic.ai/'],
-  'co': ['https://rdap.nic.co/', 'https://rdap.nic.co/'],
-  'me': ['https://rdap.nic.me/', 'https://rdap.nic.me/'],
-  'tv': ['https://rdap.nic.tv/', 'https://rdap.nic.tv/'],
-  'cc': ['https://rdap.nic.cc/', 'https://rdap.nic.cc/'],
-  'ly': ['https://rdap.nic.ly/', 'https://rdap.nic.ly/'],
-  'sh': ['https://rdap.nic.sh/', 'https://rdap.nic.sh/'],
-  'gg': ['https://rdap.nic.gg/', 'https://rdap.nic.gg/'],
+  // Popular new gTLDs with enhanced coverage
+  'io': [
+    'https://rdap.nic.io/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/io/'
+  ],
+  'ai': [
+    'https://rdap.nic.ai/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/ai/'
+  ],
+  'co': [
+    'https://rdap.nic.co/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/co/'
+  ],
+  'me': [
+    'https://rdap.nic.me/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/me/'
+  ],
+  'tv': [
+    'https://rdap.nic.tv/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/tv/'
+  ],
+  'cc': [
+    'https://rdap.nic.cc/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/cc/'
+  ],
+  'ly': [
+    'https://rdap.nic.ly/',
+    'https://rdap.identitydigital.services/rdap/'
+  ],
+  'sh': [
+    'https://rdap.nic.sh/',
+    'https://rdap.identitydigital.services/rdap/'
+  ],
+  'gg': [
+    'https://rdap.nic.gg/',
+    'https://rdap.identitydigital.services/rdap/'
+  ],
   
   // Tech TLDs
-  'tech': ['https://rdap.nic.tech/', 'https://rdap.nic.tech/'],
-  'online': ['https://rdap.nic.online/', 'https://rdap.nic.online/'],
-  'site': ['https://rdap.nic.site/', 'https://rdap.nic.site/'],
-  'website': ['https://rdap.nic.website/', 'https://rdap.nic.website/'],
-  'app': ['https://rdap.nic.google/', 'https://rdap.google.com/'],
-  'dev': ['https://rdap.nic.google/', 'https://rdap.google.com/'],
-  'page': ['https://rdap.nic.google/', 'https://rdap.google.com/'],
-  'how': ['https://rdap.nic.google/', 'https://rdap.google.com/'],
+  'tech': [
+    'https://rdap.nic.tech/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/tech/'
+  ],
+  'online': [
+    'https://rdap.nic.online/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/online/'
+  ],
+  'site': [
+    'https://rdap.nic.site/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/site/'
+  ],
+  'website': [
+    'https://rdap.nic.website/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/website/'
+  ],
+  'app': [
+    'https://rdap.nic.google/',
+    'https://rdap.google.com/',
+    'https://rdap.identitydigital.services/rdap/'
+  ],
+  'dev': [
+    'https://rdap.nic.google/',
+    'https://rdap.google.com/',
+    'https://rdap.identitydigital.services/rdap/'
+  ],
+  'page': [
+    'https://rdap.nic.google/',
+    'https://rdap.google.com/',
+    'https://rdap.identitydigital.services/rdap/'
+  ],
+  'how': [
+    'https://rdap.nic.google/',
+    'https://rdap.google.com/',
+    'https://rdap.identitydigital.services/rdap/'
+  ],
   
   // Business TLDs
-  'company': ['https://rdap.nic.company/', 'https://rdap.nic.company/'],
-  'business': ['https://rdap.nic.business/', 'https://rdap.nic.business/'],
-  'services': ['https://rdap.nic.services/', 'https://rdap.nic.services/'],
-  'shop': ['https://rdap.nic.shop/', 'https://rdap.nic.shop/'],
-  'store': ['https://rdap.nic.store/', 'https://rdap.nic.store/'],
+  'company': [
+    'https://rdap.nic.company/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/company/'
+  ],
+  'business': [
+    'https://rdap.nic.business/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/business/'
+  ],
+  'services': [
+    'https://rdap.nic.services/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/services/'
+  ],
+  'shop': [
+    'https://rdap.nic.shop/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/shop/'
+  ],
+  'store': [
+    'https://rdap.nic.store/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/store/'
+  ],
   
   // Creative TLDs
-  'design': ['https://rdap.nic.design/', 'https://rdap.nic.design/'],
-  'art': ['https://rdap.nic.art/', 'https://rdap.nic.art/'],
-  'studio': ['https://rdap.nic.studio/', 'https://rdap.nic.studio/'],
-  'photography': ['https://rdap.nic.photography/', 'https://rdap.nic.photography/'],
-  'blog': ['https://rdap.nic.blog/', 'https://rdap.nic.blog/'],
-  'news': ['https://rdap.nic.news/', 'https://rdap.nic.news/'],
-  'media': ['https://rdap.nic.media/', 'https://rdap.nic.media/'],
+  'design': [
+    'https://rdap.nic.design/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/design/'
+  ],
+  'art': [
+    'https://rdap.nic.art/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/art/'
+  ],
+  'studio': [
+    'https://rdap.nic.studio/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/studio/'
+  ],
+  'photography': [
+    'https://rdap.nic.photography/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/photography/'
+  ],
+  'blog': [
+    'https://rdap.nic.blog/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/blog/'
+  ],
+  'news': [
+    'https://rdap.nic.news/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/news/'
+  ],
+  'media': [
+    'https://rdap.nic.media/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/media/'
+  ],
   
   // Country TLDs with RDAP
-  'uk': ['https://rdap.nominet.uk/', 'https://rdap.nic.uk/'],
-  'de': ['https://rdap.denic.de/', 'https://rdap.nic.de/'],
-  'cn': ['https://rdap.cnnic.cn/', 'https://rdap.nic.cn/'],
-  'nl': ['https://rdap.sidn.nl/', 'https://rdap.nic.nl/'],
-  'fr': ['https://rdap.nic.fr/', 'https://rdap.nic.fr/'],
-  'it': ['https://rdap.nic.it/', 'https://rdap.nic.it/'],
-  'be': ['https://rdap.dns.be/', 'https://rdap.nic.be/'],
-  'eu': ['https://rdap.eu/', 'https://rdap.nic.eu/'],
-  'ca': ['https://rdap.ca/', 'https://rdap.nic.ca/'],
-  'au': ['https://rdap.auda.org.au/', 'https://rdap.nic.au/'],
-  'jp': ['https://rdap.jprs.jp/', 'https://rdap.nic.jp/'],
-  'kr': ['https://rdap.kr/', 'https://rdap.nic.kr/'],
-  'in': ['https://rdap.registry.in/', 'https://rdap.nic.in/'],
-  'ru': ['https://rdap.tcinet.ru/', 'https://rdap.nic.ru/'],
-  'br': ['https://rdap.registro.br/', 'https://rdap.nic.br/'],
-  'mx': ['https://rdap.mx/', 'https://rdap.nic.mx/'],
+  'uk': [
+    'https://rdap.nominet.uk/',
+    'https://rdap.nic.uk/',
+    'https://rdap.identitydigital.services/rdap/'
+  ],
+  'de': [
+    'https://rdap.denic.de/',
+    'https://rdap.nic.de/',
+    'https://rdap.identitydigital.services/rdap/'
+  ],
+  'cn': [
+    'https://rdap.cnnic.cn/',
+    'https://rdap.nic.cn/',
+    'https://restwhois.ngtld.cn/',
+    'https://rdap.teleinfo.cn/',
+    'https://rdap.identitydigital.services/rdap/',
+    // Additional fallback patterns for CN
+    'https://whois.cnnic.cn/rdap/',
+    'https://registry.cn/rdap/'
+  ],
+  'nl': [
+    'https://rdap.sidn.nl/',
+    'https://rdap.nic.nl/',
+    'https://rdap.identitydigital.services/rdap/'
+  ],
+  'fr': [
+    'https://rdap.nic.fr/',
+    'https://rdap.identitydigital.services/rdap/'
+  ],
+  'it': [
+    'https://rdap.nic.it/',
+    'https://rdap.identitydigital.services/rdap/'
+  ],
+  'be': [
+    'https://rdap.dns.be/',
+    'https://rdap.nic.be/',
+    'https://rdap.identitydigital.services/rdap/'
+  ],
+  'eu': [
+    'https://rdap.eu/',
+    'https://rdap.nic.eu/',
+    'https://rdap.identitydigital.services/rdap/'
+  ],
+  'ca': [
+    'https://rdap.ca/',
+    'https://rdap.nic.ca/',
+    'https://rdap.identitydigital.services/rdap/'
+  ],
+  'au': [
+    'https://rdap.auda.org.au/',
+    'https://rdap.nic.au/',
+    'https://rdap.identitydigital.services/rdap/'
+  ],
+  'jp': [
+    'https://rdap.jprs.jp/',
+    'https://rdap.nic.jp/',
+    'https://rdap.identitydigital.services/rdap/'
+  ],
+  'kr': [
+    'https://rdap.kr/',
+    'https://rdap.nic.kr/',
+    'https://rdap.identitydigital.services/rdap/'
+  ],
+  'in': [
+    'https://rdap.registry.in/',
+    'https://rdap.nic.in/',
+    'https://rdap.identitydigital.services/rdap/'
+  ],
+  'ru': [
+    'https://rdap.tcinet.ru/',
+    'https://rdap.nic.ru/',
+    'https://rdap.identitydigital.services/rdap/'
+  ],
+  'br': [
+    'https://rdap.registro.br/',
+    'https://rdap.nic.br/',
+    'https://rdap.identitydigital.services/rdap/'
+  ],
+  'mx': [
+    'https://rdap.mx/',
+    'https://rdap.nic.mx/',
+    'https://rdap.identitydigital.services/rdap/'
+  ],
   
   // Generic new TLDs
-  'top': ['https://rdap.nic.top/', 'https://rdap.nic.top/'],
-  'xyz': ['https://rdap.nic.xyz/', 'https://rdap.nic.xyz/'],
-  'click': ['https://rdap.nic.click/', 'https://rdap.nic.click/'],
-  'link': ['https://rdap.uniregistry.net/', 'https://rdap.nic.link/'],
-  'club': ['https://rdap.nic.club/', 'https://rdap.nic.club/'],
+  'top': [
+    'https://rdap.nic.top/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/top/'
+  ],
+  'xyz': [
+    'https://rdap.nic.xyz/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/xyz/'
+  ],
+  'click': [
+    'https://rdap.nic.click/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/click/'
+  ],
+  'link': [
+    'https://rdap.uniregistry.net/',
+    'https://rdap.nic.link/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/link/'
+  ],
+  'club': [
+    'https://rdap.nic.club/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/club/'
+  ],
   
   // Financial TLDs
-  'finance': ['https://rdap.nic.finance/', 'https://rdap.nic.finance/'],
-  'money': ['https://rdap.nic.money/', 'https://rdap.nic.money/'],
-  'crypto': ['https://rdap.nic.crypto/', 'https://rdap.nic.crypto/'],
+  'finance': [
+    'https://rdap.nic.finance/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/finance/'
+  ],
+  'money': [
+    'https://rdap.nic.money/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/money/'
+  ],
+  'crypto': [
+    'https://rdap.nic.crypto/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/crypto/'
+  ],
   
   // Entertainment TLDs
-  'games': ['https://rdap.nic.games/', 'https://rdap.nic.games/'],
-  'fun': ['https://rdap.nic.fun/', 'https://rdap.nic.fun/'],
-  'live': ['https://rdap.nic.live/', 'https://rdap.nic.live/'],
-  'stream': ['https://rdap.nic.stream/', 'https://rdap.nic.stream/'],
+  'games': [
+    'https://rdap.nic.games/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/games/'
+  ],
+  'fun': [
+    'https://rdap.nic.fun/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/fun/'
+  ],
+  'live': [
+    'https://rdap.nic.live/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/live/'
+  ],
+  'stream': [
+    'https://rdap.nic.stream/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/stream/'
+  ],
   
   // Health TLDs
-  'health': ['https://rdap.nic.health/', 'https://rdap.nic.health/'],
-  'care': ['https://rdap.nic.care/', 'https://rdap.nic.care/'],
-  'fitness': ['https://rdap.nic.fitness/', 'https://rdap.nic.fitness/'],
+  'health': [
+    'https://rdap.nic.health/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/health/'
+  ],
+  'care': [
+    'https://rdap.nic.care/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/care/'
+  ],
+  'fitness': [
+    'https://rdap.nic.fitness/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/fitness/'
+  ],
   
   // Education TLDs
-  'education': ['https://rdap.nic.education/', 'https://rdap.nic.education/'],
-  'academy': ['https://rdap.nic.academy/', 'https://rdap.nic.academy/'],
-  'school': ['https://rdap.nic.school/', 'https://rdap.nic.school/'],
+  'education': [
+    'https://rdap.nic.education/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/education/'
+  ],
+  'academy': [
+    'https://rdap.nic.academy/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/academy/'
+  ],
+  'school': [
+    'https://rdap.nic.school/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/school/'
+  ],
   
   // Travel TLDs
-  'travel': ['https://rdap.nic.travel/', 'https://rdap.nic.travel/'],
-  'hotel': ['https://rdap.nic.hotel/', 'https://rdap.nic.hotel/'],
-  'restaurant': ['https://rdap.nic.restaurant/', 'https://rdap.nic.restaurant/']
+  'travel': [
+    'https://rdap.nic.travel/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/travel/'
+  ],
+  'hotel': [
+    'https://rdap.nic.hotel/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/hotel/'
+  ],
+  'restaurant': [
+    'https://rdap.nic.restaurant/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.centralnic.com/restaurant/'
+  ]
 }
 
 // Function to get all supported TLDs from IANA bootstrap
@@ -168,27 +465,73 @@ async function getSupportedTLDs(): Promise<string[]> {
   }
 }
 
-// Generate common RDAP server patterns for unknown TLDs
+// Enhanced RDAP server patterns with more comprehensive coverage
 function generateRdapServerPatterns(tld: string): string[] {
   const patterns = [
+    // Standard patterns
     `https://rdap.nic.${tld}/`,
     `https://rdap.${tld}/`,
     `https://rdap.registry.${tld}/`,
+    
+    // Alternative naming conventions
     `https://whois.nic.${tld}/rdap/`,
     `https://rdap-${tld}.nic/`,
     `https://tld-rdap.${tld}/`,
     `https://rdap.${tld}.registry/`,
-    `https://rdap.centralnic.com/${tld}/`,
-    `https://rdap.identitydigital.services/rdap/`,
-    `https://rdap.afilias.info/rdap/${tld}/`
+    `https://${tld}.rdap.nic/`,
+    `https://registry.${tld}/rdap/`,
+    
+    // Major registry providers
+    'https://rdap.centralnic.com/',
+    'https://rdap.identitydigital.services/rdap/',
+    'https://rdap.afilias.info/rdap/afilias/',
+    'https://rdap.uniregistry.net/',
+    'https://rdap.gmo-registry.com/rdap/',
+    'https://rdap.nic.saarland/',
+    'https://rdap.nic.red/',
+    'https://rdap.donuts.domains/',
+    'https://rdap.rightside.co/',
+    
+    // Regional registries
+    'https://rdap.apnic.net/',
+    'https://rdap.ripe.net/',
+    'https://rdap.lacnic.net/',
+    'https://rdap.afrinic.net/',
+    'https://rdap.arin.net/',
+    
+    // ccTLD specific patterns
+    `https://rdap.dns.${tld}/`,
+    `https://whois.${tld}/rdap/`,
+    `https://registry.${tld}/rdap/`
   ]
   
   return patterns
 }
+
 // Function to get TLD from domain
 function getTLD(domain: string): string {
   const parts = domain.toLowerCase().split('.')
   return parts[parts.length - 1]
+}
+
+// Adaptive timeout based on TLD characteristics
+function getTimeoutForTLD(tld: string): number {
+  // Government and educational TLDs are typically slower
+  const slowTLDs = ['gov', 'mil', 'edu', 'org', 'int', 'museum', 'coop', 'aero']
+  // Country TLDs that might be slower due to geographic distance or infrastructure
+  const countryTLDs = ['cn', 'ru', 'in', 'br', 'za', 'eg', 'ng', 'bd', 'pk']
+  // Chinese domains often need extra time due to network latency and Great Firewall
+  const chineseTLDs = ['cn', 'xn--fiqs8s', 'xn--fiqz9s'] // cn, 中国, 中國
+  
+  if (slowTLDs.includes(tld)) {
+    return 15000 // 15 seconds for slow TLDs
+  } else if (chineseTLDs.includes(tld)) {
+    return 18000 // 18 seconds for Chinese TLDs (increased)
+  } else if (countryTLDs.includes(tld)) {
+    return 12000 // 12 seconds for country TLDs
+  } else {
+    return 10000 // 10 seconds for regular TLDs (increased from 8)
+  }
 }
 
 // Function to get RDAP bootstrap data from IANA
@@ -202,7 +545,7 @@ async function getRdapBootstrap(): Promise<any> {
   
   try {
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 10000)
+    const timeoutId = setTimeout(() => controller.abort(), 15000) // Increased timeout
     
     const response = await fetch(IANA_RDAP_BOOTSTRAP_URL, {
       headers: {
@@ -232,7 +575,7 @@ async function getRdapBootstrap(): Promise<any> {
   }
 }
 
-// Function to get RDAP server URL for a domain (enhanced)
+// Enhanced function to get RDAP server URL for a domain
 async function getRdapServer(domain: string): Promise<string[]> {
   const tld = getTLD(domain)
   const servers: string[] = []
@@ -249,7 +592,9 @@ async function getRdapServer(domain: string): Promise<string[]> {
           // Add all official servers
           rdapServers.forEach((server: string) => {
             const serverUrl = server.endsWith('/') ? server : server + '/'
-            servers.push(serverUrl)
+            if (!servers.includes(serverUrl)) {
+              servers.push(serverUrl)
+            }
           })
           break
         }
@@ -269,16 +614,28 @@ async function getRdapServer(domain: string): Promise<string[]> {
     })
   }
   
-  // If no servers found, generate common patterns
+  // If no servers found, generate comprehensive patterns
   if (servers.length === 0) {
     const patterns = generateRdapServerPatterns(tld)
-    servers.push(...patterns)
+    patterns.forEach(pattern => {
+      if (!servers.includes(pattern)) {
+        servers.push(pattern)
+      }
+    })
+  }
+  
+  // Remove servers that have failed recently for this TLD
+  const failedServers = failedRdapServers.get(tld) || new Set()
+  const failedCacheTime = failedServerCacheTime.get(tld) || 0
+  
+  if (Date.now() - failedCacheTime < FAILED_SERVER_CACHE_DURATION) {
+    return servers.filter(server => !failedServers.has(server))
   }
   
   return servers
 }
 
-// Function to query RDAP with parallel attempts (optimized)
+// Enhanced RDAP query with intelligent retry and error handling
 async function queryRDAP(domain: string): Promise<any> {
   const tld = getTLD(domain)
   
@@ -295,22 +652,29 @@ async function queryRDAP(domain: string): Promise<any> {
     throw new Error(`No RDAP server found for domain: ${domain}`)
   }
 
-  console.log(`Querying RDAP for ${domain} with ${rdapServers.length} servers (parallel)`)
+  console.log(`Querying RDAP for ${domain} with ${rdapServers.length} servers (enhanced parallel)`)
   
-  // Limit to top 3 servers for faster response
-  const topServers = rdapServers.slice(0, 3)
+  // Increase limit to top 5 servers for better success rate
+  const topServers = rdapServers.slice(0, 5)
+  const timeout = getTimeoutForTLD(tld)
   
   // Try all servers in parallel, take the first successful response
-  console.log(`🚀 Starting parallel RDAP queries for ${domain} using servers:`, topServers)
+  console.log(`🚀 Starting enhanced parallel RDAP queries for ${domain} using servers:`, topServers)
+  console.log(`⏰ Using ${timeout}ms timeout for .${tld} TLD`)
 
-  const promises = topServers.map(async (server) => {
+  const promises = topServers.map(async (server, index) => {
     const rdapUrl = `${server}domain/${domain}`
     
     try {
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 8000) // Increased to 8 seconds
+      const timeoutId = setTimeout(() => controller.abort(), timeout)
 
-      console.log(`🔍 Querying RDAP server: ${rdapUrl}`)
+      // Add small delay for secondary servers to prioritize faster ones
+      if (index > 0) {
+        await new Promise(resolve => setTimeout(resolve, index * 200))
+      }
+
+      console.log(`🔍 [${index + 1}/${topServers.length}] Querying RDAP server: ${rdapUrl}`)
 
       const response = await fetch(rdapUrl, {
         headers: {
@@ -327,6 +691,7 @@ async function queryRDAP(domain: string): Promise<any> {
       if (!response.ok) {
         console.log(`❌ RDAP server ${server} returned ${response.status}: ${response.statusText}`)
 
+        // Handle different error types
         if (response.status === 404) {
           // Domain not found - likely available
           console.log(`✅ Domain ${domain} not found in registry (available)`)
@@ -339,9 +704,17 @@ async function queryRDAP(domain: string): Promise<any> {
         }
 
         if (response.status === 429) {
-          // Rate limited - mark server as slow
+          // Rate limited - mark server as failed temporarily
           console.log(`⏰ Rate limited on ${server}`)
+          markServerAsFailed(tld, server)
           throw new Error(`Rate limited on ${server}`)
+        }
+
+        if (response.status >= 500) {
+          // Server error - mark as failed temporarily
+          console.log(`🚫 Server error on ${server}`)
+          markServerAsFailed(tld, server)
+          throw new Error(`Server error on ${server}: ${response.status}`)
         }
 
         // Other errors
@@ -377,6 +750,15 @@ async function queryRDAP(domain: string): Promise<any> {
       }
     } catch (error) {
       console.log(`❌ RDAP server ${server} failed:`, error instanceof Error ? error.message : error)
+      
+      // Mark server as failed if it's a persistent error
+      if (error instanceof Error && 
+          (error.message.includes('timeout') || 
+           error.message.includes('fetch failed') ||
+           error.message.includes('Rate limited'))) {
+        markServerAsFailed(tld, server)
+      }
+      
       throw new Error(`${server}: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
@@ -432,6 +814,16 @@ async function queryRDAP(domain: string): Promise<any> {
   }
 }
 
+// Function to mark a server as failed temporarily
+function markServerAsFailed(tld: string, server: string) {
+  if (!failedRdapServers.has(tld)) {
+    failedRdapServers.set(tld, new Set())
+  }
+  failedRdapServers.get(tld)!.add(server)
+  failedServerCacheTime.set(tld, Date.now())
+  console.log(`🚫 Marked server as failed for .${tld}: ${server}`)
+}
+
 // Function to parse RDAP response
 function parseRdapResponse(rdapData: any, domain: string) {
   const events = rdapData.events || []
@@ -445,23 +837,27 @@ function parseRdapResponse(rdapData: any, domain: string) {
     date: e.eventDate
   })))
 
-  // Find registrar entity
+  // Find registrar entity - include CN-specific roles
   const registrarEntity = entities.find((entity: any) => 
-    entity.roles && entity.roles.includes('registrar')
+    entity.roles && (
+      entity.roles.includes('registrar') || 
+      entity.roles.includes('reseller') ||
+      entity.roles.includes('sponsor') // Common in CN domains
+    )
   )
 
-  // Extract dates from events - try multiple event action names
+  // Extract dates from events - try multiple event action names including CN-specific ones
   const createdEvent = events.find((event: any) =>
-    ['registration', 'registered', 'created', 'creation'].includes(event.eventAction?.toLowerCase())
+    ['registration', 'registered', 'created', 'creation', '注册', '创建'].includes(event.eventAction?.toLowerCase())
   )
   const updatedEvent = events.find((event: any) =>
-    ['last changed', 'last updated', 'updated', 'changed', 'modification'].includes(event.eventAction?.toLowerCase())
+    ['last changed', 'last updated', 'updated', 'changed', 'modification', '最后修改', '更新'].includes(event.eventAction?.toLowerCase())
   )
   const expiryEvent = events.find((event: any) =>
-    ['expiration', 'expires', 'expiry', 'registry expiry date'].includes(event.eventAction?.toLowerCase())
+    ['expiration', 'expires', 'expiry', 'registry expiry date', '到期', '过期'].includes(event.eventAction?.toLowerCase())
   )
   const transferEvent = events.find((event: any) =>
-    ['transfer', 'transferred'].includes(event.eventAction?.toLowerCase())
+    ['transfer', 'transferred', '转移', '转入'].includes(event.eventAction?.toLowerCase())
   )
 
   // Debug: Log which events were found
@@ -535,7 +931,7 @@ async function verifyDomainOnline(domain: string): Promise<boolean> {
   try {
     // Parallel check for both HTTP and HTTPS with shorter timeout
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 2000) // Reduced to 2 seconds
+    const timeoutId = setTimeout(() => controller.abort(), 3000) // Increased to 3 seconds
     
     const httpsPromise = fetch(`https://${domain}`, {
       method: 'HEAD',
@@ -591,9 +987,10 @@ async function getFallbackResponse(domain: string) {
     }
   }
   
-  // Use heuristic as last resort
+  // Use enhanced heuristic as last resort
   const [name] = domain.split('.')
-  const likelyRegistered = name.length <= 4 || /^(test|demo|example|www|mail|app|api|admin)$/.test(name.toLowerCase())
+  const likelyRegistered = name.length <= 3 || // Very short names are usually taken
+    /^(test|demo|example|www|mail|app|api|admin|blog|shop|home|info|news|support|help|contact)$/.test(name.toLowerCase())
   
   return {
     domain,
@@ -603,7 +1000,7 @@ async function getFallbackResponse(domain: string) {
     expiry_date: null,
     status: likelyRegistered ? ['RDAP query failed - heuristic guess'] : [],
     name_servers: [],
-    fallback_method: 'Heuristic guess'
+    fallback_method: 'Enhanced heuristic guess'
   }
 }
 
@@ -655,7 +1052,7 @@ export async function GET(
       console.log(`✅ RDAP success for ${domain}: ${responseData.registrar}`)
     } else {
       // RDAP failed, use enhanced fallback
-      console.log(`⚠️  RDAP failed for ${domain}, using fallback verification`)
+      console.log(`⚠️  RDAP failed for ${domain}, using enhanced fallback verification`)
       const fallbackData = await getFallbackResponse(domain)
       responseData = {
         ...fallbackData,
@@ -663,8 +1060,16 @@ export async function GET(
       }
     }
     
-    // Cache the result with appropriate TTL
-    const ttl = responseData.is_available ? 10 * 60 * 1000 : 30 * 60 * 1000 // 10min for available, 30min for registered
+    // Cache the result with stratified TTL
+    let ttl: number
+    if (responseData.is_available) {
+      ttl = 5 * 60 * 1000 // 5min for available domains (they might get registered)
+    } else if (responseData.fallback_method) {
+      ttl = 2 * 60 * 1000 // 2min for fallback results (less reliable)
+    } else {
+      ttl = 30 * 60 * 1000 // 30min for registered domains with RDAP data
+    }
+    
     domainCache.set(cacheKey, responseData, ttl)
     
     return NextResponse.json(responseData)

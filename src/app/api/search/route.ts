@@ -306,9 +306,9 @@ export async function GET(request: NextRequest) {
       const tldInfo = allTlds.find((item: { tld: string; marketShare: number; category: string; popularity: number; }) => item.tld === tld.tld)
       
       try {
-        // Call the domain API with shorter timeout
+        // Call the domain API with shorter timeout for other extensions check
         const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 2500) // Reduced to 2.5 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 2000) // Reduced to 2 second timeout for faster UX
         
         const domainResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/domain/${domain}`, {
           signal: controller.signal,

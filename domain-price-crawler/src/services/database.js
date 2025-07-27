@@ -1,6 +1,20 @@
 const { query, transaction } = require('../config/database');
 const { logger } = require('../utils/logger');
 
+// 转换ISO时间格式为MySQL DATETIME格式
+const formatDateTimeForMySQL = (isoString) => {
+  if (!isoString) return null;
+  
+  // 如果已经是MySQL格式，直接返回
+  if (typeof isoString === 'string' && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(isoString)) {
+    return isoString;
+  }
+  
+  // 转换ISO格式到MySQL DATETIME格式
+  const date = new Date(isoString);
+  return date.toISOString().slice(0, 19).replace('T', ' ');
+};
+
 // 保存价格数据
 const savePricingData = async (pricingData) => {
   try {
@@ -20,37 +34,38 @@ const savePricingData = async (pricingData) => {
       source = 'scheduled'
     } = pricingData;
 
+    // 转换时间格式
+    const formattedUpdatedTime = formatDateTimeForMySQL(updatedTime);
+
     const result = await query(`
       INSERT INTO pricing_data (
         tld, registrar, registrar_name, registrar_url,
         registration_price, renewal_price, transfer_price,
         currency, currency_name, currency_type, has_promo,
         updated_time, source
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-      ON CONFLICT (tld, registrar) 
-      DO UPDATE SET
-        registrar_name = EXCLUDED.registrar_name,
-        registrar_url = EXCLUDED.registrar_url,
-        registration_price = EXCLUDED.registration_price,
-        renewal_price = EXCLUDED.renewal_price,
-        transfer_price = EXCLUDED.transfer_price,
-        currency = EXCLUDED.currency,
-        currency_name = EXCLUDED.currency_name,
-        currency_type = EXCLUDED.currency_type,
-        has_promo = EXCLUDED.has_promo,
-        updated_time = EXCLUDED.updated_time,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        registrar_name = VALUES(registrar_name),
+        registrar_url = VALUES(registrar_url),
+        registration_price = VALUES(registration_price),
+        renewal_price = VALUES(renewal_price),
+        transfer_price = VALUES(transfer_price),
+        currency = VALUES(currency),
+        currency_name = VALUES(currency_name),
+        currency_type = VALUES(currency_type),
+        has_promo = VALUES(has_promo),
+        updated_time = VALUES(updated_time),
         crawled_at = CURRENT_TIMESTAMP,
-        source = EXCLUDED.source,
+        source = VALUES(source),
         is_active = true
-      RETURNING id
     `, [
       tld, registrar, registrarName, registrarUrl,
       registrationPrice, renewalPrice, transferPrice,
       currency, currencyName, currencyType, hasPromo,
-      updatedTime, source
+      formattedUpdatedTime, source
     ]);
 
-    return result.rows[0];
+    return { id: result.insertId };
   } catch (error) {
     logger.error('Failed to save pricing data:', error.message);
     throw error;
@@ -70,37 +85,38 @@ const saveBatchPricingData = async (pricingDataArray) => {
         updatedTime, source = 'scheduled'
       } = pricingData;
 
+      // 转换时间格式
+      const formattedUpdatedTime = formatDateTimeForMySQL(updatedTime);
+
       const result = await client.query(`
         INSERT INTO pricing_data (
           tld, registrar, registrar_name, registrar_url,
           registration_price, renewal_price, transfer_price,
           currency, currency_name, currency_type, has_promo,
           updated_time, source
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-        ON CONFLICT (tld, registrar) 
-        DO UPDATE SET
-          registrar_name = EXCLUDED.registrar_name,
-          registrar_url = EXCLUDED.registrar_url,
-          registration_price = EXCLUDED.registration_price,
-          renewal_price = EXCLUDED.renewal_price,
-          transfer_price = EXCLUDED.transfer_price,
-          currency = EXCLUDED.currency,
-          currency_name = EXCLUDED.currency_name,
-          currency_type = EXCLUDED.currency_type,
-          has_promo = EXCLUDED.has_promo,
-          updated_time = EXCLUDED.updated_time,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+          registrar_name = VALUES(registrar_name),
+          registrar_url = VALUES(registrar_url),
+          registration_price = VALUES(registration_price),
+          renewal_price = VALUES(renewal_price),
+          transfer_price = VALUES(transfer_price),
+          currency = VALUES(currency),
+          currency_name = VALUES(currency_name),
+          currency_type = VALUES(currency_type),
+          has_promo = VALUES(has_promo),
+          updated_time = VALUES(updated_time),
           crawled_at = CURRENT_TIMESTAMP,
-          source = EXCLUDED.source,
+          source = VALUES(source),
           is_active = true
-        RETURNING id
       `, [
         tld, registrar, registrarName, registrarUrl,
         registrationPrice, renewalPrice, transferPrice,
         currency, currencyName, currencyType, hasPromo,
-        updatedTime, source
+        formattedUpdatedTime, source
       ]);
 
-      results.push(result.rows[0]);
+      results.push({ id: result.insertId });
     }
     
     return results;
