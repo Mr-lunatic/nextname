@@ -147,7 +147,7 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
   ]
 
   // 用户评价 - 使用翻译
-  const testimonials = (t('testimonials.reviews', { returnObjects: true }) as unknown) as Array<{
+  const testimonials = (t('testimonials.reviews', { returnObjects: true as any }) as unknown) as Array<{
     content: string,
     author: string,
     title: string
@@ -160,7 +160,7 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
   }))
 
   // FAQ数据 - 使用翻译
-  const faqs = (t('faq.questions', { returnObjects: true }) as unknown) as Array<{
+  const faqs = (t('faq.questions', { returnObjects: true as any }) as unknown) as Array<{
     question: string,
     answer: string
   }>
