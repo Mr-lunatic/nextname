@@ -276,12 +276,6 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false, sh
                   <XCircle className="w-4 h-4 mr-2" />
                   已注册
                 </Badge>
-                {daysUntilExpiry && (
-                  <Badge variant={daysUntilExpiry < 30 ? "destructive" : daysUntilExpiry < 90 ? "secondary" : "outline"}>
-                    <Clock className="w-3 h-3 mr-1" />
-                    {daysUntilExpiry > 0 ? `${daysUntilExpiry}天后到期` : '已过期'}
-                  </Badge>
-                )}
               </div>
             </div>
           </CardHeader>
