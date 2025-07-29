@@ -238,13 +238,12 @@ export default function TLDPageClient({ params }: TLDPageClientProps) {
                     </div>
                   </div>
                   
-                  <Separator />
-                  
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">注册政策</label>
-                    <p className="mt-1">{tldDetails.registrationPolicy}</p>
-                  </div>
-                  
+                  {tldDetails.restrictions && (
+                    <>
+                      <Separator />
+                    </>
+                  )}
+
                   {tldDetails.restrictions && (
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">使用限制</label>
