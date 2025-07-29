@@ -1,22 +1,36 @@
 import { Metadata } from 'next'
 import TLDsPageClient from './client'
 
-export const runtime = 'edge'
+// export const runtime = 'edge' // 暂时禁用Edge Runtime，因为JSON导入问题
 
 export const metadata: Metadata = {
-  title: '顶级域名大全 - 所有TLD后缀完整列表与价格对比 | Next Name',
-  description: '查看所有可注册的顶级域名(TLD)，包括.com、.net、.org等通用域名和各国家域名，实时价格对比和注册建议。',
-  keywords: '顶级域名,TLD,域名后缀,域名价格,域名注册,com域名,net域名,org域名',
+  title: 'Complete TLD List - All Domain Extensions & Prices | NextName',
+  description: 'Browse all available domain extensions (TLDs): .com, .net, .org, country codes, and new gTLDs with real-time pricing from 50+ registrars. Find the perfect domain extension for your project.',
+  keywords: [
+    'tld list', 'domain extensions', 'top level domains', 'all domain extensions',
+    'new tld domains', 'domain suffix list', 'gtld vs cctld', 'domain extension meanings',
+    'domain extension prices', 'tld comparison', 'domain suffix guide', 'tld registry',
+    'generic tld', 'country code domains', 'new gtld list', 'domain extension search'
+  ],
   openGraph: {
-    title: '顶级域名大全 - 所有TLD后缀完整列表',
-    description: '查看所有可注册的顶级域名(TLD)，包括.com、.net、.org等通用域名和各国家域名，实时价格对比和注册建议。',
+    title: 'Complete TLD List - All Domain Extensions & Prices',
+    description: 'Browse all available domain extensions (TLDs): .com, .net, .org, country codes, and new gTLDs with real-time pricing from 50+ registrars.',
     type: 'website',
     url: 'https://nextname.app/tlds',
+    images: [
+      {
+        url: '/og-tlds.png',
+        width: 1200,
+        height: 630,
+        alt: 'Complete TLD List - Domain Extensions Guide',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: '顶级域名大全 - 所有TLD后缀完整列表',
-    description: '查看所有可注册的顶级域名(TLD)，包括.com、.net、.org等通用域名和各国家域名，实时价格对比和注册建议。',
+    title: 'Complete TLD List - All Domain Extensions & Prices',
+    description: 'Browse all available domain extensions (TLDs) with real-time pricing from 50+ registrars.',
+    images: ['/og-tlds.png'],
   },
   alternates: {
     canonical: '/tlds',

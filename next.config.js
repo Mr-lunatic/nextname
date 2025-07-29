@@ -1,11 +1,11 @@
-// const { setupDevPlatform } = require('@cloudflare/next-on-pages/next-dev')
+const { setupDevPlatform } = require('@cloudflare/next-on-pages/next-dev')
 
-// // Here we use the @cloudflare/next-on-pages next-dev module to allow us to use bindings during local development
-// // (when running the application with `next dev`), for more information see:
-// // https://github.com/cloudflare/next-on-pages/blob/main/packages/next-on-pages/docs/api.md#setupdevplatform
-// if (process.env.NODE_ENV === 'development') {
-//   setupDevPlatform()
-// }
+// Here we use the @cloudflare/next-on-pages next-dev module to allow us to use bindings during local development
+// (when running the application with `next dev`), for more information see:
+// https://github.com/cloudflare/next-on-pages/blob/main/packages/next-on-pages/docs/api.md#setupdevplatform
+if (process.env.NODE_ENV === 'development') {
+  setupDevPlatform()
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -17,6 +17,20 @@ const nextConfig = {
   
   // Bundle优化和代码分割
   webpack: (config, { dev, isServer }) => {
+    // 开发环境修复 Edge Runtime 模块加载问题
+    if (dev && !isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        crypto: false,
+      }
+      
+      // 修复开发环境模块解析问题
+      config.optimization.moduleIds = 'named'
+      config.optimization.chunkIds = 'named'
+    }
+    
     if (!dev) {
       config.cache = false
     }
@@ -105,6 +119,19 @@ const nextConfig = {
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
     RDAP_CACHE_TTL: process.env.RDAP_CACHE_TTL || '3600',
     RDAP_TIMEOUT: process.env.RDAP_TIMEOUT || '2500',
+  },
+
+  // Webpack配置 - 添加模块别名来防止Neon数据库连接错误
+  webpack: (config, { isServer }) => {
+    // 在开发环境中，将@neondatabase/serverless重定向到我们的mock实现
+    if (process.env.NODE_ENV === 'development') {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@neondatabase/serverless': require.resolve('./src/lib/database-cf.ts'),
+      }
+    }
+
+    return config
   },
   
   // 缓存头设置

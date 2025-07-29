@@ -1,13 +1,13 @@
 "use client"
 
 import { useState, useEffect, useMemo } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Search, Filter, Grid, List, TrendingUp, Globe, Building, Users } from 'lucide-react'
+import { Search, Filter, Grid, List, Globe, Building, Users, Tag } from 'lucide-react'
 import Link from 'next/link'
 import { tldManager, TLDDetails } from '@/lib/tld-manager'
 import { NextNameLogo } from '@/components/logo'
@@ -16,14 +16,19 @@ import { LanguageSwitcher } from '@/components/language-currency-switcher'
 import { Footer } from '@/components/footer'
 import { TLDListStructuredData } from '@/components/tld-structured-data'
 import { ScrollToTop } from '@/components/scroll-to-top'
+import { Pagination, PaginationInfo } from '@/components/ui/pagination'
 
 export default function TLDsPageClient() {
   const [tlds, setTlds] = useState<TLDDetails[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState<string>('all')
-  const [sortBy, setSortBy] = useState<string>('popularity')
+  const [sortBy, setSortBy] = useState<string>('priority')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageLoading, setPageLoading] = useState(false)
+  const [isFiltering, setIsFiltering] = useState(false)
+  const itemsPerPage = 40 // 4*10 布局
 
   useEffect(() => {
     const loadTLDs = async () => {
@@ -45,7 +50,7 @@ export default function TLDsPageClient() {
 
     // 搜索过滤
     if (searchQuery) {
-      filtered = filtered.filter(tld => 
+      filtered = filtered.filter(tld =>
         tld.tld.toLowerCase().includes(searchQuery.toLowerCase()) ||
         tld.description.toLowerCase().includes(searchQuery.toLowerCase())
       )
@@ -59,19 +64,96 @@ export default function TLDsPageClient() {
     // 排序
     filtered.sort((a, b) => {
       switch (sortBy) {
-        case 'popularity':
-          return b.popularityScore - a.popularityScore
-        case 'price':
-          return (a.averagePrice || 999) - (b.averagePrice || 999)
+        case 'priority':
+          // 先按优先级排序，再按字母排序
+          if (a.priority !== b.priority) {
+            return a.priority - b.priority
+          }
+          return a.tld.localeCompare(b.tld)
         case 'alphabetical':
           return a.tld.localeCompare(b.tld)
+        case 'category':
+          return a.category.localeCompare(b.category)
         default:
-          return 0
+          // 默认按优先级排序
+          if (a.priority !== b.priority) {
+            return a.priority - b.priority
+          }
+          return a.tld.localeCompare(b.tld)
       }
     })
 
     return filtered
   }, [tlds, searchQuery, typeFilter, sortBy])
+
+  // 分页计算
+  const totalPages = Math.ceil(filteredAndSortedTLDs.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentPageTLDs = filteredAndSortedTLDs.slice(startIndex, endIndex)
+
+  // 当过滤条件改变时重置到第一页，并添加防抖
+  useEffect(() => {
+    setIsFiltering(true)
+    setCurrentPage(1)
+
+    // 防抖处理，避免快速筛选时的DOM冲突
+    const timer = setTimeout(() => {
+      setIsFiltering(false)
+    }, 100)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery, typeFilter, sortBy])
+
+  // 当页面改变时滚动到顶部并显示加载状态
+  useEffect(() => {
+    setPageLoading(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+
+    // 模拟页面切换的加载时间
+    const timer = setTimeout(() => {
+      setPageLoading(false)
+    }, 200) // 减少加载时间，避免动画冲突
+
+    return () => clearTimeout(timer)
+  }, [currentPage])
+
+  // 键盘导航支持
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.target instanceof HTMLInputElement) return // 忽略输入框中的按键
+
+      switch (event.key) {
+        case 'ArrowLeft':
+          if (currentPage > 1) {
+            event.preventDefault()
+            setCurrentPage(currentPage - 1)
+          }
+          break
+        case 'ArrowRight':
+          if (currentPage < totalPages) {
+            event.preventDefault()
+            setCurrentPage(currentPage + 1)
+          }
+          break
+        case 'Home':
+          if (event.ctrlKey) {
+            event.preventDefault()
+            setCurrentPage(1)
+          }
+          break
+        case 'End':
+          if (event.ctrlKey) {
+            event.preventDefault()
+            setCurrentPage(totalPages)
+          }
+          break
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [currentPage, totalPages])
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -144,20 +226,20 @@ export default function TLDsPageClient() {
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
         <div className="text-center mb-12">
-          <motion.h1 
+          <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-4xl font-bold mb-4"
           >
-            顶级域名大全
+            Complete List of Top-Level Domains (TLDs)
           </motion.h1>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             className="text-xl text-muted-foreground mb-8"
           >
-            探索所有可注册的顶级域名，找到最适合您的域名后缀
+            Explore all available domain extensions with real-time pricing from 50+ registrars
           </motion.p>
           
           {/* Stats */}
@@ -170,38 +252,47 @@ export default function TLDsPageClient() {
             <Card>
               <CardContent className="p-4 text-center">
                 <div className="text-2xl font-bold text-primary">{tlds.length}</div>
-                <div className="text-sm text-muted-foreground">总TLD数量</div>
+                <div className="text-sm text-muted-foreground">Total TLDs</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {tlds.filter(t => t.type === 'generic').length}
-                </div>
-                <div className="text-sm text-muted-foreground">通用域名</div>
+                <div className="text-2xl font-bold text-green-600">{filteredAndSortedTLDs.length}</div>
+                <div className="text-sm text-muted-foreground">Filtered Results</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4 text-center">
                 <div className="text-2xl font-bold text-blue-600">
-                  {tlds.filter(t => t.type === 'country').length}
+                  {currentPage} / {totalPages}
                 </div>
-                <div className="text-sm text-muted-foreground">国家域名</div>
+                <div className="text-sm text-muted-foreground">Current Page</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4 text-center">
                 <div className="text-2xl font-bold text-orange-600">
-                  ${Math.min(...tlds.filter(t => t.averagePrice).map(t => t.averagePrice!))}
+                  {tlds.filter(t => t.type === 'sponsored').length}
                 </div>
-                <div className="text-sm text-muted-foreground">最低价格</div>
+                <div className="text-sm text-muted-foreground">Sponsored TLDs</div>
               </CardContent>
             </Card>
           </motion.div>
         </div>
 
+        {/* Section Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="mb-6"
+        >
+          <h2 className="text-2xl font-semibold mb-2">Search & Filter Domain Extensions</h2>
+          <p className="text-muted-foreground">Find the perfect TLD for your project from our comprehensive database</p>
+        </motion.div>
+
         {/* Filters and Search */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
@@ -213,33 +304,46 @@ export default function TLDsPageClient() {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="搜索TLD或描述..."
+                    placeholder="Search TLD or description..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"
                   />
                 </div>
                 
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <Select
+                  value={typeFilter}
+                  onValueChange={(value) => {
+                    setIsFiltering(true)
+                    setTypeFilter(value)
+                  }}
+                >
                   <SelectTrigger className="w-full md:w-48">
-                    <SelectValue placeholder="选择类型" />
+                    <SelectValue placeholder="Select Type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">所有类型</SelectItem>
-                    <SelectItem value="generic">通用域名</SelectItem>
-                    <SelectItem value="country">国家域名</SelectItem>
-                    <SelectItem value="sponsored">赞助域名</SelectItem>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="generic">Generic TLDs</SelectItem>
+                    <SelectItem value="country">Country TLDs</SelectItem>
+                    <SelectItem value="sponsored">Sponsored TLDs</SelectItem>
+                    <SelectItem value="second-level">Second Level</SelectItem>
                   </SelectContent>
                 </Select>
 
-                <Select value={sortBy} onValueChange={setSortBy}>
+                <Select
+                  value={sortBy}
+                  onValueChange={(value) => {
+                    setIsFiltering(true)
+                    setSortBy(value)
+                  }}
+                >
                   <SelectTrigger className="w-full md:w-48">
-                    <SelectValue placeholder="排序方式" />
+                    <SelectValue placeholder="Sort By" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="popularity">按热度排序</SelectItem>
-                    <SelectItem value="price">按价格排序</SelectItem>
-                    <SelectItem value="alphabetical">按字母排序</SelectItem>
+                    <SelectItem value="priority">By Importance</SelectItem>
+                    <SelectItem value="alphabetical">Alphabetical</SelectItem>
+                    <SelectItem value="category">By Category</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -269,37 +373,50 @@ export default function TLDsPageClient() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
+          className="relative"
         >
+          {/* 页面加载覆盖层 */}
+          {(pageLoading || isFiltering) && (
+            <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-10 flex items-center justify-center">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                <span>
+                  {isFiltering ? 'Filtering results...' : `Loading page ${currentPage}...`}
+                </span>
+              </div>
+            </div>
+          )}
+
           {filteredAndSortedTLDs.length === 0 ? (
             <Card>
               <CardContent className="p-12 text-center">
-                <p className="text-muted-foreground">没有找到匹配的TLD</p>
+                <p className="text-muted-foreground">No matching TLDs found</p>
               </CardContent>
             </Card>
           ) : (
-            <div className={viewMode === 'grid' 
-              ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' 
-              : 'space-y-4'
-            }>
-              {filteredAndSortedTLDs.map((tld, index) => (
-                <motion.div
-                  key={tld.tld}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                >
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`page-${currentPage}-${typeFilter}-${sortBy}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className={viewMode === 'grid'
+                  ? 'grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6'
+                  : 'space-y-4'
+                }
+              >
+                {!isFiltering && currentPageTLDs.map((tld, index) => (
+                  <motion.div
+                    key={tld.tld}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.01, duration: 0.2 }}
+                  >
                   <Link href={`/tld${tld.tld}`}>
                     <Card className="h-full hover:shadow-lg transition-all duration-300 cursor-pointer">
                       <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-xl font-mono">{tld.tld}</CardTitle>
-                          <div className="flex items-center gap-2">
-                            {getTypeIcon(tld.type)}
-                            <Badge variant="secondary">
-                              {getTypeLabel(tld.type)}
-                            </Badge>
-                          </div>
-                        </div>
+                        <CardTitle className="text-xl font-mono">{tld.tld}</CardTitle>
                       </CardHeader>
                       <CardContent>
                         <p className="text-muted-foreground mb-4 line-clamp-2">
@@ -307,29 +424,114 @@ export default function TLDsPageClient() {
                         </p>
                         
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">
-                              热度: {tld.popularityScore}
-                            </span>
-                          </div>
-                          {tld.averagePrice && (
-                            <div className="text-right">
-                              <div className="text-sm text-muted-foreground">起价</div>
-                              <div className="font-semibold text-primary">
-                                ${tld.averagePrice}
-                              </div>
-                            </div>
-                          )}
+                          <span className="text-xs text-muted-foreground truncate">
+                            {tld.category
+                              .replace('Generic Top-Level Domains', 'Generic TLD')
+                              .replace('Country Code Top-Level Domains', 'Country TLD')
+                              .replace('Sponsored Top-Level Domains', 'Sponsored TLD')
+                              .replace('Second-Level Domains', 'Second-Level')
+                            }
+                          </span>
+                          <Badge variant="outline" className="text-xs ml-2 flex-shrink-0">
+                            {tld.type}
+                          </Badge>
                         </div>
                       </CardContent>
                     </Card>
                   </Link>
-                </motion.div>
-              ))}
-            </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </AnimatePresence>
           )}
         </motion.div>
+
+        {/* 分页组件 */}
+        {filteredAndSortedTLDs.length > 0 && totalPages > 1 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="mt-12 space-y-6"
+          >
+            {/* 分页信息 */}
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div className="flex flex-col items-center sm:items-start gap-1">
+                <PaginationInfo
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={filteredAndSortedTLDs.length}
+                  itemsPerPage={itemsPerPage}
+                />
+                <div className="text-xs text-muted-foreground hidden lg:block">
+                  Use ← → arrow keys to navigate • Ctrl+Home/End for first/last page
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                {/* 快速跳转按钮 */}
+                <div className="hidden md:flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                  >
+                    First
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Last
+                  </Button>
+                </div>
+
+                {/* 跳转到页面 */}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span className="hidden sm:inline">Go to:</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={totalPages}
+                    value={currentPage}
+                    onChange={(e) => {
+                      const page = parseInt(e.target.value)
+                      if (page >= 1 && page <= totalPages) {
+                        setCurrentPage(page)
+                      }
+                    }}
+                    className="w-16 border rounded px-2 py-1 bg-background text-center"
+                  />
+                  <span>/ {totalPages}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 分页控件 */}
+            <div className="block sm:hidden">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                maxVisiblePages={3}
+                showFirstLast={false}
+                className="justify-center"
+              />
+            </div>
+            <div className="hidden sm:block">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                maxVisiblePages={5}
+                className="justify-center"
+              />
+            </div>
+          </motion.div>
+        )}
       </div>
 
       <Footer />

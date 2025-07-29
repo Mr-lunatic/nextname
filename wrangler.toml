@@ -2,17 +2,10 @@ name = "nextname"
 compatibility_date = "2025-07-15"
 compatibility_flags = ["nodejs_compat"]
 
+# Build configuration for Cloudflare Pages
 [build]
 command = "npm run pages:build"
 cwd = ""
-
-[build.environment_variables]
-NODE_VERSION = "20"
-
-[[pages]]
-compatibility_date = "2025-07-15"
-compatibility_flags = ["nodejs_compat"]
-pages_build_output_dir = ".vercel/output/static"
 
 # KV namespace for caching
 [[kv_namespaces]]

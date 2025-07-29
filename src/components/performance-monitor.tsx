@@ -63,15 +63,54 @@ export function PerformanceMonitor() {
     return 'poor'
   }, [])
 
-  const sendToAnalytics = useCallback((metric: string, value: number, rating: string) => {
-    // 这里可以发送到你的分析服务
-    console.log(`Performance metric: ${metric} = ${value} (${rating})`)
+  const sendToAnalytics = useCallback(async (metric: string, value: number, rating: string) => {
+    try {
+      // Send individual vitals to analytics endpoint
+      await fetch('/api/analytics/vitals', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          metric,
+          value,
+          rating,
+          url: window.location.href,
+          userAgent: navigator.userAgent,
+          timestamp: new Date().toISOString()
+        })
+      })
+    } catch (error) {
+      // Silently fail in production, log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Failed to send vitals:', error)
+      }
+    }
   }, [])
 
-  const sendBatchMetrics = useCallback(() => {
-    // 批量发送所有指标
-    const allMetrics = { ...vitals, ...metrics }
-    console.log('Batch metrics:', allMetrics)
+  const sendBatchMetrics = useCallback(async () => {
+    try {
+      // 批量发送所有指标
+      const allMetrics = { ...vitals, ...metrics }
+
+      await fetch('/api/analytics/batch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url: window.location.href,
+          metrics: allMetrics,
+          userAgent: navigator.userAgent,
+          timestamp: new Date().toISOString()
+        })
+      })
+    } catch (error) {
+      // Silently fail in production, log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Failed to send batch metrics:', error)
+      }
+    }
   }, [vitals, metrics])
 
   const estimateTimeToInteractive = useCallback(() => {

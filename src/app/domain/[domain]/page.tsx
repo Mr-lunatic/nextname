@@ -22,13 +22,18 @@ export async function generateMetadata({ params }: DomainPageProps): Promise<Met
     }
   }
 
-  const title = `${domain} - 域名查询、WHOIS信息与价格对比 | NextName`
-  const description = `查看 ${domain} 的详细信息：WHOIS查询、注册状态、到期时间、DNS记录，以及50+注册商价格对比。免费域名查询工具。`
+  const title = `${domain} WHOIS Lookup - Domain Registration Details | NextName`
+  const description = `Complete WHOIS information for ${domain}: registration date, expiry, registrar, DNS records, and availability status. Free domain lookup with comprehensive details.`
 
   return {
     title,
     description,
-    keywords: `${domain},域名查询,WHOIS查询,域名价格,域名注册,${domain}注册,${domain}价格`,
+    keywords: [
+      `${domain} whois`, `${domain} domain info`, `${domain} registration details`,
+      `${domain} availability`, `${domain} expiration date`, `${domain} dns records`,
+      `${domain} registrar info`, `who owns ${domain}`, `${domain} domain lookup`,
+      `${domain} whois data`, `${domain} domain status`, `${domain} registration info`
+    ],
     openGraph: {
       title,
       description,
@@ -39,7 +44,7 @@ export async function generateMetadata({ params }: DomainPageProps): Promise<Met
           url: '/og-domain.png',
           width: 1200,
           height: 630,
-          alt: `${domain} 域名查询结果`,
+          alt: `${domain} WHOIS Lookup Results`,
         },
       ],
     },

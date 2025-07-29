@@ -4,19 +4,33 @@ import JsonFormatterClient from './client'
 export const runtime = 'edge'
 
 export const metadata: Metadata = {
-  title: 'JSON 格式化工具 - 在线JSON美化验证器 | NextName',
-  description: '免费的在线JSON格式化和验证工具，支持JSON美化、压缩、验证，本地处理保护隐私，无需上传数据到服务器。',
-  keywords: 'JSON,格式化,美化,验证,压缩,在线工具,JSON validator,隐私保护',
+  title: 'JSON Formatter & Validator - Online JSON Beautifier Tool | NextName',
+  description: 'Free online JSON formatter, validator and beautifier. Format, validate, minify and prettify JSON data instantly. Privacy-focused tool runs locally in your browser.',
+  keywords: [
+    'json formatter', 'json validator', 'json beautifier', 'online json formatter',
+    'json pretty print', 'json minifier', 'json parser', 'json viewer',
+    'format json online', 'validate json online', 'json syntax checker',
+    'json tool', 'json editor', 'json lint', 'json prettifier'
+  ],
   openGraph: {
-    title: 'JSON 格式化工具 - 在线JSON美化验证器',
-    description: '免费的在线JSON格式化和验证工具，支持JSON美化、压缩、验证，本地处理保护隐私。',
+    title: 'JSON Formatter & Validator - Online JSON Beautifier Tool',
+    description: 'Free online JSON formatter, validator and beautifier. Format, validate, minify and prettify JSON data instantly.',
     type: 'website',
     url: 'https://nextname.app/tools/json-formatter',
+    images: [
+      {
+        url: '/og-json-formatter.png',
+        width: 1200,
+        height: 630,
+        alt: 'JSON Formatter and Validator Tool',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'JSON 格式化工具 - 在线JSON美化验证器',
-    description: '免费的在线JSON格式化和验证工具，支持JSON美化、压缩、验证，本地处理保护隐私。',
+    title: 'JSON Formatter & Validator - Online JSON Beautifier Tool',
+    description: 'Free online JSON formatter and validator running locally for privacy protection.',
+    images: ['/og-json-formatter.png'],
   },
   alternates: {
     canonical: '/tools/json-formatter',

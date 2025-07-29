@@ -33,6 +33,7 @@ import dynamic from 'next/dynamic'
 
 import { CardSpotlight, HeroSpotlight, LightSpotlight } from '@/components/ui/framer-spotlight';
 import { LazySection, LazyPlaceholder } from '@/components/lazy-section'
+import { WebsiteStructuredData, SoftwareApplicationStructuredData, FAQStructuredData } from '@/components/seo-structured-data'
 
 
 export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: string; price: string; }[] }) {
@@ -142,6 +143,19 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-surface-primary)' }}>
+      {/* SEO Structured Data */}
+      <WebsiteStructuredData
+        url="https://nextname.app"
+        name="NextName - AI-Powered Domain Search Platform"
+        description="Search domain availability instantly with our AI-powered tool. Compare prices from 50+ registrars, get WHOIS data, and discover your perfect domain name."
+        keywords={[
+          'domain search', 'domain availability checker', 'whois lookup', 'domain name generator',
+          'domain price comparison', 'ai domain suggestions', 'domain registrar comparison'
+        ]}
+      />
+      <SoftwareApplicationStructuredData />
+      <FAQStructuredData faqs={faqs} />
+
       <Navigation currentLocale={locale} />
 
       {/* Hero Section */}

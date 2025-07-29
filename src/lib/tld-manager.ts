@@ -1,37 +1,47 @@
-import { getAllSupportedTLDs } from './tld-data'
-
 export interface TLDDetails {
   tld: string
-  type: 'generic' | 'country' | 'sponsored' | 'infrastructure'
-  registry: string
-  launchedDate?: string
-  registrationPolicy: string
-  restrictions?: string
-  dnssecSupport: boolean
-  idnSupport: boolean
-  status: 'active' | 'withdrawn' | 'retired'
-  popularityScore: number
-  averagePrice?: number
+  type: 'generic' | 'country' | 'sponsored' | 'second-level'
+  category: string
   description: string
+  status: 'active' | 'withdrawn' | 'retired'
+  restrictions?: string
   usageExamples: string[]
   targetAudience: string[]
-  pros: string[]
-  cons: string[]
+  priority: number
 }
 
-export interface TLDPricing {
-  registrar: string
-  registrationPrice: number
-  renewalPrice: number
-  transferPrice: number
-  currency: string
-  features: string[]
-  rating: number
+// TLD分类映射
+const TLD_CATEGORIES = {
+  '通用顶级域名 (gTLD)': {
+    type: 'generic' as const,
+    englishName: 'Generic Top-Level Domains',
+    description: 'Generic top-level domains available for general registration',
+    priority: 1
+  },
+  '国家代码顶级域名 (ccTLD)': {
+    type: 'country' as const,
+    englishName: 'Country Code Top-Level Domains',
+    description: 'Country-specific top-level domains',
+    priority: 2
+  },
+  '赞助/限制性顶级域名 (sTLD/rTLD)': {
+    type: 'sponsored' as const,
+    englishName: 'Sponsored Top-Level Domains',
+    description: 'Sponsored top-level domains with specific requirements',
+    priority: 3
+  },
+  '国家代码下的二级/三级域名': {
+    type: 'second-level' as const,
+    englishName: 'Second-Level Domains',
+    description: 'Second and third level domains under country codes',
+    priority: 4
+  }
 }
 
 export class TLDManager {
   private static instance: TLDManager
   private tldData: Map<string, TLDDetails> = new Map()
+  private categorizedTLDs: Map<string, TLDDetails[]> = new Map()
   private initialized = false
 
   static getInstance(): TLDManager {
@@ -44,179 +54,192 @@ export class TLDManager {
   async initialize() {
     if (this.initialized) return
 
-    const supportedTLDs = await getAllSupportedTLDs()
-
-    // 增强TLD数据
-    for (const tldData of supportedTLDs) {
-      const enhancedData = this.enhanceTLDData(tldData.tld)
-      this.tldData.set(tldData.tld, enhancedData)
-    }
-
+    // 从JSON文件加载TLD数据
+    await this.loadTLDsFromJSON()
     this.initialized = true
   }
 
-  private enhanceTLDData(tld: string): TLDDetails {
-    const tldInfo = this.getTLDInfo(tld)
+  private async loadTLDsFromJSON() {
+    try {
+      // 动态导入JSON文件
+      const tldListData = await import('../../tld_list.json')
+      const data = tldListData.default || tldListData
+      
+      Object.entries(data).forEach(([categoryName, tlds]) => {
+        const categoryInfo = TLD_CATEGORIES[categoryName as keyof typeof TLD_CATEGORIES]
+        if (!categoryInfo) return
 
-    return {
-      tld,
-      type: tldInfo.type || 'generic',
-      registry: tldInfo.registry || 'Unknown',
-      launchedDate: tldInfo.launchedDate,
-      registrationPolicy: tldInfo.registrationPolicy || '通用顶级域名',
-      restrictions: tldInfo.restrictions,
-      dnssecSupport: tldInfo.dnssecSupport || false,
-      idnSupport: tldInfo.idnSupport || false,
-      status: 'active',
-      popularityScore: tldInfo.popularityScore || 50,
-      averagePrice: tldInfo.averagePrice,
-      description: tldInfo.description || `${tld}域名的详细信息`,
-      usageExamples: tldInfo.usageExamples || ['通用网站', '个人项目'],
-      targetAudience: tldInfo.targetAudience || ['个人用户', '小型企业'],
-      pros: tldInfo.pros || ['价格合理'],
-      cons: tldInfo.cons || ['知名度较低']
+        const categoryTLDs: TLDDetails[] = []
+
+        tlds.forEach((tld: string) => {
+          const tldDetails: TLDDetails = {
+            tld: tld.startsWith('.') ? tld : `.${tld}`,
+            type: categoryInfo.type,
+            category: categoryInfo.englishName,
+            description: this.generateTLDDescription(tld, categoryInfo.type),
+            status: 'active',
+            restrictions: this.getTLDRestrictions(tld, categoryInfo.type),
+            usageExamples: this.generateUsageExamples(tld, categoryInfo.type),
+            targetAudience: this.getTargetAudience(tld, categoryInfo.type),
+            priority: categoryInfo.priority
+          }
+
+          this.tldData.set(tldDetails.tld, tldDetails)
+          categoryTLDs.push(tldDetails)
+        })
+
+        this.categorizedTLDs.set(categoryInfo.englishName, categoryTLDs)
+      })
+    } catch (error) {
+      console.error('Failed to load TLD data:', error)
+      // 如果加载失败，使用一些基本的TLD数据
+      this.loadFallbackTLDs()
     }
   }
 
-  private getTLDInfo(tld: string): Partial<TLDDetails> {
-    const tldDatabase: Record<string, Partial<TLDDetails>> = {
-      '.com': {
-        type: 'generic',
-        registry: 'Verisign',
-        launchedDate: '1985-01-01',
-        registrationPolicy: '通用顶级域名，无特殊限制，全球通用',
-        dnssecSupport: true,
-        idnSupport: true,
-        popularityScore: 100,
-        averagePrice: 12,
-        description: '.com是最受欢迎和最广泛使用的顶级域名，适合各种类型的网站',
-        usageExamples: ['企业官网', '电商平台', '品牌展示', '个人博客'],
-        targetAudience: ['企业', '个人', '电商', '品牌'],
-        pros: ['全球认知度最高', '搜索引擎友好', '用户信任度高', '易于记忆'],
-        cons: ['价格相对较高', '好域名稀缺', '竞争激烈']
-      },
-      '.net': {
-        type: 'generic',
-        registry: 'Verisign',
-        launchedDate: '1985-01-01',
-        registrationPolicy: '通用顶级域名，原为网络服务提供商设计',
-        dnssecSupport: true,
-        idnSupport: true,
-        popularityScore: 85,
-        averagePrice: 11,
-        description: '.net域名适合网络服务、技术公司和在线平台',
-        usageExamples: ['网络服务', '技术博客', '在线工具', 'SaaS平台'],
-        targetAudience: ['技术公司', '网络服务商', '开发者', 'IT企业'],
-        pros: ['技术属性强', '价格适中', '认知度较高'],
-        cons: ['不如.com普及', '部分用户可能混淆']
-      },
-      '.org': {
-        type: 'generic',
-        registry: 'Public Interest Registry',
-        launchedDate: '1985-01-01',
-        registrationPolicy: '通用顶级域名，原为非营利组织设计',
-        dnssecSupport: true,
-        idnSupport: true,
-        popularityScore: 80,
-        averagePrice: 10,
-        description: '.org域名适合非营利组织、开源项目和社区网站',
-        usageExamples: ['非营利组织', '开源项目', '社区网站', '慈善机构'],
-        targetAudience: ['非营利组织', '开源社区', '教育机构', '慈善机构'],
-        pros: ['公益属性强', '信任度高', '价格合理'],
-        cons: ['商业用途受限', '知名度不如.com']
-      },
-      '.io': {
-        type: 'country',
-        registry: 'Internet Computer Bureau',
-        launchedDate: '1997-09-16',
-        registrationPolicy: '英属印度洋领地国家域名，广泛用于科技行业',
-        dnssecSupport: true,
-        idnSupport: false,
-        popularityScore: 75,
-        averagePrice: 35,
-        description: '.io域名在科技和初创公司中非常受欢迎',
-        usageExamples: ['科技初创', '开发者工具', 'SaaS平台', 'API服务'],
-        targetAudience: ['科技公司', '初创企业', '开发者', 'SaaS服务'],
-        pros: ['科技属性强', '简短易记', '创新形象'],
-        cons: ['价格较高', '国家域名风险', '续费成本高']
-      },
-      '.ai': {
-        type: 'country',
-        registry: 'Government of Anguilla',
-        launchedDate: '1995-01-03',
-        registrationPolicy: '安圭拉国家域名，广泛用于人工智能行业',
-        dnssecSupport: true,
-        idnSupport: false,
-        popularityScore: 70,
-        averagePrice: 80,
-        description: '.ai域名是人工智能和机器学习公司的首选',
-        usageExamples: ['人工智能', '机器学习', '智能产品', 'AI工具'],
-        targetAudience: ['AI公司', '科技企业', '研究机构', '智能产品'],
-        pros: ['AI属性明确', '行业认知度高', '品牌价值强'],
-        cons: ['价格昂贵', '续费成本极高', '国家域名风险']
+  private loadFallbackTLDs() {
+    const fallbackTLDs = [
+      { tld: '.com', type: 'generic' as const, category: 'Generic Top-Level Domains', priority: 1 },
+      { tld: '.net', type: 'generic' as const, category: 'Generic Top-Level Domains', priority: 1 },
+      { tld: '.org', type: 'generic' as const, category: 'Generic Top-Level Domains', priority: 1 },
+      { tld: '.us', type: 'country' as const, category: 'Country Code Top-Level Domains', priority: 2 },
+      { tld: '.uk', type: 'country' as const, category: 'Country Code Top-Level Domains', priority: 2 },
+    ]
+
+    fallbackTLDs.forEach(({ tld, type, category, priority }) => {
+      const tldDetails: TLDDetails = {
+        tld,
+        type,
+        category,
+        description: this.generateTLDDescription(tld, type),
+        status: 'active',
+        restrictions: this.getTLDRestrictions(tld, type),
+        usageExamples: this.generateUsageExamples(tld, type),
+        targetAudience: this.getTargetAudience(tld, type),
+        priority
       }
-    }
 
-    return tldDatabase[tld] || {
-      type: 'generic',
-      registry: 'Unknown',
-      registrationPolicy: '通用顶级域名',
-      dnssecSupport: false,
-      idnSupport: false,
-      popularityScore: 50,
-      averagePrice: 15,
-      description: `${tld}域名的详细信息`,
-      usageExamples: ['通用网站', '个人项目'],
-      targetAudience: ['个人用户', '小型企业'],
-      pros: ['价格合理'],
-      cons: ['知名度较低']
+      this.tldData.set(tld, tldDetails)
+    })
+  }
+
+  private generateTLDDescription(tld: string, type: string): string {
+    const cleanTld = tld.replace('.', '')
+    
+    switch (type) {
+      case 'generic':
+        return `The .${cleanTld} domain is a generic top-level domain suitable for various purposes.`
+      case 'country':
+        return `The .${cleanTld} domain is a country code top-level domain.`
+      case 'sponsored':
+        return `The .${cleanTld} domain is a sponsored top-level domain with specific registration requirements.`
+      case 'second-level':
+        return `The ${tld} domain is a second or third level domain under a country code.`
+      default:
+        return `The ${tld} domain extension.`
     }
   }
 
-  async getTLDDetails(tld: string): Promise<TLDDetails | null> {
-    await this.initialize()
-    return this.tldData.get(tld) || null
+  private getTLDRestrictions(tld: string, type: string): string | undefined {
+    if (type === 'sponsored') {
+      return 'May have specific registration requirements or restrictions'
+    }
+    if (type === 'country') {
+      return 'May require local presence or specific documentation'
+    }
+    if (type === 'second-level') {
+      return 'Subject to the policies of the parent domain'
+    }
+    return undefined
   }
 
+  private generateUsageExamples(tld: string, type: string): string[] {
+    const cleanTld = tld.replace('.', '')
+    const baseDomain = `example.${cleanTld}`
+    
+    switch (type) {
+      case 'generic':
+        return [`${baseDomain}`, `mysite.${cleanTld}`, `business.${cleanTld}`]
+      case 'country':
+        return [`${baseDomain}`, `company.${cleanTld}`, `local.${cleanTld}`]
+      case 'sponsored':
+        return [`${baseDomain}`, `organization.${cleanTld}`]
+      case 'second-level':
+        return [`example${tld}`, `mysite${tld}`]
+      default:
+        return [`${baseDomain}`]
+    }
+  }
+
+  private getTargetAudience(tld: string, type: string): string[] {
+    switch (type) {
+      case 'generic':
+        return ['Businesses', 'Individuals', 'Organizations', 'General Public']
+      case 'country':
+        return ['Local Businesses', 'Residents', 'Government', 'Local Organizations']
+      case 'sponsored':
+        return ['Specific Communities', 'Professional Organizations', 'Industry Groups']
+      case 'second-level':
+        return ['Regional Users', 'Local Services', 'Specific Purposes']
+      default:
+        return ['General Public']
+    }
+  }
+
+  // 获取所有TLD
   async getAllTLDs(): Promise<TLDDetails[]> {
     await this.initialize()
     return Array.from(this.tldData.values())
   }
 
-  async getPopularTLDs(limit: number = 10): Promise<TLDDetails[]> {
+  // 按分类获取TLD
+  async getTLDsByCategory(category?: string): Promise<TLDDetails[]> {
     await this.initialize()
-    return Array.from(this.tldData.values())
-      .sort((a, b) => b.popularityScore - a.popularityScore)
-      .slice(0, limit)
-  }
-
-  async getTLDsByType(type: TLDDetails['type']): Promise<TLDDetails[]> {
-    await this.initialize()
-    return Array.from(this.tldData.values())
-      .filter(tld => tld.type === type)
-  }
-
-  async getRelatedTLDs(tld: string, limit: number = 5): Promise<TLDDetails[]> {
-    await this.initialize()
-    const currentTLD = this.tldData.get(tld)
-    if (!currentTLD) return []
-
-    return Array.from(this.tldData.values())
-      .filter(t => t.tld !== tld && t.type === currentTLD.type)
-      .sort((a, b) => b.popularityScore - a.popularityScore)
-      .slice(0, limit)
-  }
-
-  generateTLDPageData(tld: string, details: TLDDetails) {
-    return {
-      title: `${tld}域名 - 注册价格${details.averagePrice}元起 | 政策详解与使用指南`,
-      description: `了解${tld}域名的注册政策、价格趋势、使用限制和最佳实践。${details.description}`,
-      keywords: `${tld}域名,${tld}注册,${tld}价格,${tld}后缀`,
-      canonical: `/tld${tld}`,
-      lastUpdated: new Date().toISOString(),
-      tld: details
+    
+    if (!category || category === 'all') {
+      return this.getAllTLDs()
     }
+    
+    return this.categorizedTLDs.get(category) || []
+  }
+
+  // 获取所有分类
+  getCategories(): string[] {
+    return Array.from(this.categorizedTLDs.keys())
+  }
+
+  // 获取特定TLD详情
+  async getTLDDetails(tld: string): Promise<TLDDetails | null> {
+    await this.initialize()
+    const normalizedTld = tld.startsWith('.') ? tld : `.${tld}`
+    return this.tldData.get(normalizedTld) || null
+  }
+
+  // 搜索TLD
+  async searchTLDs(query: string): Promise<TLDDetails[]> {
+    await this.initialize()
+    const allTLDs = await this.getAllTLDs()
+    const lowerQuery = query.toLowerCase()
+    
+    return allTLDs.filter(tld => 
+      tld.tld.toLowerCase().includes(lowerQuery) ||
+      tld.description.toLowerCase().includes(lowerQuery) ||
+      tld.category.toLowerCase().includes(lowerQuery)
+    )
+  }
+
+  // 获取相关TLD（同类型的其他TLD）
+  async getRelatedTLDs(tld: string, limit: number = 6): Promise<TLDDetails[]> {
+    await this.initialize()
+    const targetTLD = await this.getTLDDetails(tld)
+    if (!targetTLD) return []
+
+    const sameCategoryTLDs = await this.getTLDsByCategory(targetTLD.category)
+    return sameCategoryTLDs
+      .filter(t => t.tld !== targetTLD.tld)
+      .slice(0, limit)
   }
 }
 
+// 导出单例实例
 export const tldManager = TLDManager.getInstance()
