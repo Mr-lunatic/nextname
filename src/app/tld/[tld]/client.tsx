@@ -6,10 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { 
-  Globe, Building, Users, Shield, Check, X, 
+import {
+  Globe, Building, Users, Shield, Check, X,
   TrendingUp, DollarSign, Info, ExternalLink,
-  Star, Clock, Award, AlertCircle
+  Star, Clock, Award, AlertCircle, Tag
 } from 'lucide-react'
 import Link from 'next/link'
 import { tldManager, TLDDetails } from '@/lib/tld-manager'
@@ -167,37 +167,34 @@ export default function TLDPageClient({ params }: TLDPageClientProps) {
                   
                   <div className="flex flex-wrap gap-2">
                     <Badge variant="secondary" className="flex items-center gap-1">
-                      <TrendingUp className="h-3 w-3" />
-                      热度: {tldDetails.popularityScore}
+                      <Tag className="h-3 w-3" />
+                      {tldDetails.category}
                     </Badge>
-                    {tldDetails.dnssecSupport && (
-                      <Badge variant="secondary" className="flex items-center gap-1">
-                        <Shield className="h-3 w-3" />
-                        DNSSEC支持
-                      </Badge>
-                    )}
-                    {tldDetails.idnSupport && (
-                      <Badge variant="secondary" className="flex items-center gap-1">
-                        <Globe className="h-3 w-3" />
-                        IDN支持
+                    <Badge variant="outline" className="flex items-center gap-1">
+                      {getTypeIcon(tldDetails.type)}
+                      {getTypeLabel(tldDetails.type)}
+                    </Badge>
+                    {tldDetails.restrictions && (
+                      <Badge variant="destructive" className="flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        有限制
                       </Badge>
                     )}
                   </div>
                 </div>
                 
-                {tldDetails.averagePrice && (
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-primary">
-                      ${tldDetails.averagePrice}
-                    </div>
-                    <div className="text-sm text-muted-foreground">平均注册价格</div>
-                    <Button className="mt-4" asChild>
-                      <Link href={`/search?q=${tld}&type=suffix`}>
-                        查看注册商价格
-                      </Link>
-                    </Button>
+                <div className="text-center">
+                  <div className="text-lg font-medium text-muted-foreground mb-2">
+                    {tldDetails.type === 'generic' ? '通用顶级域名' :
+                     tldDetails.type === 'country' ? '国家代码域名' :
+                     tldDetails.type === 'sponsored' ? '赞助域名' : '二级域名'}
                   </div>
-                )}
+                  <Button className="mt-4" asChild>
+                    <Link href={`/search?q=${tld}&type=suffix`}>
+                      查找注册商
+                    </Link>
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -312,36 +309,48 @@ export default function TLDPageClient({ params }: TLDPageClientProps) {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Award className="h-5 w-5" />
-                    优缺点分析
+                    <Info className="h-5 w-5" />
+                    使用信息
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <h4 className="font-medium mb-3 text-green-600">优点</h4>
+                      <h4 className="font-medium mb-3 text-blue-600">目标用户</h4>
                       <ul className="space-y-2">
-                        {tldDetails.pros.map((pro, index) => (
+                        {tldDetails.targetAudience.map((audience, index) => (
                           <li key={index} className="flex items-start gap-2">
-                            <Check className="h-4 w-4 text-green-600 mt-0.5" />
-                            <span className="text-sm">{pro}</span>
+                            <Users className="h-4 w-4 text-blue-600 mt-0.5" />
+                            <span className="text-sm">{audience}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
-                    
+
                     <div>
-                      <h4 className="font-medium mb-3 text-orange-600">缺点</h4>
+                      <h4 className="font-medium mb-3 text-green-600">使用示例</h4>
                       <ul className="space-y-2">
-                        {tldDetails.cons.map((con, index) => (
+                        {tldDetails.usageExamples.map((example, index) => (
                           <li key={index} className="flex items-start gap-2">
-                            <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5" />
-                            <span className="text-sm">{con}</span>
+                            <Globe className="h-4 w-4 text-green-600 mt-0.5" />
+                            <span className="text-sm font-mono">{example}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
                   </div>
+
+                  {tldDetails.restrictions && (
+                    <div className="mt-6 p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5" />
+                        <div>
+                          <h4 className="font-medium text-orange-600 mb-1">注册限制</h4>
+                          <span className="text-sm text-orange-700 dark:text-orange-300">{tldDetails.restrictions}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
@@ -408,11 +417,9 @@ export default function TLDPageClient({ params }: TLDPageClientProps) {
                                 {relatedTLD.description}
                               </div>
                             </div>
-                            {relatedTLD.averagePrice && (
-                              <div className="text-sm font-medium text-primary">
-                                ${relatedTLD.averagePrice}
-                              </div>
-                            )}
+                            <Badge variant="outline" className="text-xs">
+                              {relatedTLD.type}
+                            </Badge>
                           </div>
                         </Link>
                       ))}
