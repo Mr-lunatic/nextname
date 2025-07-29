@@ -21,8 +21,8 @@ export async function generateMetadata({ params }: TLDPageProps): Promise<Metada
     }
   }
 
-  const title = `${tld}域名 - 注册价格${tldDetails.averagePrice ? `${tldDetails.averagePrice}元起` : ''} | 政策详解与使用指南`
-  const description = `了解${tld}域名的注册政策、价格趋势、使用限制和最佳实践。${tldDetails.description}`
+  const title = `${tld}域名 - 注册指南 | 政策详解与使用说明`
+  const description = `了解${tld}域名的注册政策、使用限制和最佳实践。${tldDetails.description}`
 
   return {
     title,
