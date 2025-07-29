@@ -25,16 +25,16 @@ const nextConfig = {
         path: false,
         crypto: false,
       }
-      
+
       // 修复开发环境模块解析问题
       config.optimization.moduleIds = 'named'
       config.optimization.chunkIds = 'named'
     }
-    
+
     if (!dev) {
       config.cache = false
     }
-    
+
     // Bundle分析
     if (process.env.ANALYZE === 'true') {
       const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
@@ -45,7 +45,7 @@ const nextConfig = {
         })
       )
     }
-    
+
     // 优化chunk分割
     if (!isServer) {
       config.optimization.splitChunks = {
@@ -72,7 +72,15 @@ const nextConfig = {
         }
       }
     }
-    
+
+    // 在开发环境中，将@neondatabase/serverless重定向到我们的mock实现
+    if (process.env.NODE_ENV === 'development') {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@neondatabase/serverless': require.resolve('./src/lib/database-cf.ts'),
+      }
+    }
+
     return config
   },
   
@@ -121,18 +129,7 @@ const nextConfig = {
     RDAP_TIMEOUT: process.env.RDAP_TIMEOUT || '2500',
   },
 
-  // Webpack配置 - 添加模块别名来防止Neon数据库连接错误
-  webpack: (config, { isServer }) => {
-    // 在开发环境中，将@neondatabase/serverless重定向到我们的mock实现
-    if (process.env.NODE_ENV === 'development') {
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        '@neondatabase/serverless': require.resolve('./src/lib/database-cf.ts'),
-      }
-    }
 
-    return config
-  },
   
   // 缓存头设置
   async headers() {
