@@ -29,14 +29,14 @@ export function TLDStructuredData({ tld, url }: TLDStructuredDataProps) {
       },
       "serviceType": "域名注册",
       "areaServed": "全球",
-      "offers": tld.averagePrice ? {
+      "offers": {
         "@type": "AggregateOffer",
         "priceCurrency": "USD",
-        "lowPrice": tld.averagePrice,
-        "highPrice": tld.averagePrice * 2,
+        "lowPrice": 10,
+        "highPrice": 50,
         "offerCount": "5+",
         "availability": "https://schema.org/InStock"
-      } : undefined
+      }
     },
     "breadcrumb": {
       "@type": "BreadcrumbList",
@@ -69,7 +69,7 @@ export function TLDStructuredData({ tld, url }: TLDStructuredDataProps) {
           "name": `${tld.tld}域名有什么注册限制吗？`,
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": tld.restrictions || tld.registrationPolicy
+            "text": tld.restrictions || `${tld.tld}域名的注册限制因注册商而异，建议咨询具体注册商了解详细要求。`
           }
         },
         {
@@ -82,12 +82,10 @@ export function TLDStructuredData({ tld, url }: TLDStructuredDataProps) {
         },
         {
           "@type": "Question",
-          "name": `${tld.tld}域名的平均价格是多少？`,
+          "name": `${tld.tld}域名的价格是多少？`,
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": tld.averagePrice 
-              ? `${tld.tld}域名的平均注册价格约为$${tld.averagePrice}，具体价格因注册商而异。`
-              : `${tld.tld}域名的价格因注册商而异，建议对比多家注册商的价格。`
+            "text": `${tld.tld}域名的价格因注册商而异，通常在$10-$50之间。建议对比多家注册商的价格以获得最优惠的价格。`
           }
         }
       ]
@@ -134,12 +132,12 @@ export function TLDListStructuredData({ tlds, totalCount }: TLDListStructuredDat
             "@type": "Organization",
             "name": tld.registry
           },
-          "offers": tld.averagePrice ? {
+          "offers": {
             "@type": "Offer",
-            "price": tld.averagePrice,
+            "price": "10-50",
             "priceCurrency": "USD",
             "availability": "https://schema.org/InStock"
-          } : undefined
+          }
         }
       }))
     },

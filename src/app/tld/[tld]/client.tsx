@@ -219,15 +219,13 @@ export default function TLDPageClient({ params }: TLDPageClientProps) {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground">注册局</label>
-                      <p className="font-medium">{tldDetails.registry}</p>
+                      <label className="text-sm font-medium text-muted-foreground">域名</label>
+                      <p className="font-medium font-mono">{tldDetails.tld}</p>
                     </div>
-                    {tldDetails.launchedDate && (
-                      <div>
-                        <label className="text-sm font-medium text-muted-foreground">启用日期</label>
-                        <p className="font-medium">{tldDetails.launchedDate}</p>
-                      </div>
-                    )}
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">分类</label>
+                      <p className="font-medium">{tldDetails.category}</p>
+                    </div>
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">域名类型</label>
                       <p className="font-medium">{getTypeLabel(tldDetails.type)}</p>
