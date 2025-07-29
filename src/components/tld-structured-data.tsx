@@ -15,7 +15,7 @@ export function TLDStructuredData({ tld, url }: TLDStructuredDataProps) {
     "about": {
       "@type": "Thing",
       "name": `${tld.tld}顶级域名`,
-      "description": tld.registrationPolicy,
+      "description": tld.description,
       "additionalType": "https://schema.org/Product"
     },
     "mainEntity": {
@@ -130,7 +130,7 @@ export function TLDListStructuredData({ tlds, totalCount }: TLDListStructuredDat
           "serviceType": "域名注册",
           "provider": {
             "@type": "Organization",
-            "name": tld.registry
+            "name": "ICANN"
           },
           "offers": {
             "@type": "Offer",
