@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 import TLDsPageClient from './client'
 
-// export const runtime = 'edge' // 暂时禁用Edge Runtime，因为JSON导入问题
+export const runtime = 'edge'
 
 export const metadata: Metadata = {
   title: 'Complete TLD List - All Domain Extensions & Prices | NextName',
