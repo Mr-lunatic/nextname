@@ -1,5 +1,5 @@
 {
-  "通用顶级域名 (gTLD)": [
+  "gTLD": [
     "abogado",
     "abudhabi",
     "academy",
@@ -548,7 +548,7 @@
     "zuerich",
     "zip"
   ],
-  "国家代码顶级域名 (ccTLD)": [
+  "ccTLD": [
     "ac",
     "ad",
     "ae",
@@ -789,7 +789,7 @@
     "zm",
     "zw"
   ],
-  "赞助/限制性顶级域名 (sTLD/rTLD)": [
+  "sTLD/rTLD": [
     "aero",
     "coop",
     "crs",
@@ -798,15 +798,12 @@
     "museum",
     "post"
   ],
-  "国家代码下的二级/三级域名": [
-
-
+  "国家代码下二级/三级域名": [
     "5g.in",
     "6g.in",
     "aaa.pro",
     "abc.br",
     "abg.ec",
-
     "abo.pa",
     "abr.it",
     "abruzzo.it",
@@ -840,8 +837,6 @@
     "adm.br",
     "adm.ec",
     "adult.ht",
-
-
     "adv.br",
     "adygeya.ru",
     "adygeya.su",
@@ -850,7 +845,6 @@
     "aero.np",
     "aero.tj",
     "aeroport.fr",
-
     "ag.it",
     "agr.br",
     "agrar.hu",
@@ -1476,8 +1470,6 @@
     "eu.com",
     "eu.pr",
     "eun.eg",
-
-
     "exnet.su",
     "experts-comptables.fr",
     "far.br",
@@ -2375,7 +2367,6 @@
     "plc.co.im",
     "plc.ly",
     "plc.uk",
-
     "pmn.it",
     "pn.it",
     "po.it",
@@ -2813,9 +2804,7 @@
     "wolomin.pl",
     "wroclaw.pl",
     "www.ro",
-
     "xj.cn",
-
     "xz.cn",
     "yalta.ua",
     "yn.cn",

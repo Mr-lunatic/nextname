@@ -10,29 +10,29 @@ export interface TLDDetails {
   priority: number
 }
 
-// TLD分类映射
+// TLD分类映射 - 根据tld_list.json的实际分类
 const TLD_CATEGORIES = {
-  '通用顶级域名 (gTLD)': {
+  'gTLD': {
     type: 'generic' as const,
-    englishName: 'Generic Top-Level Domains',
+    englishName: 'Generic Top-Level Domains (gTLD)',
     description: 'Generic top-level domains available for general registration',
     priority: 1
   },
-  '国家代码顶级域名 (ccTLD)': {
+  'ccTLD': {
     type: 'country' as const,
-    englishName: 'Country Code Top-Level Domains',
+    englishName: 'Country Code Top-Level Domains (ccTLD)',
     description: 'Country-specific top-level domains',
     priority: 2
   },
-  '赞助/限制性顶级域名 (sTLD/rTLD)': {
+  'sTLD/rTLD': {
     type: 'sponsored' as const,
-    englishName: 'Sponsored Top-Level Domains',
+    englishName: 'Sponsored/Restricted Top-Level Domains (sTLD/rTLD)',
     description: 'Sponsored top-level domains with specific requirements',
     priority: 3
   },
-  '国家代码下的二级/三级域名': {
+  '国家代码下二级/三级域名': {
     type: 'second-level' as const,
-    englishName: 'Second-Level Domains',
+    englishName: 'Second/Third Level Domains',
     description: 'Second and third level domains under country codes',
     priority: 4
   }
@@ -125,18 +125,18 @@ export class TLDManager {
 
   private generateTLDDescription(tld: string, type: string): string {
     const cleanTld = tld.replace('.', '')
-    
+
     switch (type) {
       case 'generic':
-        return `The .${cleanTld} domain is a generic top-level domain suitable for various purposes.`
+        return `Generic top-level domain suitable for businesses, organizations, and individuals worldwide.`
       case 'country':
-        return `The .${cleanTld} domain is a country code top-level domain.`
+        return `Country code top-level domain for specific geographic regions.`
       case 'sponsored':
-        return `The .${cleanTld} domain is a sponsored top-level domain with specific registration requirements.`
+        return `Sponsored top-level domain with specific registration requirements and restrictions.`
       case 'second-level':
-        return `The ${tld} domain is a second or third level domain under a country code.`
+        return `Second or third level domain under a country code with regional focus.`
       default:
-        return `The ${tld} domain extension.`
+        return `Domain extension for specific purposes.`
     }
   }
 
@@ -186,10 +186,20 @@ export class TLDManager {
     }
   }
 
-  // 获取所有TLD
+  // 获取所有TLD，优先展示gTLD
   async getAllTLDs(): Promise<TLDDetails[]> {
     await this.initialize()
-    return Array.from(this.tldData.values())
+    const allTLDs = Array.from(this.tldData.values())
+
+    // 按优先级排序，gTLD优先
+    return allTLDs.sort((a, b) => {
+      // 首先按优先级排序（数字越小优先级越高）
+      if (a.priority !== b.priority) {
+        return a.priority - b.priority
+      }
+      // 同优先级内按字母顺序排序
+      return a.tld.localeCompare(b.tld)
+    })
   }
 
   // 按分类获取TLD

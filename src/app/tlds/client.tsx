@@ -14,9 +14,9 @@ import { NextNameLogo } from '@/components/logo'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageSwitcher } from '@/components/language-currency-switcher'
 import { Footer } from '@/components/footer'
-import { TLDListStructuredData } from '@/components/tld-structured-data'
+// import { TLDListStructuredData } from '@/components/tld-structured-data'
 import { ScrollToTop } from '@/components/scroll-to-top'
-import { Pagination, PaginationInfo } from '@/components/ui/pagination'
+// import { Pagination, PaginationInfo } from '@/components/ui/pagination'
 
 export default function TLDsPageClient() {
   const [tlds, setTlds] = useState<TLDDetails[]>([])
@@ -28,7 +28,9 @@ export default function TLDsPageClient() {
   const [currentPage, setCurrentPage] = useState(1)
   const [pageLoading, setPageLoading] = useState(false)
   const [isFiltering, setIsFiltering] = useState(false)
-  const itemsPerPage = 40 // 4*10 布局
+
+  // 响应式分页设置：桌面端4列*10行=40，移动端2列*20行=40
+  const itemsPerPage = 40
 
   useEffect(() => {
     const loadTLDs = async () => {
@@ -203,10 +205,10 @@ export default function TLDsPageClient() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-surface-primary)' }}>
-      <TLDListStructuredData
+      {/* <TLDListStructuredData
         tlds={filteredAndSortedTLDs}
         totalCount={tlds.length}
-      />
+      /> */}
 
       {/* Header */}
       <header className="backdrop-blur" style={{ borderBottom: '1px solid var(--color-border-default)', backgroundColor: 'var(--color-surface-secondary)' }}>
@@ -231,7 +233,7 @@ export default function TLDsPageClient() {
             animate={{ opacity: 1, y: 0 }}
             className="text-4xl font-bold mb-4"
           >
-            Complete List of Top-Level Domains (TLDs)
+            All Domain Extensions (TLDs)
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -239,7 +241,7 @@ export default function TLDsPageClient() {
             transition={{ delay: 0.1 }}
             className="text-xl text-muted-foreground mb-8"
           >
-            Explore all available domain extensions with real-time pricing from 50+ registrars
+            Browse all available domain extensions organized by category, with gTLD domains prioritized
           </motion.p>
           
           {/* Stats */}
@@ -272,9 +274,9 @@ export default function TLDsPageClient() {
             <Card>
               <CardContent className="p-4 text-center">
                 <div className="text-2xl font-bold text-orange-600">
-                  {tlds.filter(t => t.type === 'sponsored').length}
+                  {tlds.filter(t => t.type === 'generic').length}
                 </div>
-                <div className="text-sm text-muted-foreground">Sponsored TLDs</div>
+                <div className="text-sm text-muted-foreground">gTLD Domains</div>
               </CardContent>
             </Card>
           </motion.div>
@@ -323,9 +325,9 @@ export default function TLDsPageClient() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="generic">Generic TLDs</SelectItem>
-                    <SelectItem value="country">Country TLDs</SelectItem>
-                    <SelectItem value="sponsored">Sponsored TLDs</SelectItem>
+                    <SelectItem value="generic">gTLD (Generic)</SelectItem>
+                    <SelectItem value="country">ccTLD (Country)</SelectItem>
+                    <SelectItem value="sponsored">sTLD/rTLD (Sponsored)</SelectItem>
                     <SelectItem value="second-level">Second Level</SelectItem>
                   </SelectContent>
                 </Select>
@@ -402,7 +404,7 @@ export default function TLDsPageClient() {
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
                 className={viewMode === 'grid'
-                  ? 'grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6'
+                  ? 'grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6'
                   : 'space-y-4'
                 }
               >
@@ -414,27 +416,18 @@ export default function TLDsPageClient() {
                     transition={{ delay: index * 0.01, duration: 0.2 }}
                   >
                   <Link href={`/tld${tld.tld}`}>
-                    <Card className="h-full hover:shadow-lg transition-all duration-300 cursor-pointer">
-                      <CardHeader>
-                        <CardTitle className="text-xl font-mono">{tld.tld}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-muted-foreground mb-4 line-clamp-2">
-                          {tld.description}
-                        </p>
-                        
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground truncate">
-                            {tld.category
-                              .replace('Generic Top-Level Domains', 'Generic TLD')
-                              .replace('Country Code Top-Level Domains', 'Country TLD')
-                              .replace('Sponsored Top-Level Domains', 'Sponsored TLD')
-                              .replace('Second-Level Domains', 'Second-Level')
-                            }
-                          </span>
-                          <Badge variant="outline" className="text-xs ml-2 flex-shrink-0">
-                            {tld.type}
-                          </Badge>
+                    <Card className="h-full hover:shadow-lg transition-all duration-300 cursor-pointer group">
+                      <CardContent className="p-6 flex flex-col items-center justify-center text-center h-full min-h-[120px]">
+                        <div className="text-2xl font-mono font-bold text-primary group-hover:text-primary/80 transition-colors mb-3">
+                          {tld.tld}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {tld.category
+                            .replace('Generic Top-Level Domains (gTLD)', 'gTLD')
+                            .replace('Country Code Top-Level Domains (ccTLD)', 'ccTLD')
+                            .replace('Sponsored/Restricted Top-Level Domains (sTLD/rTLD)', 'sTLD/rTLD')
+                            .replace('Second/Third Level Domains', 'Second Level')
+                          }
                         </div>
                       </CardContent>
                     </Card>
@@ -446,7 +439,7 @@ export default function TLDsPageClient() {
           )}
         </motion.div>
 
-        {/* 分页组件 */}
+        {/* 简化的分页控件 */}
         {filteredAndSortedTLDs.length > 0 && totalPages > 1 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -457,12 +450,9 @@ export default function TLDsPageClient() {
             {/* 分页信息 */}
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
               <div className="flex flex-col items-center sm:items-start gap-1">
-                <PaginationInfo
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  totalItems={filteredAndSortedTLDs.length}
-                  itemsPerPage={itemsPerPage}
-                />
+                <div className="text-sm text-muted-foreground">
+                  Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredAndSortedTLDs.length)} of {filteredAndSortedTLDs.length} results
+                </div>
                 <div className="text-xs text-muted-foreground hidden lg:block">
                   Use ← → arrow keys to navigate • Ctrl+Home/End for first/last page
                 </div>
@@ -510,25 +500,52 @@ export default function TLDsPageClient() {
               </div>
             </div>
 
-            {/* 分页控件 */}
-            <div className="block sm:hidden">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-                maxVisiblePages={3}
-                showFirstLast={false}
-                className="justify-center"
-              />
-            </div>
-            <div className="hidden sm:block">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-                maxVisiblePages={5}
-                className="justify-center"
-              />
+            {/* 简化的分页控件 */}
+            <div className="flex justify-center items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className="w-10"
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
             </div>
           </motion.div>
         )}
