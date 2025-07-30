@@ -20,7 +20,6 @@ import { Footer } from '@/components/footer'
 import { ScrollToTop } from '@/components/scroll-to-top'
 import { EnhancedSmartSearchV2 } from '@/components/enhanced-smart-search-v2'
 import { PriceComparison } from '@/components/price-comparison'
-import { registrarPricing } from '@/lib/registrar-pricing'
 
 // Mock data for fallback
 const mockRegistrarPrices = [
