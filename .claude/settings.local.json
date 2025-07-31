@@ -50,7 +50,9 @@
       "Bash(git add .)",
       "Bash(npx next:*)",
       "Bash(git clean -fd)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(npm ci:*)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": []
   }

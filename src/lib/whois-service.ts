@@ -3,13 +3,13 @@
  * 
  * 查询优先级：
  * 1. RDAP协议（标准化、可靠）
- * 2. WHO.CX API（备用方案）
- * 3. 失败时正常报错，不使用虚假数据
+ * 2. Who-Dat API (https://whois-domain-teal.vercel.app)
+ * 3. WHO.CX API（备用方案）
  */
 
 export const runtime = 'edge'
 
-// WHOIS查询结果接口
+// WHOIS查询结果接口 - 扩展支持联系人信息
 export interface WhoisResult {
   domain: string
   is_available: boolean
@@ -20,6 +20,7 @@ export interface WhoisResult {
   created_date?: string
   updated_date?: string
   expiry_date?: string
+  transfer_date?: string
   status?: string[]
   name_servers?: string[]
   dnssec?: string
@@ -28,9 +29,37 @@ export interface WhoisResult {
   registry_domain_id?: string
   last_update_of_whois_database?: string
   whois_raw?: string
-  query_method: 'rdap' | 'whocx'
+  query_method: 'rdap' | 'whodat' | 'whocx'
   query_time_ms: number
   error?: string
+  
+  // 新增：联系人信息
+  registrant_contact?: {
+    name?: string
+    organization?: string
+    email?: string
+    phone?: string
+    country?: string
+    state?: string
+    city?: string
+    address?: string
+  }
+  admin_contact?: {
+    name?: string
+    organization?: string
+    email?: string
+    phone?: string
+    country?: string
+    address?: string
+  }
+  tech_contact?: {
+    name?: string
+    organization?: string
+    email?: string
+    phone?: string
+    country?: string
+    address?: string
+  }
 }
 
 // WHOIS查询错误类型
@@ -183,7 +212,7 @@ async function fetchRdapServers(tld: string): Promise<string[]> {
 }
 
 /**
- * 解析RDAP响应
+ * 解析RDAP响应 - 增强版本支持联系人信息
  */
 function parseRdapResponse(data: any, domain: string): Partial<WhoisResult> {
   try {
@@ -201,24 +230,137 @@ function parseRdapResponse(data: any, domain: string): Partial<WhoisResult> {
       entity.roles && entity.roles.includes('registrar')
     )
 
+    // 查找联系人信息
+    const registrantEntity = entities.find((entity: any) => 
+      entity.roles && entity.roles.includes('registrant')
+    )
+    const adminEntity = entities.find((entity: any) => 
+      entity.roles && entity.roles.includes('administrative')
+    )
+    const techEntity = entities.find((entity: any) => 
+      entity.roles && entity.roles.includes('technical')
+    )
+
     // 解析事件日期
     const createdEvent = events.find((e: any) => e.eventAction === 'registration')
     const updatedEvent = events.find((e: any) => e.eventAction === 'last changed')
     const expiryEvent = events.find((e: any) => e.eventAction === 'expiration')
+    const transferEvent = events.find((e: any) => e.eventAction === 'transfer')
 
-    return {
+    // 解析联系人信息的辅助函数
+    const parseContactInfo = (entity: any) => {
+      if (!entity) return undefined
+
+      const vcardArray = entity.vcardArray
+      let contactInfo: any = {}
+
+      if (vcardArray && Array.isArray(vcardArray) && vcardArray[1]) {
+        const properties = vcardArray[1]
+        
+        for (const prop of properties) {
+          if (!Array.isArray(prop) || prop.length < 4) continue
+          
+          const [propName, params, type, value] = prop
+          
+          switch (propName.toLowerCase()) {
+            case 'fn':
+              contactInfo.name = value
+              break
+            case 'org':
+              contactInfo.organization = Array.isArray(value) ? value[0] : value
+              break
+            case 'email':
+              contactInfo.email = value
+              break
+            case 'tel':
+              contactInfo.phone = value
+              break
+            case 'adr':
+              if (Array.isArray(value) && value.length >= 7) {
+                // ADR格式: [邮政信箱, 扩展地址, 街道, 城市, 州/省, 邮编, 国家]
+                const [, , street, city, state, postal, country] = value
+                contactInfo.address = [street, city, state].filter(Boolean).join(', ')
+                contactInfo.city = city
+                contactInfo.state = state
+                contactInfo.country = country
+              }
+              break
+          }
+        }
+      }
+
+      // 如果vCard解析失败，尝试直接从实体中提取
+      if (!contactInfo.name && entity.handle) {
+        contactInfo.name = entity.handle
+      }
+
+      return Object.keys(contactInfo).length > 0 ? contactInfo : undefined
+    }
+
+    const result: Partial<WhoisResult> = {
       domain,
       is_available: false, // RDAP返回数据说明域名已注册
       registrar: registrarEntity?.handle || registrarEntity?.fn || 'Unknown',
       created_date: createdEvent?.eventDate,
       updated_date: updatedEvent?.eventDate,
       expiry_date: expiryEvent?.eventDate,
+      transfer_date: transferEvent?.eventDate,
       status: status,
       name_servers: nameservers.map((ns: any) => ns.ldhName || ns.unicodeName).filter(Boolean),
       registry_domain_id: data.handle,
       last_update_of_whois_database: new Date().toISOString(),
       query_method: 'rdap' as const
     }
+
+    // 添加注册商详细信息
+    if (registrarEntity) {
+      if (registrarEntity.publicIds) {
+        const ianaId = registrarEntity.publicIds.find((id: any) => id.type === 'IANA Registrar ID')
+        if (ianaId) {
+          result.registrar_iana_id = ianaId.identifier
+        }
+      }
+      
+      // 查找注册商联系信息
+      if (registrarEntity.entities) {
+        const abuseEntity = registrarEntity.entities.find((e: any) => 
+          e.roles && e.roles.includes('abuse')
+        )
+        if (abuseEntity && abuseEntity.vcardArray) {
+          const vcardProps = abuseEntity.vcardArray[1] || []
+          for (const prop of vcardProps) {
+            if (prop[0] === 'email') {
+              result.registrar_abuse_contact_email = prop[3]
+            } else if (prop[0] === 'tel') {
+              result.registrar_abuse_contact_phone = prop[3]
+            }
+          }
+        }
+      }
+    }
+
+    // 添加联系人信息
+    const registrantContact = parseContactInfo(registrantEntity)
+    if (registrantContact) {
+      result.registrant_contact = registrantContact
+    }
+
+    const adminContact = parseContactInfo(adminEntity)
+    if (adminContact) {
+      result.admin_contact = adminContact
+    }
+
+    const techContact = parseContactInfo(techEntity)
+    if (techContact) {
+      result.tech_contact = techContact
+    }
+
+    // DNSSEC信息
+    if (data.secureDNS) {
+      result.dnssec = data.secureDNS.delegationSigned ? 'signedDelegation' : 'unsigned'
+    }
+
+    return result
   } catch (error) {
     throw new WhoisError(
       `Failed to parse RDAP response: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -383,7 +525,164 @@ async function fetchRawWhoisData(domain: string): Promise<string> {
 
 
 /**
- * WHO.CX API查询（备用方案）
+ * Who-Dat API查询（第二优先级）
+ */
+async function queryWhoDatAPI(domain: string): Promise<Partial<WhoisResult>> {
+  console.log(`🔍 Querying Who-Dat API for ${domain}`)
+  
+  // 获取环境变量中的API Key和Base URL
+  const apiKey = process.env.WHO_DAT_API_KEY || ''
+  const baseUrl = process.env.WHO_DAT_BASE_URL || 'https://whois-domain-teal.vercel.app'
+  
+  console.log(`🔧 Debug - API Key exists: ${!!apiKey}`)
+  console.log(`🔧 Debug - API Key length: ${apiKey.length}`)
+  console.log(`🔧 Debug - Base URL: ${baseUrl}`)
+
+  try {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 10000) // 10s timeout
+
+    const headers: Record<string, string> = {
+      'User-Agent': 'NextName-WHOIS-Service/1.0',
+      'Accept': 'application/json'
+    }
+
+    // 如果有API Key，添加到请求头（根据Who-Dat标准格式）
+    if (apiKey) {
+      headers.Authorization = apiKey  // Who-Dat API直接使用key，不需要Bearer前缀
+    }
+
+    const response = await fetch(`${baseUrl}/${domain}`, {
+      method: 'GET',
+      signal: controller.signal,
+      headers
+    })
+
+    clearTimeout(timeout)
+
+    if (!response.ok) {
+      throw new Error(`Who-Dat API failed: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log(`✅ Who-Dat API success for ${domain}`)
+
+    // 解析Who-Dat API返回的数据
+    return parseWhoDatResponse(data, domain)
+  } catch (error) {
+    console.warn(`❌ Who-Dat API failed for ${domain}:`, error instanceof Error ? error.message : error)
+    throw new WhoisError(
+      `Who-Dat API query failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      'SERVICE_UNAVAILABLE',
+      domain
+    )
+  }
+}
+
+/**
+ * 解析Who-Dat API响应（适配用户自定义实例格式）
+ */
+function parseWhoDatResponse(data: any, domain: string): Partial<WhoisResult> {
+  try {
+    const result: Partial<WhoisResult> = {
+      domain,
+      query_method: 'whodat' as const,
+      last_update_of_whois_database: new Date().toISOString()
+    }
+
+    // 处理域名基本信息
+    if (data.domain) {
+      const domainInfo = data.domain
+      
+      // 设置可用性 - 如果有域名信息，说明已注册
+      result.is_available = false
+      
+      // 日期信息
+      if (domainInfo.created_date || domainInfo.created_date_in_time) {
+        result.created_date = domainInfo.created_date_in_time || domainInfo.created_date
+      }
+      if (domainInfo.expiration_date || domainInfo.expiration_date_in_time) {
+        result.expiry_date = domainInfo.expiration_date_in_time || domainInfo.expiration_date
+      }
+      
+      // 状态信息
+      if (domainInfo.status && Array.isArray(domainInfo.status)) {
+        result.status = domainInfo.status
+      }
+      
+      // 名称服务器
+      if (domainInfo.name_servers && Array.isArray(domainInfo.name_servers)) {
+        result.name_servers = domainInfo.name_servers
+      }
+      
+      // 域名ID
+      if (domainInfo.id) {
+        result.registry_domain_id = domainInfo.id
+      }
+    }
+
+    // 处理注册商信息
+    if (data.registrar) {
+      const registrarInfo = data.registrar
+      if (registrarInfo.name) {
+        result.registrar = registrarInfo.name
+      }
+    }
+
+    // 处理注册人联系信息
+    if (data.registrant) {
+      const registrantInfo = data.registrant
+      result.registrant_contact = {
+        name: registrantInfo.name,
+        organization: registrantInfo.organization,
+        email: registrantInfo.email,
+        phone: registrantInfo.phone,
+        country: registrantInfo.country,
+        state: registrantInfo.state || registrantInfo.province,
+        city: registrantInfo.city,
+        address: registrantInfo.address
+      }
+    }
+
+    // 处理管理员联系信息
+    if (data.admin || data.administrative_contact) {
+      const adminData = data.admin || data.administrative_contact
+      result.admin_contact = {
+        name: adminData.name,
+        organization: adminData.organization,
+        email: adminData.email,
+        phone: adminData.phone,
+        country: adminData.country,
+        address: adminData.address
+      }
+    }
+
+    // 处理技术联系信息
+    if (data.tech || data.technical_contact) {
+      const techData = data.tech || data.technical_contact
+      result.tech_contact = {
+        name: techData.name,
+        organization: techData.organization,
+        email: techData.email,
+        phone: techData.phone,
+        country: techData.country,
+        address: techData.address
+      }
+    }
+
+    return result
+  } catch (error) {
+    throw new WhoisError(
+      `Failed to parse Who-Dat response: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      'PARSE_ERROR',
+      domain,
+      { responseData: data }
+    )
+  }
+}
+
+/**
+ * WHO.CX API查询（第三优先级）
  */
 async function queryWhoCxAPI(domain: string): Promise<Partial<WhoisResult>> {
   console.log(`🔍 Querying WHO.CX API for ${domain}`)
@@ -538,33 +837,51 @@ export async function queryWhois(domain: string): Promise<WhoisResult> {
     console.warn(`❌ RDAP failed for ${normalizedDomain}:`, rdapError instanceof Error ? rdapError.message : rdapError)
 
     try {
-      // 第二优先级：WHO.CX API
-      console.log(`📡 Trying WHO.CX API for ${normalizedDomain}`)
-      const whocxResult = await queryWhoCxAPI(normalizedDomain)
+      // 第二优先级：Who-Dat API
+      console.log(`📡 Trying Who-Dat API for ${normalizedDomain}`)
+      const whodatResult = await queryWhoDatAPI(normalizedDomain)
 
       const queryTime = Date.now() - startTime
-      console.log(`✅ WHO.CX API query successful for ${normalizedDomain} (${queryTime}ms)`)
+      console.log(`✅ Who-Dat API query successful for ${normalizedDomain} (${queryTime}ms)`)
 
       return {
-        ...whocxResult,
+        ...whodatResult,
         domain: normalizedDomain,
         query_time_ms: queryTime
       } as WhoisResult
-    } catch (whocxError) {
-      console.error(`❌ WHO.CX API also failed for ${normalizedDomain}:`, whocxError instanceof Error ? whocxError.message : whocxError)
+    } catch (whodatError) {
+      console.warn(`❌ Who-Dat API failed for ${normalizedDomain}:`, whodatError instanceof Error ? whodatError.message : whodatError)
 
-      // 所有方法都失败，抛出详细错误
-      const queryTime = Date.now() - startTime
-      throw new WhoisError(
-        `All WHOIS query methods failed for ${normalizedDomain}. Please try again later.`,
-        'SERVICE_UNAVAILABLE',
-        normalizedDomain,
-        {
-          rdapError: rdapError instanceof Error ? rdapError.message : rdapError,
-          whocxError: whocxError instanceof Error ? whocxError.message : whocxError,
-          queryTime
-        }
-      )
+      try {
+        // 第三优先级：WHO.CX API
+        console.log(`📡 Trying WHO.CX API for ${normalizedDomain}`)
+        const whocxResult = await queryWhoCxAPI(normalizedDomain)
+
+        const queryTime = Date.now() - startTime
+        console.log(`✅ WHO.CX API query successful for ${normalizedDomain} (${queryTime}ms)`)
+
+        return {
+          ...whocxResult,
+          domain: normalizedDomain,
+          query_time_ms: queryTime
+        } as WhoisResult
+      } catch (whocxError) {
+        console.error(`❌ All WHOIS methods failed for ${normalizedDomain}`)
+
+        // 所有方法都失败，抛出详细错误
+        const queryTime = Date.now() - startTime
+        throw new WhoisError(
+          `All WHOIS query methods failed for ${normalizedDomain}. Please try again later.`,
+          'SERVICE_UNAVAILABLE',
+          normalizedDomain,
+          {
+            rdapError: rdapError instanceof Error ? rdapError.message : rdapError,
+            whoDatError: whodatError instanceof Error ? whodatError.message : whodatError,
+            whocxError: whocxError instanceof Error ? whocxError.message : whocxError,
+            queryTime
+          }
+        )
+      }
     }
   }
 }

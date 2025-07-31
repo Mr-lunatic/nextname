@@ -1,1 +1,0 @@
-var t={},d=(o,_,c)=>(t.__chunk_4036=(r,s,e)=>{"use strict";e.d(s,{Z:()=>l});let l=(0,e(8622).Z)("Shield",[["path",{d:"M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",key:"3xmgem"}]])},t);export{d as __getNamedExports};

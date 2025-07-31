@@ -1,36 +1,43 @@
-const { setupDevPlatform } = require('@cloudflare/next-on-pages/next-dev')
+// 开发环境和生产环境使用不同的配置
+const isDev = process.env.NODE_ENV === 'development'
 
-// Here we use the @cloudflare/next-on-pages next-dev module to allow us to use bindings during local development
-// (when running the application with `next dev`), for more information see:
-// https://github.com/cloudflare/next-on-pages/blob/main/packages/next-on-pages/docs/api.md#setupdevplatform
-if (process.env.NODE_ENV === 'development') {
-  setupDevPlatform()
+// 生产环境才使用 Cloudflare 配置
+if (!isDev) {
+  try {
+    const { setupDevPlatform } = require('@cloudflare/next-on-pages/next-dev')
+    setupDevPlatform()
+  } catch (e) {
+    console.warn('Cloudflare setup not available:', e.message)
+  }
 }
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // 基础配置，移除所有实验性功能
+  // 基础配置
   trailingSlash: true,
-
-  // 明确指定源目录
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
   
-  // Bundle优化和代码分割
+  // Webpack 配置
   webpack: (config, { dev, isServer }) => {
-    // 开发环境修复 Edge Runtime 模块加载问题
-    if (dev && !isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        path: false,
-        crypto: false,
+    // 开发环境简化配置，移除 Cloudflare 相关依赖
+    if (dev) {
+      // 禁用缓存以避免 undici 相关错误
+      config.cache = false
+      
+      // 简化模块解析
+      if (!isServer) {
+        config.resolve.fallback = {
+          ...config.resolve.fallback,
+          fs: false,
+          path: false,
+          crypto: false,
+        }
       }
-
-      // 修复开发环境模块解析问题
-      config.optimization.moduleIds = 'named'
-      config.optimization.chunkIds = 'named'
+      
+      return config
     }
 
+    // 生产环境保持原有配置
     if (!dev) {
       config.cache = false
     }
@@ -70,14 +77,6 @@ const nextConfig = {
             priority: 3
           }
         }
-      }
-    }
-
-    // 在开发环境中，将@neondatabase/serverless重定向到我们的mock实现
-    if (process.env.NODE_ENV === 'development') {
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        '@neondatabase/serverless': require.resolve('./src/lib/database-cf.ts'),
       }
     }
 

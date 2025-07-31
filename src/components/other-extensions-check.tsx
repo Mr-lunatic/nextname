@@ -14,9 +14,22 @@ export function OtherExtensionsCheck({ domain }: OtherExtensionsCheckProps) {
   const [extensionsData, setExtensionsData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  // 使用 useMemo 来避免 commonExtensions 在每次渲染时都改变
-  // 恢复7个TLD，按照之前约定：7个TLD + 第8个位置放"查看更多"按钮
-  const commonExtensions = useMemo(() => ['.com', '.net', '.org', '.cn', '.io', '.ai', '.co'], [])
+  // 使用 useMemo 来避免 popularRdapTlds 在每次渲染时都改变
+  // 10个热门RDAP支持的TLD作为备选池，前端仅显示7个，剩下3个作为失败时的备选
+  const popularRdapTlds = useMemo(() => [
+    // 主要显示的7个TLD（按优先级排序）
+    '.com',    // Verisign - 最稳定
+    '.net',    // Verisign - 最稳定
+    '.org',    // PIR - 稳定
+    '.io',     // NIC.io - 技术友好
+    '.ai',     // Identity Digital - AI热门
+    '.dev',    // Google - 开发者友好
+    '.app',    // Google - 应用开发
+    // 备选的3个TLD（当主要TLD查询失败时使用）
+    '.info',   // Identity Digital - 支持良好
+    '.tech',   // CentralNic - 技术相关
+    '.online'  // CentralNic - 通用用途
+  ], [])
 
   const domainPrefix = useMemo(() => {
     if (!domain || typeof domain !== 'string') {
@@ -36,51 +49,129 @@ export function OtherExtensionsCheck({ domain }: OtherExtensionsCheckProps) {
       setLoading(true)
       try {
         const currentTld = '.' + domain.split('.').slice(1).join('.')
-        const extensionsToCheck = commonExtensions.filter(ext => ext !== currentTld)
+        const tldsToCheck = popularRdapTlds.filter(tld => tld !== currentTld)
         
-        // 使用更短的超时时间，针对不同TLD使用不同策略
-        const promises = extensionsToCheck.map(async (extension) => {
-          const testDomain = `${domainPrefix}${extension}`
-          try {
-            // 根据TLD设置不同的超时时间
-            const timeout = getTimeoutForTLD(extension)
-            const controller = new AbortController()
-            const timeoutId = setTimeout(() => controller.abort(), timeout)
-            
-            const response = await fetch(`/api/search?q=${encodeURIComponent(testDomain)}&type=domain`, {
-              signal: controller.signal
+        // 分为主要TLD（前7个）和备选TLD（后3个）
+        const mainTlds = tldsToCheck.slice(0, 7)
+        const backupTlds = tldsToCheck.slice(7)
+        
+        console.log('🔍 Checking main TLDs:', mainTlds)
+        console.log('🔄 Backup TLDs available:', backupTlds)
+        
+        // 先查询主要的7个TLD
+        const results: any[] = []
+        const failedTlds: string[] = []
+        
+        // 使用异步并发查询，但限制并发数量以避免过载
+        const batchSize = 3 // 每批处理3个TLD
+        
+        for (let i = 0; i < mainTlds.length; i += batchSize) {
+          const batch = mainTlds.slice(i, i + batchSize)
+          const batchPromises = batch.map(async (tld) => {
+            const testDomain = `${domainPrefix}${tld}`
+            try {
+              // 根据TLD设置不同的超时时间
+              const timeout = getTimeoutForTLD(tld)
+              const controller = new AbortController()
+              const timeoutId = setTimeout(() => controller.abort(), timeout)
+              
+              const response = await fetch(`/api/search?q=${encodeURIComponent(testDomain)}&type=domain`, {
+                signal: controller.signal
+              })
+              clearTimeout(timeoutId)
+              
+              if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`)
+              }
+              
+              const data = await response.json()
+              console.log(`✅ Successfully queried ${testDomain}`)
+              return {
+                domain: testDomain,
+                extension: tld,
+                available: data.result?.is_available || false,
+                current: false,
+                query_method: data.result?.query_method || 'unknown',
+                success: true
+              }
+            } catch (error) {
+              console.warn(`❌ Failed to query ${testDomain}:`, error)
+              failedTlds.push(tld)
+              return {
+                domain: testDomain,
+                extension: tld,
+                success: false,
+                error: error
+              }
+            }
+          })
+          
+          const batchResults = await Promise.allSettled(batchPromises)
+          const successfulBatchResults = batchResults
+            .map((result, index) => {
+              if (result.status === 'fulfilled' && result.value.success) {
+                return result.value
+              }
+              return null
             })
-            clearTimeout(timeoutId)
-            
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status}`)
-            }
-            
-            const data = await response.json()
-            return {
-              domain: testDomain,
-              extension,
-              available: data.result?.is_available || false,
-              current: false
-            }
-          } catch (error) {
-            console.warn(`Quick check failed for ${testDomain}, using heuristic:`, error)
-            // 使用启发式判断快速返回结果
-            const isLikelyAvailable = getHeuristicAvailability(domainPrefix, extension)
-            return {
-              domain: testDomain,
-              extension,
-              available: isLikelyAvailable,
-              current: false,
-              heuristic: true // 标记为启发式结果
+            .filter(Boolean)
+          
+          results.push(...successfulBatchResults)
+          
+          // 在批次之间添加小延迟，避免服务器过载
+          if (i + batchSize < mainTlds.length) {
+            await new Promise(resolve => setTimeout(resolve, 100))
+          }
+        }
+        
+        // 如果有失败的TLD且有备选TLD可用，使用备选TLD替补
+        if (failedTlds.length > 0 && backupTlds.length > 0) {
+          console.log(`🔄 ${failedTlds.length} TLDs failed, using ${Math.min(failedTlds.length, backupTlds.length)} backup TLDs`)
+          
+          const backupTldsToUse = backupTlds.slice(0, failedTlds.length)
+          
+          for (const tld of backupTldsToUse) {
+            const testDomain = `${domainPrefix}${tld}`
+            try {
+              const timeout = getTimeoutForTLD(tld)
+              const controller = new AbortController()
+              const timeoutId = setTimeout(() => controller.abort(), timeout)
+              
+              const response = await fetch(`/api/search?q=${encodeURIComponent(testDomain)}&type=domain`, {
+                signal: controller.signal
+              })
+              clearTimeout(timeoutId)
+              
+              if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`)
+              }
+              
+              const data = await response.json()
+              console.log(`✅ Backup TLD ${testDomain} succeeded`)
+              results.push({
+                domain: testDomain,
+                extension: tld,
+                available: data.result?.is_available || false,
+                current: false,
+                query_method: data.result?.query_method || 'unknown',
+                isBackup: true
+              })
+            } catch (error) {
+              console.warn(`❌ Backup TLD ${testDomain} also failed:`, error)
+              // 对于备选TLD失败，使用改进的启发式判断
+              const isLikelyAvailable = getRdapHeuristicAvailability(domainPrefix, tld)
+              results.push({
+                domain: testDomain,
+                extension: tld,
+                available: isLikelyAvailable,
+                current: false,
+                heuristic: true,
+                query_method: 'heuristic',
+                isBackup: true
+              })
             }
           }
-        })
-
-        const results = await Promise.allSettled(promises)
-        const successfulResults = results
-          .filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled')
-          .map(result => result.value)
+        }
         
         // 添加当前域名到结果中
         const allResults = [
@@ -88,9 +179,10 @@ export function OtherExtensionsCheck({ domain }: OtherExtensionsCheckProps) {
             domain: domain,
             extension: currentTld,
             available: false, // 当前查询的域名，如果显示在这里说明是已注册的
-            current: true
+            current: true,
+            query_method: 'current'
           },
-          ...successfulResults
+          ...results
         ]
 
         setExtensionsData(allResults)
@@ -102,37 +194,70 @@ export function OtherExtensionsCheck({ domain }: OtherExtensionsCheckProps) {
     }
 
     checkExtensions()
-  }, [domain, domainPrefix, commonExtensions])
+  }, [domain, domainPrefix, popularRdapTlds])
 
-  // TLD特定超时时间设置
+  // RDAP TLD特定超时时间设置
   const getTimeoutForTLD = (tld: string): number => {
-    const slowTLDs = ['.cn', '.co'] // 已知较慢的TLD
-    const fastTLDs = ['.com', '.net', '.org'] // 快速TLD
+    // Google管理的TLD通常很快
+    const googleTlds = ['.dev', '.app']
+    // Verisign管理的TLD很稳定
+    const verisignTlds = ['.com', '.net']
+    // 其他稳定的RDAP TLD
+    const stableTlds = ['.org', '.info']
+    // CentralNic管理的TLD
+    const centralnicTlds = ['.tech', '.online']
+    // 特殊TLD
+    const specialTlds = ['.io', '.ai']
     
-    if (slowTLDs.includes(tld)) {
-      return 5000 // 5秒 for slow TLDs
-    } else if (fastTLDs.includes(tld)) {
-      return 2000 // 2秒 for fast TLDs
+    if (googleTlds.includes(tld) || verisignTlds.includes(tld)) {
+      return 2000 // 2秒 for fast and reliable TLDs
+    } else if (stableTlds.includes(tld)) {
+      return 2500 // 2.5秒 for stable TLDs
+    } else if (centralnicTlds.includes(tld)) {
+      return 3000 // 3秒 for CentralNic TLDs
+    } else if (specialTlds.includes(tld)) {
+      return 3500 // 3.5秒 for special TLDs
     } else {
-      return 3000 // 3秒 for others (.io, .ai)
+      return 4000 // 4秒 for others
     }
   }
 
-  // 启发式可用性判断函数
-  const getHeuristicAvailability = (prefix: string, tld: string): boolean => {
-    // 基于域名特征的快速判断
-    const commonWords = ['app', 'api', 'www', 'mail', 'admin', 'blog', 'shop', 'home', 'info', 'news', 'support', 'help', 'contact', 'test', 'demo', 'example']
+  // 针对RDAP支持TLD的改进启发式判断
+  const getRdapHeuristicAvailability = (prefix: string, tld: string): boolean => {
+    // 基于域名特征和TLD特性的判断
+    const commonWords = ['app', 'api', 'www', 'mail', 'admin', 'blog', 'shop', 'home', 'info', 'news', 'support', 'help', 'contact', 'test', 'demo', 'example', 'tech', 'dev', 'ai', 'online']
     const isCommonWord = commonWords.includes(prefix.toLowerCase())
     const isShort = prefix.length <= 3
-    const isPopularTLD = ['.com', '.net', '.org', '.io', '.ai'].includes(tld)
+    const isVeryShort = prefix.length <= 2
     
-    // 短域名或常见词在热门TLD下很可能被注册
-    if ((isShort || isCommonWord) && isPopularTLD) {
-      return false // 可能已注册
+    // 不同TLD的注册情况分析
+    const highDemandTlds = ['.com', '.net', '.org', '.io', '.ai']
+    const mediumDemandTlds = ['.info', '.tech', '.online']
+    const devFocusedTlds = ['.dev', '.app']
+    
+    // 极短域名在热门TLD下几乎都被注册
+    if (isVeryShort && highDemandTlds.includes(tld)) {
+      return false
     }
     
-    // 其他情况倾向于可用（显示乐观结果，用户点击后会得到准确结果）
-    return Math.random() > 0.3 // 70%概率显示可用
+    // 短域名或常见词在高需求TLD下很可能被注册
+    if ((isShort || isCommonWord) && highDemandTlds.includes(tld)) {
+      return Math.random() > 0.8 // 20%概率可用
+    }
+    
+    // 开发相关的域名在dev/app TLD下可能被注册
+    const isDevelopmentRelated = /^(api|app|dev|code|git|test|demo)/.test(prefix.toLowerCase())
+    if (isDevelopmentRelated && devFocusedTlds.includes(tld)) {
+      return Math.random() > 0.6 // 40%概率可用
+    }
+    
+    // 中等需求TLD有更好的可用性
+    if (mediumDemandTlds.includes(tld)) {
+      return Math.random() > 0.4 // 60%概率可用
+    }
+    
+    // 其他情况
+    return Math.random() > 0.3 // 70%概率可用
   }
 
   const handleViewMore = () => {
@@ -194,14 +319,30 @@ export function OtherExtensionsCheck({ domain }: OtherExtensionsCheckProps) {
                       当前域名
                     </Badge>
                   ) : item.available ? (
-                    <Badge className={`text-xs ${item.heuristic ? 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-600' : 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-600'}`}>
+                    <Badge className={`text-xs flex items-center ${
+                      item.heuristic 
+                        ? 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-600' 
+                        : 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-600'
+                    }`}>
                       <Check className="w-3 h-3 mr-1" />
-                      {item.heuristic ? '可能可注册' : '可注册'}
+                      <span className="truncate">
+                        {item.heuristic ? '可能可注册' : '可注册'}
+                        {item.query_method === 'rdap' && <span className="ml-1 text-xs opacity-75">(RDAP)</span>}
+                        {item.isBackup && <span className="ml-1 text-xs opacity-75">(备选)</span>}
+                      </span>
                     </Badge>
                   ) : (
-                    <Badge variant="secondary" className={`text-xs ${item.heuristic ? 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/50 dark:text-orange-300 dark:border-orange-600' : 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-600'}`}>
+                    <Badge variant="secondary" className={`text-xs flex items-center ${
+                      item.heuristic 
+                        ? 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/50 dark:text-orange-300 dark:border-orange-600' 
+                        : 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-600'
+                    }`}>
                       <X className="w-3 h-3 mr-1" />
-                      {item.heuristic ? '可能已注册' : '已注册'}
+                      <span className="truncate">
+                        {item.heuristic ? '可能已注册' : '已注册'}
+                        {item.query_method === 'rdap' && <span className="ml-1 text-xs opacity-75">(RDAP)</span>}
+                        {item.isBackup && <span className="ml-1 text-xs opacity-75">(备选)</span>}
+                      </span>
                     </Badge>
                   )}
                 </div>
@@ -225,7 +366,7 @@ export function OtherExtensionsCheck({ domain }: OtherExtensionsCheckProps) {
             <div className="text-center">
               <div className="text-sm font-medium text-primary dark:text-primary mb-1">
                 查看更多后缀
-              </div>
+                </div>
               <div className="text-xs text-muted-foreground">
                 探索所有可用域名
               </div>

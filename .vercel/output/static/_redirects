@@ -1,9 +1,0 @@
-# SPA 路由重定向规则
-/search/* /search/index.html 200
-/domain/* /domain/[domain]/index.html 200
-
-# API 路由保持不变（Next.js会处理）
-/api/* /api/:splat 200
-
-# 所有其他路由重定向到首页（SPA路由）
-/* /index.html 200

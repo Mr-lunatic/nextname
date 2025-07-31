@@ -31,20 +31,35 @@ import { Badge } from '@/components/ui/badge'
 import { OtherExtensionsCheck } from '@/components/other-extensions-check'
 
 interface WhoisInfo {
-  domainName: string
+  domain: string
+  domainName?: string
   registryDomainId?: string
+  registry_domain_id?: string
   registrarWhoisServer?: string
+  registrar_whois_server?: string
   registrarUrl?: string
+  registrar_url?: string
   updatedDate?: string
+  updated_date?: string
   creationDate?: string
+  created_date?: string
   registryExpiryDate?: string
+  registry_expiry_date?: string
+  expiry_date?: string
   transferDate?: string
+  transfer_date?: string
   registrar?: string
   registrarIanaId?: string
+  registrar_iana_id?: string
   registrarAbuseContactEmail?: string
+  registrar_abuse_contact_email?: string
   registrarAbuseContactPhone?: string
+  registrar_abuse_contact_phone?: string
   domainStatus?: string[]
+  domain_status?: string[]
+  status?: string[]
   nameServers?: string[]
+  name_servers?: string[]
   dnssec?: string
   dnssecDetails?: {
     delegationSigned?: boolean
@@ -55,6 +70,34 @@ interface WhoisInfo {
       digestType?: number
     }>
   }
+  // 新的联系人信息格式
+  registrant_contact?: {
+    name?: string
+    organization?: string
+    email?: string
+    phone?: string
+    country?: string
+    state?: string
+    city?: string
+    address?: string
+  }
+  admin_contact?: {
+    name?: string
+    organization?: string
+    email?: string
+    phone?: string
+    country?: string
+    address?: string
+  }
+  tech_contact?: {
+    name?: string
+    organization?: string
+    email?: string
+    phone?: string
+    country?: string
+    address?: string
+  }
+  // 兼容旧格式
   registrant?: {
     name?: string
     organization?: string
@@ -63,34 +106,29 @@ interface WhoisInfo {
     country?: string
     state?: string
     city?: string
+    address?: string
   }
   admin?: {
     name?: string
     organization?: string
     email?: string
     phone?: string
+    country?: string
+    address?: string
   }
   tech?: {
     name?: string
     organization?: string
     email?: string
     phone?: string
+    country?: string
+    address?: string
   }
   lastUpdateOfWhoisDatabase?: string
-  // Support for underscore format from API
-  registry_expiry_date?: string
-  expiry_date?: string
-  created_date?: string
-  updated_date?: string
-  transfer_date?: string
-  registrar_iana_id?: string
-  registrar_url?: string
-  registrar_whois_server?: string
-  registrar_abuse_contact_email?: string
-  registrar_abuse_contact_phone?: string
-  domain_status?: string[]
-  status?: string[]
-  name_servers?: string[]
+  last_update_of_whois_database?: string
+  query_method?: 'rdap' | 'whodat' | 'whocx'
+  query_time_ms?: number
+  whois_raw?: string
 }
 
 interface EnhancedWhoisResultProps {
@@ -358,6 +396,9 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false, sh
               <InfoRow icon={Server} label="WHOIS服务器" value={whoisInfo.registrarWhoisServer || whoisInfo.registrar_whois_server} copyable />
               <InfoRow icon={Mail} label="投诉邮箱" value={whoisInfo.registrarAbuseContactEmail || whoisInfo.registrar_abuse_contact_email} copyable />
               <InfoRow icon={Phone} label="投诉电话" value={whoisInfo.registrarAbuseContactPhone || whoisInfo.registrar_abuse_contact_phone} copyable />
+              {whoisInfo.registry_domain_id && (
+                <InfoRow icon={Info} label="注册表域名ID" value={whoisInfo.registry_domain_id} copyable />
+              )}
             </div>
 
             {/* 分隔线 */}
@@ -399,40 +440,194 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false, sh
           </CardContent>
         </Card>
 
-        {/* 联系信息 */}
-        {(whoisInfo.registrant || whoisInfo.admin || whoisInfo.tech) && (
+        {/* 联系信息 - 支持新的统一格式 */}
+        {((whoisInfo.registrant_contact || whoisInfo.registrant) || 
+          (whoisInfo.admin_contact || whoisInfo.admin) || 
+          (whoisInfo.tech_contact || whoisInfo.tech)) && (
           <Card>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center space-x-2 text-lg">
                 <User className="w-5 h-5" />
                 <span>联系信息</span>
+                {whoisInfo.query_method && (
+                  <Badge variant="outline" className="text-xs ml-auto">
+                    数据源: {whoisInfo.query_method.toUpperCase()}
+                  </Badge>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-0">
-              {whoisInfo.registrant && (
+              {/* 注册人联系信息 */}
+              {(whoisInfo.registrant_contact || whoisInfo.registrant) && (
                 <>
-                  <InfoRow icon={User} label="注册人" value={whoisInfo.registrant.name} />
-                  <InfoRow icon={Building} label="注册机构" value={whoisInfo.registrant.organization} />
-                  <InfoRow icon={Mail} label="注册人邮箱" value={whoisInfo.registrant.email} copyable />
-                  <InfoRow icon={Phone} label="注册人电话" value={whoisInfo.registrant.phone} copyable />
-                  <InfoRow icon={MapPin} label="国家/地区" value={whoisInfo.registrant.country} />
+                  <div className="py-2 border-b border-border/50">
+                    <div className="text-sm font-medium text-foreground mb-2 flex items-center">
+                      <User className="w-4 h-4 mr-2" />
+                      注册人信息
+                    </div>
+                    <div className="ml-6 space-y-1">
+                      <InfoRow 
+                        icon={User} 
+                        label="姓名" 
+                        value={(whoisInfo.registrant_contact || whoisInfo.registrant)?.name} 
+                      />
+                      <InfoRow 
+                        icon={Building} 
+                        label="机构" 
+                        value={(whoisInfo.registrant_contact || whoisInfo.registrant)?.organization} 
+                      />
+                      <InfoRow 
+                        icon={Mail} 
+                        label="邮箱" 
+                        value={(whoisInfo.registrant_contact || whoisInfo.registrant)?.email} 
+                        copyable 
+                      />
+                      <InfoRow 
+                        icon={Phone} 
+                        label="电话" 
+                        value={(whoisInfo.registrant_contact || whoisInfo.registrant)?.phone} 
+                        copyable 
+                      />
+                      <InfoRow 
+                        icon={MapPin} 
+                        label="国家/地区" 
+                        value={(whoisInfo.registrant_contact || whoisInfo.registrant)?.country} 
+                      />
+                      {(whoisInfo.registrant_contact?.state || whoisInfo.registrant?.state) && (
+                        <InfoRow 
+                          icon={MapPin} 
+                          label="州/省" 
+                          value={(whoisInfo.registrant_contact || whoisInfo.registrant)?.state} 
+                        />
+                      )}
+                      {(whoisInfo.registrant_contact?.city || whoisInfo.registrant?.city) && (
+                        <InfoRow 
+                          icon={MapPin} 
+                          label="城市" 
+                          value={(whoisInfo.registrant_contact || whoisInfo.registrant)?.city} 
+                        />
+                      )}
+                      {(whoisInfo.registrant_contact?.address || whoisInfo.registrant?.address) && (
+                        <InfoRow 
+                          icon={MapPin} 
+                          label="地址" 
+                          value={(whoisInfo.registrant_contact || whoisInfo.registrant)?.address} 
+                        />
+                      )}
+                    </div>
+                  </div>
                 </>
               )}
-              {whoisInfo.admin && (
+              
+              {/* 管理联系人信息 */}
+              {(whoisInfo.admin_contact || whoisInfo.admin) && (
                 <>
-                  <InfoRow icon={User} label="管理联系人" value={whoisInfo.admin.name} />
-                  <InfoRow icon={Building} label="管理机构" value={whoisInfo.admin.organization} />
-                  <InfoRow icon={Mail} label="管理邮箱" value={whoisInfo.admin.email} copyable />
-                  <InfoRow icon={Phone} label="管理电话" value={whoisInfo.admin.phone} copyable />
+                  <div className="py-2 border-b border-border/50">
+                    <div className="text-sm font-medium text-foreground mb-2 flex items-center">
+                      <User className="w-4 h-4 mr-2" />
+                      管理联系人
+                    </div>
+                    <div className="ml-6 space-y-1">
+                      <InfoRow 
+                        icon={User} 
+                        label="姓名" 
+                        value={(whoisInfo.admin_contact || whoisInfo.admin)?.name} 
+                      />
+                      <InfoRow 
+                        icon={Building} 
+                        label="机构" 
+                        value={(whoisInfo.admin_contact || whoisInfo.admin)?.organization} 
+                      />
+                      <InfoRow 
+                        icon={Mail} 
+                        label="邮箱" 
+                        value={(whoisInfo.admin_contact || whoisInfo.admin)?.email} 
+                        copyable 
+                      />
+                      <InfoRow 
+                        icon={Phone} 
+                        label="电话" 
+                        value={(whoisInfo.admin_contact || whoisInfo.admin)?.phone} 
+                        copyable 
+                      />
+                      {(whoisInfo.admin_contact?.country || whoisInfo.admin?.country) && (
+                        <InfoRow 
+                          icon={MapPin} 
+                          label="国家/地区" 
+                          value={(whoisInfo.admin_contact || whoisInfo.admin)?.country} 
+                        />
+                      )}
+                      {(whoisInfo.admin_contact?.address || whoisInfo.admin?.address) && (
+                        <InfoRow 
+                          icon={MapPin} 
+                          label="地址" 
+                          value={(whoisInfo.admin_contact || whoisInfo.admin)?.address} 
+                        />
+                      )}
+                    </div>
+                  </div>
                 </>
               )}
-              {whoisInfo.tech && (
+              
+              {/* 技术联系人信息 */}
+              {(whoisInfo.tech_contact || whoisInfo.tech) && (
                 <>
-                  <InfoRow icon={User} label="技术联系人" value={whoisInfo.tech.name} />
-                  <InfoRow icon={Building} label="技术机构" value={whoisInfo.tech.organization} />
-                  <InfoRow icon={Mail} label="技术邮箱" value={whoisInfo.tech.email} copyable />
-                  <InfoRow icon={Phone} label="技术电话" value={whoisInfo.tech.phone} copyable />
+                  <div className="py-2">
+                    <div className="text-sm font-medium text-foreground mb-2 flex items-center">
+                      <User className="w-4 h-4 mr-2" />
+                      技术联系人
+                    </div>
+                    <div className="ml-6 space-y-1">
+                      <InfoRow 
+                        icon={User} 
+                        label="姓名" 
+                        value={(whoisInfo.tech_contact || whoisInfo.tech)?.name} 
+                      />
+                      <InfoRow 
+                        icon={Building} 
+                        label="机构" 
+                        value={(whoisInfo.tech_contact || whoisInfo.tech)?.organization} 
+                      />
+                      <InfoRow 
+                        icon={Mail} 
+                        label="邮箱" 
+                        value={(whoisInfo.tech_contact || whoisInfo.tech)?.email} 
+                        copyable 
+                      />
+                      <InfoRow 
+                        icon={Phone} 
+                        label="电话" 
+                        value={(whoisInfo.tech_contact || whoisInfo.tech)?.phone} 
+                        copyable 
+                      />
+                      {(whoisInfo.tech_contact?.country || whoisInfo.tech?.country) && (
+                        <InfoRow 
+                          icon={MapPin} 
+                          label="国家/地区" 
+                          value={(whoisInfo.tech_contact || whoisInfo.tech)?.country} 
+                        />
+                      )}
+                      {(whoisInfo.tech_contact?.address || whoisInfo.tech?.address) && (
+                        <InfoRow 
+                          icon={MapPin} 
+                          label="地址" 
+                          value={(whoisInfo.tech_contact || whoisInfo.tech)?.address} 
+                        />
+                      )}
+                    </div>
+                  </div>
                 </>
+              )}
+              
+              {/* 如果通过RDAP隐藏了联系信息，显示提示 */}
+              {whoisInfo.query_method === 'rdap' && 
+               !(whoisInfo.registrant_contact || whoisInfo.registrant) && 
+               !(whoisInfo.admin_contact || whoisInfo.admin) && 
+               !(whoisInfo.tech_contact || whoisInfo.tech) && (
+                <div className="py-4 text-center text-muted-foreground">
+                  <Shield className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">根据RDAP隐私保护政策，联系人信息不公开显示</p>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -462,10 +657,21 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false, sh
       <Card className="bg-muted/30">
         <CardContent className="pt-6">
           <div className="space-y-3 text-sm text-muted-foreground">
-            <p className="flex items-center">
-              <Clock className="w-4 h-4 mr-2" />
-              WHOIS数据库最后更新时间: {formatDate(whoisInfo.lastUpdateOfWhoisDatabase)}
-            </p>
+            <div className="space-y-2">
+              <p className="flex items-center">
+                <Clock className="w-4 h-4 mr-2" />
+                WHOIS数据库最后更新时间: {formatDate(whoisInfo.lastUpdateOfWhoisDatabase || whoisInfo.last_update_of_whois_database)}
+              </p>
+              {whoisInfo.query_method && (
+                <p className="flex items-center text-xs">
+                  <Info className="w-3 h-3 mr-2" />
+                  查询方式: {whoisInfo.query_method.toUpperCase()}
+                  {whoisInfo.query_time_ms && (
+                    <span className="ml-2">({whoisInfo.query_time_ms}ms)</span>
+                  )}
+                </p>
+              )}
+            </div>
 
             {/* RDAP 标准信息 */}
             <div className="border-t border-border/50 pt-3 space-y-2">
