@@ -298,10 +298,28 @@ function parseRdapResponse(data: any, domain: string): Partial<WhoisResult> {
       return Object.keys(contactInfo).length > 0 ? contactInfo : undefined
     }
 
+    // 解析注册商名称
+    let registrarName = 'Unknown'
+    if (registrarEntity) {
+      // 首先尝试从vCard中获取fn (full name)
+      if (registrarEntity.vcardArray && Array.isArray(registrarEntity.vcardArray) && registrarEntity.vcardArray[1]) {
+        const vcardProperties = registrarEntity.vcardArray[1]
+        const fnProperty = vcardProperties.find((prop: any) => Array.isArray(prop) && prop[0] === 'fn')
+        if (fnProperty && fnProperty[3]) {
+          registrarName = fnProperty[3]
+        }
+      }
+      
+      // 如果vCard中没有找到，使用handle作为后备
+      if (registrarName === 'Unknown' && registrarEntity.handle) {
+        registrarName = registrarEntity.handle
+      }
+    }
+
     const result: Partial<WhoisResult> = {
       domain,
       is_available: false, // RDAP返回数据说明域名已注册
-      registrar: registrarEntity?.handle || registrarEntity?.fn || 'Unknown',
+      registrar: registrarName,
       created_date: createdEvent?.eventDate,
       updated_date: updatedEvent?.eventDate,
       expiry_date: expiryEvent?.eventDate,
