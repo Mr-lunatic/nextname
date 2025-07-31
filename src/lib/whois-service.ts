@@ -287,14 +287,12 @@ async function queryRDAP(domain: string): Promise<Partial<WhoisResult>> {
 
       const data = await response.json()
       console.log(`✅ RDAP success from ${server}`)
-      console.log(`📊 RDAP response data:`, JSON.stringify(data, null, 2))
 
       // 检查RDAP响应是否表示域名不存在
       if (data.errorCode === 404 ||
           (data.notices && data.notices.some((notice: any) =>
             notice.title && notice.title.toLowerCase().includes('not found')
           ))) {
-        console.log(`🔍 Domain ${domain} is available (RDAP indicates not found)`)
         return {
           domain,
           is_available: true,
