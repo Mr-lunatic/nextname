@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { Search, Globe, Hash, DollarSign, Loader2 } from 'lucide-react'
-import { UnifiedSearchBoxProps, SearchState, SearchSuggestion, AutocompleteOption, DEFAULT_SEARCH_CONFIG, KEYBOARD_SHORTCUTS } from './search-types'
+import { UnifiedSearchBoxProps, SearchState, SearchSuggestion, AutocompleteOption, SearchType, DEFAULT_SEARCH_CONFIG, KEYBOARD_SHORTCUTS } from './search-types'
 import { detectSearchType, sanitizeQuery, debounce, formatSearchTypeText, getSearchTypeIcon } from './search-utils'
 import { useSearchHistory } from './search-history'
 import { CompactSearchHistory } from './search-history'
