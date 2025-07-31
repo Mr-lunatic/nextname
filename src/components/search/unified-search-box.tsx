@@ -58,21 +58,11 @@ export function UnifiedSearchBox({
     loading: false
   })
 
-  // 防抖搜索函数
-  const debouncedSearch = useCallback(
-    debounce((query: string) => {
-      if (query.trim()) {
-        setState(prev => ({ ...prev, loading: false }))
-      }
-    }, finalConfig.debounceMs),
-    [finalConfig.debounceMs]
-  )
-
   // 处理输入变化
   const handleInputChange = useCallback((value: string) => {
     const sanitized = sanitizeQuery(value)
     const detectedType = detectSearchType(sanitized)
-    
+
     setState(prev => ({
       ...prev,
       query: sanitized,
@@ -82,10 +72,13 @@ export function UnifiedSearchBox({
       loading: sanitized.length > 0
     }))
 
+    // 简单的防抖处理
     if (sanitized.trim()) {
-      debouncedSearch(sanitized)
+      setTimeout(() => {
+        setState(prev => ({ ...prev, loading: false }))
+      }, finalConfig.debounceMs)
     }
-  }, [debouncedSearch, showHistory])
+  }, [finalConfig.debounceMs, showHistory])
 
   // 处理搜索
   const handleSearch = useCallback((searchQuery?: string, searchType?: typeof state.type) => {
@@ -110,6 +103,11 @@ export function UnifiedSearchBox({
   // 处理建议选择
   const handleSuggestionSelect = useCallback((suggestion: SearchSuggestion) => {
     handleSearch(suggestion.value, detectSearchType(suggestion.value))
+  }, [handleSearch])
+
+  // 处理历史选择
+  const handleHistorySelect = useCallback((query: string, type: SearchType) => {
+    handleSearch(query, type)
   }, [handleSearch])
 
   // 处理自动补全选择
@@ -305,7 +303,7 @@ export function UnifiedSearchBox({
             {/* 搜索历史 */}
             {showHistory && !state.query && (
               <CompactSearchHistory
-                onSelect={handleSuggestionSelect}
+                onSelect={handleHistorySelect}
                 maxItems={5}
               />
             )}
