@@ -277,18 +277,18 @@ export async function GET(request: NextRequest) {
   // Get TLDs for current page
   const currentPageTLDs = popularTLDs.slice(startIndex, endIndex)
   
-  // Limit concurrent checks to prevent overwhelming RDAP servers
-  const maxConcurrentChecks = 8 // Increased from 5 for better performance
+  // 改为顺序查询以避免并发压力和超时问题
+  const maxConcurrentChecks = 1 // 改为顺序查询
   const tldBatches = []
   
-  // Split current page TLDs into batches
+  // 将当前页TLD分成批次
   for (let i = 0; i < currentPageTLDs.length; i += maxConcurrentChecks) {
     tldBatches.push(currentPageTLDs.slice(i, i + maxConcurrentChecks))
   }
   
   const results = []
   const startTime = Date.now()
-  const maxProcessingTime = 6000 // Reduced to 6 seconds for faster response
+  const maxProcessingTime = 120000 // 增加到120秒，给顺序查询足够时间
   
   // Process batches with timeout
   for (const batch of tldBatches) {
@@ -306,7 +306,7 @@ export async function GET(request: NextRequest) {
       try {
         // Call the domain API with shorter timeout for other extensions check
         const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 8000) // 增加到8秒，给WHOIS查询足够时间
+        const timeoutId = setTimeout(() => controller.abort(), 5000) // 减少到5秒，顺序查询时单个域名不需要太长时间
         
         const domainResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/domain/${domain}`, {
           signal: controller.signal,
@@ -368,10 +368,8 @@ export async function GET(request: NextRequest) {
       console.error('Batch processing error:', error)
     }
     
-    // Minimal delay between batches for better performance
-    if (tldBatches.indexOf(batch) < tldBatches.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, 50)) // Reduced to 50ms for faster pagination
-    }
+    // 顺序查询不需要批次间延迟
+    // 移除延迟，让顺序查询更快速
   }
   
   // Cache the result and return
