@@ -37,7 +37,9 @@
     "searchSuggestions": "搜索建议",
     "install": "安装",
     "installApp": "安装应用",
-    "later": "稍后"
+    "later": "稍后",
+    "clear": "清空",
+    "popular": "热门"
   },
   "navigation": {
     "allTools": "所有工具",
@@ -140,6 +142,40 @@
     "inputDomainPrefix": "输入域名前缀 - 批量检索多个后缀的可注册性",
     "inputDomainSuffix": "输入域名后缀 - 批量对比各注册商的价格信息",
     "fullDomainQuery": "完整域名查询 - 检查域名是否可注册",
+    "type": {
+      "auto": "智能检测",
+      "domain": "完整域名",
+      "prefix": "域名前缀",
+      "suffix": "域名后缀"
+    },
+    "suggestion": {
+      "domain": "域名",
+      "tld": "顶级域名",
+      "keyword": "关键词",
+      "prefix": "前缀",
+      "suffix": "后缀",
+      "popular": "热门",
+      "general": "通用"
+    },
+    "noHistory": "暂无搜索历史",
+    "noSuggestions": "暂无搜索建议",
+    "recentSearches": "最近搜索",
+    "clearHistory": "清空历史",
+    "removeFromHistory": "从历史中移除",
+    "historyCount": "显示 {count}/{max} 条历史记录",
+    "resultCount": "{count} 个结果",
+    "autocomplete": "自动补全",
+    "popularSuggestions": "热门推荐",
+    "domainSuggestions": "域名建议",
+    "tldSuggestions": "后缀建议",
+    "keywordSuggestions": "关键词建议",
+    "coreFunctions": "核心功能",
+    "domainCheck": "域名查询",
+    "domainCheckDesc": "检查域名可用性和WHOIS信息",
+    "prefixSearch": "前缀搜索",
+    "prefixSearchDesc": "批量查询多个后缀的可注册性",
+    "priceComparison": "价格对比",
+    "priceComparisonDesc": "对比各注册商的域名价格",
     "domainPrefixSearch": "域名前缀搜索 - 查找以此开头的域名",
     "domainSuffixSearch": "域名后缀搜索 - 查看此后缀的价格对比",
     "popularTld": "热门",
@@ -161,6 +197,12 @@
     "noResults": "未找到匹配的域名",
     "tryDifferentFilters": "尝试调整筛选条件或搜索其他关键词",
     "clearFilters": "清除筛选条件"
+  },
+  "time": {
+    "justNow": "刚刚",
+    "minutesAgo": "{count} 分钟前",
+    "hoursAgo": "{count} 小时前",
+    "daysAgo": "{count} 天前"
   },
   "priceComparison": {
     "title": "注册商价格对比",

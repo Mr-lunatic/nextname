@@ -23,7 +23,7 @@ import { NextNameLogo } from '@/components/logo'
 import { LanguageSwitcher } from '@/components/language-currency-switcher'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { ScrollToTop } from '@/components/scroll-to-top'
-import { EnhancedSmartSearchV2 } from '@/components/enhanced-smart-search-v2'
+import { UnifiedSearchBox } from '@/components/search'
 import { RegistrarLogo } from '@/components/registrar-logos'
 
 interface RegistrarPrice {
@@ -273,9 +273,15 @@ export default function DomainPageClient({ domain, pageType = 'domain' }: Domain
 
         <div className="container mx-auto px-4 py-8">
           <div className="mb-8">
-            <EnhancedSmartSearchV2
+            <UnifiedSearchBox
               onSearch={handleSearch}
               placeholder="搜索域名或关键词..."
+              variant="default"
+              size="md"
+              showSuggestions={true}
+              showHistory={true}
+              showAutocomplete={true}
+              maxSuggestions={6}
             />
           </div>
 
@@ -315,9 +321,15 @@ export default function DomainPageClient({ domain, pageType = 'domain' }: Domain
       <div className="container mx-auto px-4 py-8">
         {/* Enhanced Search Bar - Same as search page */}
         <div className="mb-8">
-          <EnhancedSmartSearchV2
+          <UnifiedSearchBox
             onSearch={handleSearch}
             placeholder="搜索域名或关键词..."
+            variant="default"
+            size="md"
+            showSuggestions={true}
+            showHistory={true}
+            showAutocomplete={true}
+            maxSuggestions={6}
           />
         </div>
 

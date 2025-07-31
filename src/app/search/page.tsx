@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { SuffixResult } from '@/components/suffix-result'
 import { SearchResultsSkeleton, PriceComparisonSkeleton, WhoisSkeleton, SpinnerLoader } from '@/components/ui/loading-skeleton'
-import { EnhancedSmartSearchV2 } from '@/components/enhanced-smart-search-v2'
+import { UnifiedSearchBox } from '@/components/search'
 import { EnhancedWhoisResult } from '@/components/enhanced-whois-result'
 import { OtherExtensionsCheck } from '@/components/other-extensions-check'
 import { CardSpotlight, BestNameSpotlight } from '@/components/ui/framer-spotlight'
@@ -1396,9 +1396,15 @@ function SearchPageContent() {
         <div className="container mx-auto px-4 py-8">
           {/* Enhanced Search Bar */}
           <div className="mb-8">
-            <EnhancedSmartSearchV2 
+            <UnifiedSearchBox
               onSearch={handleSearch}
               placeholder="搜索域名或关键词..."
+              variant="default"
+              size="md"
+              showSuggestions={true}
+              showHistory={true}
+              showAutocomplete={true}
+              maxSuggestions={6}
             />
           </div>
 
@@ -1449,9 +1455,15 @@ function SearchPageContent() {
 
         {/* Enhanced Search Bar */}
         <div className="mb-8">
-          <EnhancedSmartSearchV2 
+          <UnifiedSearchBox
             onSearch={handleSearch}
             placeholder="搜索域名或关键词..."
+            variant="default"
+            size="md"
+            showSuggestions={true}
+            showHistory={true}
+            showAutocomplete={true}
+            maxSuggestions={6}
           />
         </div>
 

@@ -18,7 +18,7 @@ import { LanguageSwitcher } from '@/components/language-currency-switcher'
 import { NextNameLogo } from '@/components/logo'
 import { Footer } from '@/components/footer'
 import { ScrollToTop } from '@/components/scroll-to-top'
-import { EnhancedSmartSearchV2 } from '@/components/enhanced-smart-search-v2'
+import { UnifiedSearchBox } from '@/components/search'
 import { PriceComparison } from '@/components/price-comparison'
 
 // Mock data for fallback

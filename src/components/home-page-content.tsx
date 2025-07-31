@@ -19,7 +19,7 @@ import {
   Award,
   ChevronDown
 } from 'lucide-react'
-import { EnhancedSmartSearchV2 } from '@/components/enhanced-smart-search-v2'
+import { UnifiedSearchBox } from '@/components/search'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageSwitcher } from '@/components/language-currency-switcher'
 import { Button } from '@/components/ui/button'
@@ -234,9 +234,15 @@ export default function HomePageContent({ popularTLDs }: { popularTLDs: { name: 
                   className="space-y-6"
                 >
                   <div className="max-w-3xl mx-auto">
-                    <EnhancedSmartSearchV2 
+                    <UnifiedSearchBox
                       onSearch={handleSearch}
                       placeholder={t('common.searchPlaceholder')}
+                      variant="hero"
+                      size="lg"
+                      showSuggestions={true}
+                      showHistory={true}
+                      showAutocomplete={true}
+                      maxSuggestions={8}
                     />
                   </div>
                   
