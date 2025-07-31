@@ -5,11 +5,11 @@ compatibility_flags = ["nodejs_compat"]
 # Cloudflare Pages configuration
 pages_build_output_dir = ".vercel/output/static"
 
-# KV namespace for caching
-[[kv_namespaces]]
-binding = "PRICING_CACHE"
-id = "your_kv_namespace_id"
-preview_id = "your_preview_kv_namespace_id"
+# KV namespace for caching (temporarily disabled)
+# [[kv_namespaces]]
+# binding = "PRICING_CACHE"
+# id = "your_kv_namespace_id"
+# preview_id = "your_preview_kv_namespace_id"
 
 # D1 database for persistent storage
 [[d1_databases]]
