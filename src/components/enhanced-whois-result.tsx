@@ -391,7 +391,6 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false, sh
             {/* 注册商信息部分 */}
             <div className="space-y-0">
               <InfoRow icon={Building} label="注册商" value={whoisInfo.registrar} copyable />
-              <InfoRow icon={Info} label="注册商IANA ID" value={whoisInfo.registrarIanaId || whoisInfo.registrar_iana_id} />
               <InfoRow icon={Globe} label="注册商网站" value={whoisInfo.registrarUrl || whoisInfo.registrar_url} copyable />
               <InfoRow icon={Server} label="WHOIS服务器" value={whoisInfo.registrarWhoisServer || whoisInfo.registrar_whois_server} copyable />
               <InfoRow icon={Mail} label="投诉邮箱" value={whoisInfo.registrarAbuseContactEmail || whoisInfo.registrar_abuse_contact_email} copyable />
@@ -406,7 +405,15 @@ export function EnhancedWhoisResult({ domain, whoisInfo, isAvailable = false, sh
 
             {/* 技术信息部分 */}
             <div className="space-y-0">
-              <InfoRow icon={Shield} label="DNSSEC" value={whoisInfo.dnssec === 'signedDelegation' ? '已启用' : '未启用'} />
+              <InfoRow 
+                icon={Shield} 
+                label="DNSSEC" 
+                value={
+                  whoisInfo.dnssec === 'signedDelegation' || whoisInfo.dnssec === 'signed' ? '已启用' : 
+                  whoisInfo.dnssec === 'unsigned' ? '未启用' : 
+                  whoisInfo.dnssec || '未知'
+                } 
+              />
 
               {((whoisInfo.nameServers && whoisInfo.nameServers.length > 0) ||
                 (whoisInfo.name_servers && whoisInfo.name_servers.length > 0)) && (

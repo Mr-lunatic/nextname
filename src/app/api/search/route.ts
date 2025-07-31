@@ -215,7 +215,6 @@ export async function GET(request: NextRequest) {
             created_date: domainData.created_date,
             updated_date: domainData.updated_date,
             registry_expiry_date: domainData.expiry_date,
-            registrar_iana_id: domainData.registrar_iana_id,
             registrar_abuse_contact_email: domainData.registrar_abuse_contact_email,
             registrar_abuse_contact_phone: domainData.registrar_abuse_contact_phone,
             domain_status: domainData.status,

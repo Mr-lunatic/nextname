@@ -57,7 +57,6 @@ export async function GET(
       domain: whoisResult.domain,
       is_available: whoisResult.is_available,
       registrar: whoisResult.registrar,
-      registrar_iana_id: whoisResult.registrar_iana_id,
       registrar_whois_server: whoisResult.registrar_whois_server,
       registrar_url: whoisResult.registrar_url,
       created_date: whoisResult.created_date,

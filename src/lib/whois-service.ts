@@ -333,6 +333,16 @@ function parseRdapResponse(data: any, domain: string): Partial<WhoisResult> {
 
     // 添加注册商详细信息
     if (registrarEntity) {
+      // 提取注册商URL
+      if (registrarEntity.links) {
+        const aboutLink = registrarEntity.links.find((link: any) => 
+          link.rel === 'about' && link.type === 'text/html'
+        )
+        if (aboutLink && aboutLink.href) {
+          result.registrar_url = aboutLink.href
+        }
+      }
+      
       if (registrarEntity.publicIds) {
         const ianaId = registrarEntity.publicIds.find((id: any) => id.type === 'IANA Registrar ID')
         if (ianaId) {
@@ -374,9 +384,23 @@ function parseRdapResponse(data: any, domain: string): Partial<WhoisResult> {
       result.tech_contact = techContact
     }
 
-    // DNSSEC信息
+    // DNSSEC信息 - 增强版本
     if (data.secureDNS) {
-      result.dnssec = data.secureDNS.delegationSigned ? 'signedDelegation' : 'unsigned'
+      if (data.secureDNS.delegationSigned === true) {
+        result.dnssec = 'signedDelegation'
+      } else if (data.secureDNS.delegationSigned === false) {
+        result.dnssec = 'unsigned'
+      } else {
+        // 处理字符串格式的DNSSEC状态
+        const dnssecStatus = String(data.secureDNS.delegationSigned).toLowerCase()
+        if (dnssecStatus === 'true' || dnssecStatus === 'signed') {
+          result.dnssec = 'signedDelegation'
+        } else if (dnssecStatus === 'false' || dnssecStatus === 'unsigned') {
+          result.dnssec = 'unsigned'
+        } else {
+          result.dnssec = dnssecStatus
+        }
+      }
     }
 
     return result
@@ -673,6 +697,19 @@ function parseWhoDatResponse(data: any, domain: string): Partial<WhoisResult> {
       if (registrarInfo.name) {
         result.registrar = registrarInfo.name
       }
+      // 添加注册商URL和投诉联系方式
+      if (registrarInfo.url) {
+        result.registrar_url = registrarInfo.url
+      }
+      if (registrarInfo.whois_server) {
+        result.registrar_whois_server = registrarInfo.whois_server
+      }
+      if (registrarInfo.abuse_contact_email) {
+        result.registrar_abuse_contact_email = registrarInfo.abuse_contact_email
+      }
+      if (registrarInfo.abuse_contact_phone) {
+        result.registrar_abuse_contact_phone = registrarInfo.abuse_contact_phone
+      }
     }
 
     // 处理注册人联系信息
@@ -713,6 +750,22 @@ function parseWhoDatResponse(data: any, domain: string): Partial<WhoisResult> {
         phone: techData.phone,
         country: techData.country,
         address: techData.address
+      }
+    }
+
+    // 处理DNSSEC信息
+    if (data.dnssec) {
+      if (typeof data.dnssec === 'string') {
+        const dnssecLower = data.dnssec.toLowerCase()
+        if (dnssecLower.includes('signed') || dnssecLower === 'true') {
+          result.dnssec = 'signedDelegation'
+        } else if (dnssecLower.includes('unsigned') || dnssecLower === 'false') {
+          result.dnssec = 'unsigned'
+        } else {
+          result.dnssec = data.dnssec
+        }
+      } else if (typeof data.dnssec === 'boolean') {
+        result.dnssec = data.dnssec ? 'signedDelegation' : 'unsigned'
       }
     }
 
@@ -797,26 +850,45 @@ function parseWhoCxResponse(extractedData: string, domain: string, rawWhois: str
     // 解析结构化信息
     for (const line of lines) {
       const lowerLine = line.toLowerCase()
+      const colonIndex = line.indexOf(':')
+      
+      if (colonIndex === -1) continue // Skip lines without colons
+      
+      const key = line.substring(0, colonIndex).trim().toLowerCase()
+      const value = line.substring(colonIndex + 1).trim()
+      
+      if (!value) continue // Skip empty values
 
-      if (lowerLine.includes('registrar:') || lowerLine.includes('注册商:')) {
-        result.registrar = line.split(':')[1]?.trim()
-      } else if (lowerLine.includes('creation date:') || lowerLine.includes('created:') || lowerLine.includes('注册时间:')) {
-        result.created_date = line.split(':')[1]?.trim()
-      } else if (lowerLine.includes('expiry date:') || lowerLine.includes('expires:') || lowerLine.includes('到期时间:')) {
-        result.expiry_date = line.split(':')[1]?.trim()
-      } else if (lowerLine.includes('updated date:') || lowerLine.includes('updated:') || lowerLine.includes('更新时间:')) {
-        result.updated_date = line.split(':')[1]?.trim()
-      } else if (lowerLine.includes('name server:') || lowerLine.includes('dns:')) {
-        if (!result.name_servers) result.name_servers = []
-        const ns = line.split(':')[1]?.trim()
-        if (ns && !result.name_servers.includes(ns)) {
-          result.name_servers.push(ns)
+      if (key.includes('registrar') || key.includes('注册商')) {
+        // Enhanced registrar parsing - avoid numeric IDs
+        if (!/^\d+$/.test(value) && value.length > 2) {
+          result.registrar = value
         }
-      } else if (lowerLine.includes('status:') || lowerLine.includes('状态:')) {
+      } else if (key.includes('creation date') || key.includes('created') || key.includes('注册时间')) {
+        result.created_date = value
+      } else if (key.includes('expiry date') || key.includes('expires') || key.includes('到期时间')) {
+        result.expiry_date = value
+      } else if (key.includes('updated date') || key.includes('updated') || key.includes('更新时间')) {
+        result.updated_date = value
+      } else if (key.includes('name server') || key.includes('dns')) {
+        if (!result.name_servers) result.name_servers = []
+        if (value && !result.name_servers.includes(value)) {
+          result.name_servers.push(value)
+        }
+      } else if (key.includes('status') || key.includes('状态')) {
         if (!result.status) result.status = []
-        const status = line.split(':')[1]?.trim()
-        if (status && !result.status.includes(status)) {
-          result.status.push(status)
+        if (value && !result.status.includes(value)) {
+          result.status.push(value)
+        }
+      } else if (key.includes('dnssec') || key.includes('sec dns')) {
+        // 处理DNSSEC信息
+        const dnssecLower = value.toLowerCase()
+        if (dnssecLower.includes('signed') || dnssecLower === 'yes' || dnssecLower === 'true') {
+          result.dnssec = 'signedDelegation'
+        } else if (dnssecLower.includes('unsigned') || dnssecLower === 'no' || dnssecLower === 'false') {
+          result.dnssec = 'unsigned'
+        } else {
+          result.dnssec = value
         }
       }
     }
