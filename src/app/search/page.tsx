@@ -16,7 +16,9 @@ try {
     div: 'div' as any,
     button: 'button' as any
   }
-  AnimatePresence = ({ children }: { children: React.ReactNode }) => <>{children}</>
+  AnimatePresence = function AnimatePresence({ children }: { children: React.ReactNode }) {
+    return <>{children}</>
+  }
 }
 import { ArrowLeft, Check, X, ExternalLink, Filter, SortAsc, Search, ShoppingCart, Globe, Eye, Star, BarChart3, TrendingUp, Sparkles, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import Link from 'next/link'
@@ -39,49 +41,63 @@ try {
     CardSpotlight = spotlightComponents.CardSpotlight
     BestNameSpotlight = spotlightComponents.BestNameSpotlight
   } catch {
-    CardSpotlight = ({ children }: { children: React.ReactNode }) => <div>{children}</div>
-    BestNameSpotlight = ({ children }: { children: React.ReactNode }) => <div>{children}</div>
+    CardSpotlight = function CardSpotlight({ children }: { children: React.ReactNode }) {
+      return <div>{children}</div>
+    }
+    BestNameSpotlight = function BestNameSpotlight({ children }: { children: React.ReactNode }) {
+      return <div>{children}</div>
+    }
   }
 } catch (error) {
   console.warn('Some components not available, using fallbacks:', error)
   
   // 简化的搜索框组件
-  UnifiedSearchBox = ({ onSearch, placeholder }: { 
+  UnifiedSearchBox = function UnifiedSearchBox({ onSearch, placeholder }: { 
     onSearch: (query: string, type: string) => void
     placeholder: string 
-  }) => (
-    <div className="w-full max-w-4xl mx-auto">
-      <input 
-        type="text" 
-        placeholder={placeholder}
-        className="w-full p-4 border rounded-lg"
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            const target = e.target as HTMLInputElement
-            onSearch(target.value, 'auto')
-          }
-        }}
-      />
-    </div>
-  )
+  }) {
+    return (
+      <div className="w-full max-w-4xl mx-auto">
+        <input 
+          type="text" 
+          placeholder={placeholder}
+          className="w-full p-4 border rounded-lg"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              const target = e.target as HTMLInputElement
+              onSearch(target.value, 'auto')
+            }
+          }}
+        />
+      </div>
+    )
+  }
   
   // 简化的WHOIS结果组件
-  EnhancedWhoisResult = ({ domain, whoisInfo }: { domain: string, whoisInfo: any }) => (
-    <div className="p-4 border rounded-lg">
-      <h3 className="text-lg font-bold">{domain}</h3>
-      <p>WHOIS信息已加载</p>
-    </div>
-  )
+  EnhancedWhoisResult = function EnhancedWhoisResult({ domain, whoisInfo }: { domain: string, whoisInfo: any }) {
+    return (
+      <div className="p-4 border rounded-lg">
+        <h3 className="text-lg font-bold">{domain}</h3>
+        <p>WHOIS信息已加载</p>
+      </div>
+    )
+  }
   
   // 简化的其他扩展组件
-  OtherExtensionsCheck = ({ domain }: { domain: string }) => (
-    <div className="p-4 border rounded-lg">
-      <p>检查其他扩展: {domain}</p>
-    </div>
-  )
+  OtherExtensionsCheck = function OtherExtensionsCheck({ domain }: { domain: string }) {
+    return (
+      <div className="p-4 border rounded-lg">
+        <p>检查其他扩展: {domain}</p>
+      </div>
+    )
+  }
   
-  CardSpotlight = ({ children }: { children: React.ReactNode }) => <div>{children}</div>
-  BestNameSpotlight = ({ children }: { children: React.ReactNode }) => <div>{children}</div>
+  CardSpotlight = function CardSpotlight({ children }: { children: React.ReactNode }) {
+    return <div>{children}</div>
+  }
+  BestNameSpotlight = function BestNameSpotlight({ children }: { children: React.ReactNode }) {
+    return <div>{children}</div>
+  }
 }
 import { NextNameLogo } from '@/components/logo'
 import { RegistrarLogo } from '@/components/registrar-logos'
