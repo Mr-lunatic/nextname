@@ -326,7 +326,7 @@ export async function GET(request: NextRequest) {
         return {
           domain,
           tld,
-          is_available: domainData.is_available || false,
+          is_available: domainData.is_available === true ? true : (domainData.is_available === false ? false : null),
           estimated_price: domainData.is_available ? getEstimatedPrice(tld.tld) : null,
           registrar: domainData.is_available ? null : domainData.registrar,
           expiry_date: domainData.is_available ? null : domainData.expiry_date,

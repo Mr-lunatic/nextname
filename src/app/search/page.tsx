@@ -829,9 +829,9 @@ function SearchPageContent() {
       // 可用性筛选
       let matchesAvailabilityFilter = true
       if (availabilityFilter === 'available') {
-        matchesAvailabilityFilter = item.is_available
+        matchesAvailabilityFilter = item.is_available === true
       } else if (availabilityFilter === 'registered') {
-        matchesAvailabilityFilter = !item.is_available
+        matchesAvailabilityFilter = item.is_available === false
       }
 
       return matchesTextFilter && matchesAvailabilityFilter
@@ -995,7 +995,7 @@ function SearchPageContent() {
                                 {item.top_registrars[registrarIndex].registrar}
                               </div>
                               <div className="space-y-1">
-                                {item.is_available ? (
+                                {item.is_available === true ? (
                                   <>
                                     <div className="text-xs text-muted-foreground">
                                       <span className="font-medium">注册:</span>
@@ -1010,7 +1010,7 @@ function SearchPageContent() {
                                       </span>
                                     </div>
                                   </>
-                                ) : (
+                                ) : item.is_available === false ? (
                                   <>
                                     <div className="text-xs text-muted-foreground">
                                       <span className="font-medium">转入:</span>
@@ -1025,9 +1025,13 @@ function SearchPageContent() {
                                       </span>
                                     </div>
                                   </>
+                                ) : (
+                                  <div className="text-xs text-center text-muted-foreground">
+                                    查询中...
+                                  </div>
                                 )}
                               </div>
-                              {registrarIndex === 0 && item.is_available && (
+                              {registrarIndex === 0 && item.is_available === true && (
                                 <div className="text-xs text-green-600 font-medium mt-1 flex items-center justify-center">
                                   {/* 移动端隐藏图标，只显示文字 */}
                                   <span className="hidden sm:inline">
@@ -1037,7 +1041,7 @@ function SearchPageContent() {
                                   最低价
                                 </div>
                               )}
-                              {registrarIndex === 0 && !item.is_available && (
+                              {registrarIndex === 0 && item.is_available === false && (
                                 <div className="text-xs text-blue-600 font-medium mt-1 flex items-center justify-center">
                                   <ExternalLink className="w-3 h-3 mr-1" />
                                   转入价
@@ -1047,7 +1051,7 @@ function SearchPageContent() {
                           ) : (
                             <div className="bg-muted/30 rounded-lg p-3 min-h-[80px] flex items-center justify-center">
                               <span className="text-muted-foreground text-sm">
-                                {item.is_available ? '暂无数据' : '-'}
+                                {item.is_available === true ? '暂无数据' : item.is_available === false ? '-' : '查询中'}
                               </span>
                             </div>
                           )}
@@ -1057,22 +1061,29 @@ function SearchPageContent() {
                       {/* 状态列 */}
                       <td className="px-4 py-6 text-center">
                         <Badge
-                          variant={item.is_available ? "default" : "secondary"}
+                          variant={item.is_available === true ? "default" : item.is_available === false ? "secondary" : "outline"}
                           className={`status-badge inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition-all ${
-                            item.is_available
+                            item.is_available === true
                               ? 'bg-green-100 text-green-800 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800'
-                              : 'bg-red-100 text-red-800 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800'
+                              : item.is_available === false
+                              ? 'bg-red-100 text-red-800 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800'
+                              : 'bg-yellow-100 text-yellow-800 border border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800'
                           }`}
                         >
-                          {item.is_available ? (
+                          {item.is_available === true ? (
                             <>
                               <Check className="w-4 h-4 mr-1" />
                               可注册
                             </>
-                          ) : (
+                          ) : item.is_available === false ? (
                             <>
                               <X className="w-4 h-4 mr-1" />
                               已注册
+                            </>
+                          ) : (
+                            <>
+                              <AlertCircle className="w-4 h-4 mr-1" />
+                              查询中
                             </>
                           )}
                         </Badge>
@@ -1081,7 +1092,7 @@ function SearchPageContent() {
                       {/* 操作列 */}
                       <td className="px-6 py-6">
                         <div className="flex justify-center">
-                          {item.is_available ? (
+                          {item.is_available === true ? (
                             <Button
                               size="sm"
                               className="bg-green-600 hover:bg-green-700 text-white transition-colors"
@@ -1123,7 +1134,7 @@ function SearchPageContent() {
                               <ShoppingCart className="w-4 h-4 mr-1" />
                               注册
                             </Button>
-                          ) : (
+                          ) : item.is_available === false ? (
                             <Button
                               size="sm"
                               variant="outline"
@@ -1134,6 +1145,15 @@ function SearchPageContent() {
                             >
                               <Eye className="w-4 h-4 mr-1" />
                               WHOIS
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              disabled
+                            >
+                              <Search className="w-4 h-4 mr-1" />
+                              查询中
                             </Button>
                           )}
                         </div>
@@ -1181,22 +1201,29 @@ function SearchPageContent() {
                           {item.domain}
                         </div>
                         <Badge
-                          variant={item.is_available ? "default" : "secondary"}
+                          variant={item.is_available === true ? "default" : item.is_available === false ? "secondary" : "outline"}
                           className={`${
-                            item.is_available
+                            item.is_available === true
                               ? 'bg-green-100 text-green-800 border border-green-200'
-                              : 'bg-red-100 text-red-800 border border-red-200'
+                              : item.is_available === false
+                              ? 'bg-red-100 text-red-800 border border-red-200'
+                              : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
                           }`}
                         >
-                          {item.is_available ? (
+                          {item.is_available === true ? (
                             <>
                               <Check className="w-3 h-3 mr-1" />
                               可注册
                             </>
-                          ) : (
+                          ) : item.is_available === false ? (
                             <>
                               <X className="w-3 h-3 mr-1" />
                               已注册
+                            </>
+                          ) : (
+                            <>
+                              <AlertCircle className="w-3 h-3 mr-1" />
+                              查询中
                             </>
                           )}
                         </Badge>
@@ -1247,7 +1274,7 @@ function SearchPageContent() {
 
                       {/* 操作按钮 */}
                       <div className="flex gap-2">
-                        {item.is_available ? (
+                        {item.is_available === true ? (
                           <Button
                             size="sm"
                             className="flex-1 h-8 text-xs bg-green-600 hover:bg-green-700 text-white"
@@ -1287,7 +1314,7 @@ function SearchPageContent() {
                             <ShoppingCart className="w-4 h-4 mr-1" />
                             立即注册
                           </Button>
-                        ) : (
+                        ) : item.is_available === false ? (
                           <div className="flex gap-2 flex-1">
                             <Button
                               size="sm"
@@ -1311,6 +1338,16 @@ function SearchPageContent() {
                               到期时间
                             </Button>
                           </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="flex-1 h-8 text-xs"
+                            disabled
+                          >
+                            <Search className="w-3 h-3 mr-1" />
+                            查询中
+                          </Button>
                         )}
                       </div>
                     </div>
@@ -1335,7 +1372,7 @@ function SearchPageContent() {
                     <>
                       <span className="hidden sm:inline">|</span>
                       <span>
-                        其中 <span className="font-semibold text-green-600">{sortedResults.filter((item: any) => item.is_available).length}</span> 个可注册
+                        其中 <span className="font-semibold text-green-600">{sortedResults.filter((item: any) => item.is_available === true).length}</span> 个可注册
                       </span>
                     </>
                   )}
