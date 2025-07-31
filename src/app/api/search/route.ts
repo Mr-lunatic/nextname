@@ -306,7 +306,7 @@ export async function GET(request: NextRequest) {
       try {
         // Call the domain API with shorter timeout for other extensions check
         const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 2000) // Reduced to 2 second timeout for faster UX
+        const timeoutId = setTimeout(() => controller.abort(), 8000) // 增加到8秒，给WHOIS查询足够时间
         
         const domainResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/domain/${domain}`, {
           signal: controller.signal,

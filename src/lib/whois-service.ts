@@ -123,55 +123,6 @@ const FALLBACK_RDAP_SERVERS: Record<string, string[]> = {
 }
 
 /**
- * 判断域名是否可能可用（基于域名特征）
- */
-function isLikelyAvailableDomain(domain: string): boolean {
-  const normalizedDomain = domain.toLowerCase()
-  const domainPart = normalizedDomain.split('.')[0]
-  
-  // 太短的域名（<3个字符）可能已被注册
-  if (domainPart.length < 3) {
-    return false
-  }
-  
-  // 太长的域名（>20个字符）可能可用
-  if (domainPart.length > 20) {
-    return true
-  }
-  
-  // 包含多个连续相同字符的域名可能可用
-  if (/([a-z])\1{3,}/.test(domainPart)) {
-    return true
-  }
-  
-  // 随机字符串特征检测
-  const randomPatterns = [
-    /^[a-z]{8,}\d+$/, // 字母+数字
-    /^[a-z]*[qwxz]{2,}[a-z]*$/, // 包含多个qwxz的组合
-    /^[a-z]*[aeiou]{4,}[a-z]*$/, // 包含多个连续元音
-    /^[bcdfghjklmnpqrstvwxyz]{6,}$/, // 纯辅音组合
-    /^[a-z]*[0-9]+[a-z]*[0-9]+[a-z]*$/ // 字母数字混合
-  ]
-  
-  if (randomPatterns.some(pattern => pattern.test(domainPart))) {
-    return true
-  }
-  
-  // 字符重复度检测（随机字符串通常有更多不同字符）
-  const uniqueChars = new Set(domainPart).size
-  const totalChars = domainPart.length
-  const uniqueRatio = uniqueChars / totalChars
-  
-  // 如果唯一字符比例高于0.7，可能是随机字符串
-  if (uniqueRatio > 0.7 && domainPart.length > 8) {
-    return true
-  }
-  
-  // 默认情况下，不确定是否可用
-  return false
-}
-
-/**
  * 获取域名的TLD
  */
 function getTLD(domain: string): string {
@@ -1035,25 +986,8 @@ export async function queryWhois(domain: string): Promise<WhoisResult> {
       } catch (whocxError) {
         console.error(`❌ All WHOIS methods failed for ${normalizedDomain}`)
 
-        // 所有方法都失败时，根据域名特征判断可能的可用性
+        // 所有方法都失败，抛出详细错误
         const queryTime = Date.now() - startTime
-        
-        // 对于明显随机或无意义的域名，假设其可用
-        const isLikelyAvailable = isLikelyAvailableDomain(normalizedDomain)
-        
-        if (isLikelyAvailable) {
-          console.log(`🔍 Assuming ${normalizedDomain} is available due to query failures and domain characteristics`)
-          return {
-            domain: normalizedDomain,
-            is_available: true,
-            query_method: 'rdap' as const, // 默认查询方法
-            query_time_ms: queryTime,
-            error: 'All query methods failed, assuming available',
-            last_update_of_whois_database: new Date().toISOString()
-          } as WhoisResult
-        }
-        
-        // 对于正常域名，抛出详细错误
         throw new WhoisError(
           `All WHOIS query methods failed for ${normalizedDomain}. Please try again later.`,
           'SERVICE_UNAVAILABLE',
