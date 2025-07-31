@@ -113,6 +113,7 @@ const FALLBACK_RDAP_SERVERS: Record<string, string[]> = {
   'br': ['https://rdap.registro.br/'],
   'mx': ['https://rdap.mx/'],
   'co': ['https://rdap.nic.co/'],
+  'cn': [], // .cn域名RDAP支持有限，主要依赖Who-Dat和WHO.CX
   'me': ['https://rdap.nic.me/'],
   'tv': ['https://rdap.nic.tv/'],
   'cc': ['https://rdap.nic.cc/'],
@@ -561,10 +562,37 @@ async function queryWhoDatAPI(domain: string): Promise<Partial<WhoisResult>> {
     clearTimeout(timeout)
 
     if (!response.ok) {
+      // 特殊处理：如果是404或500，可能是域名不存在
+      if (response.status === 404) {
+        return {
+          domain,
+          is_available: true,
+          query_method: 'whodat' as const,
+          last_update_of_whois_database: new Date().toISOString()
+        }
+      }
       throw new Error(`Who-Dat API failed: ${response.status}`)
     }
 
-    const data = await response.json()
+    const responseText = await response.text()
+    
+    // 检查是否返回了 "domain is not found" 文本响应
+    if (responseText.includes('domain is not found') || responseText.includes('whoisparser:')) {
+      console.log(`✅ Who-Dat API: ${domain} is available (not found)`)
+      return {
+        domain,
+        is_available: true,
+        query_method: 'whodat' as const,
+        last_update_of_whois_database: new Date().toISOString()
+      }
+    }
+
+    let data
+    try {
+      data = JSON.parse(responseText)
+    } catch (parseError) {
+      throw new Error(`Who-Dat API returned invalid JSON: ${responseText.substring(0, 100)}`)
+    }
     console.log(`✅ Who-Dat API success for ${domain}`)
 
     // 解析Who-Dat API返回的数据
