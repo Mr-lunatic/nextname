@@ -60,9 +60,9 @@ export function sanitizeQuery(query: string): string {
  */
 export function highlightMatch(text: string, query: string): string {
   if (!query) return text
-  
+
   const regex = new RegExp(`(${escapeRegExp(query)})`, 'gi')
-  return text.replace(regex, '<mark>$1</mark>')
+  return text.replace(regex, '<mark class="bg-primary/20 text-primary font-semibold px-0.5 rounded">$1</mark>')
 }
 
 /**

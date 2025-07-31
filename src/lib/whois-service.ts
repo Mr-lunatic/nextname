@@ -341,7 +341,7 @@ async function queryRDAP(domain: string): Promise<Partial<WhoisResult>> {
 
 /**
  * 获取域名的原始WHOIS数据
- * 这里我们使用一个简单的WHOIS查询服务来获取原始数据
+ * 使用多个数据源以提高可靠性
  */
 async function fetchRawWhoisData(domain: string): Promise<string> {
   try {
@@ -379,6 +379,8 @@ async function fetchRawWhoisData(domain: string): Promise<string> {
     )
   }
 }
+
+
 
 /**
  * WHO.CX API查询（备用方案）

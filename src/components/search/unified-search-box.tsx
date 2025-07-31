@@ -265,15 +265,7 @@ export function UnifiedSearchBox({
 
           {/* 右侧控件 */}
           <div className="absolute right-1.5 sm:right-2 flex items-center space-x-1 sm:space-x-2">
-            {/* 搜索类型指示器 */}
-            <Card className="px-1.5 sm:px-2 md:px-3 py-0.5 sm:py-1 bg-secondary">
-              <CardContent className="p-0 flex items-center space-x-0.5 sm:space-x-1 text-xs">
-                {getTypeIcon()}
-                <span className="hidden md:inline text-xs">
-                  {formatSearchTypeText(state.type, t)}
-                </span>
-              </CardContent>
-            </Card>
+
 
             {/* 搜索按钮 */}
             <Button
@@ -300,29 +292,29 @@ export function UnifiedSearchBox({
             ref={dropdownRef}
             className="absolute top-full left-0 right-0 mt-1 sm:mt-2 rounded-lg shadow-lg border bg-background z-50 max-h-80 sm:max-h-96 overflow-y-auto"
           >
-            {/* 搜索历史 */}
-            {showHistory && !state.query && (
-              <CompactSearchHistory
-                onSelect={handleHistorySelect}
-                maxItems={10}
-              />
-            )}
-
-            {/* 自动补全 */}
-            {showAutocomplete && state.query && (
-              <SearchAutocomplete
-                query={state.query}
-                onSelect={handleAutocompleteSelect}
-                maxOptions={3}
-              />
-            )}
-
-            {/* 搜索建议 */}
+            {/* 1. 搜索建议 (优先级最高) */}
             {showSuggestions && (
               <CompactSearchSuggestions
                 query={state.query}
                 onSelect={handleSuggestionSelect}
                 maxSuggestions={maxSuggestions}
+              />
+            )}
+
+            {/* 2. 搜索历史 (首次访问时显示，有查询时隐藏) */}
+            {showHistory && !state.query && (
+              <CompactSearchHistory
+                onSelect={handleHistorySelect}
+                maxItems={6}
+              />
+            )}
+
+            {/* 3. 智能建议 (优先级最低) */}
+            {showAutocomplete && (
+              <SearchAutocomplete
+                query={state.query}
+                onSelect={handleAutocompleteSelect}
+                maxOptions={state.query ? 4 : 6}
               />
             )}
           </div>

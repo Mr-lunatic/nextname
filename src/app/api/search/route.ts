@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { searchCache, tldCache, CacheKeys } from '@/lib/cache'
 import { tldMetadata, getAllSupportedTLDs } from '@/lib/tld-data'
+import { queryWhois } from '@/lib/whois-service'
 
 // Configure Edge Runtime for Cloudflare Pages
 export const runtime = 'edge'
@@ -195,14 +196,14 @@ export async function GET(request: NextRequest) {
   const query = sanitizedQuery.toLowerCase()
   
   if (type === 'domain' || (type === 'auto' && query.includes('.'))) {
-    // Domain availability check - forward to domain API
+    // Domain availability check - use WHOIS service directly
     try {
-      const domainResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/domain/${query}`)
-      const domainData = await domainResponse.json()
-      
-      return NextResponse.json({
+      console.log(`🔍 Querying domain: ${query}`)
+      const domainData = await queryWhois(query)
+
+      const result = {
         query,
-        type: 'domain',
+        type: 'domain' as const,
         result: {
           domain: query,
           is_available: domainData.is_available,
@@ -220,11 +221,18 @@ export async function GET(request: NextRequest) {
             domain_status: domainData.status,
             name_servers: domainData.name_servers,
             dnssec: domainData.dnssec,
-            last_update_of_whois_database: new Date().toISOString()
+            last_update_of_whois_database: domainData.last_update_of_whois_database || new Date().toISOString()
           }
         }
-      })
+      }
+
+      // Cache the result
+      searchCache.set(cacheKey, result)
+      console.log(`✅ Domain query successful for ${query}`)
+
+      return NextResponse.json(result)
     } catch (error) {
+      console.error(`❌ Domain query failed for ${query}:`, error)
       // 返回错误信息，不使用虚假数据
       return NextResponse.json({
         query,

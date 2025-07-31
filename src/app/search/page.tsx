@@ -1,7 +1,5 @@
 "use client";
 
-export const runtime = 'edge';
-
 import { useState, useEffect, Suspense, useCallback, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations } from '@/hooks/useTranslations'
@@ -149,16 +147,14 @@ function SearchPageContent() {
     // Only preload if not already cached
     if (!cachedResult) {
       try {
-        console.log(`🔄 Preloading page ${page}`)
         const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&type=${type}&lang=zh&page=${page}&limit=10`)
         const data = await response.json()
 
         // Cache the preloaded result
         searchCache.set(cacheKey, data)
         searchCache.set(`${cacheKey}-time`, Date.now())
-        console.log(`✅ Preloaded page ${page}`)
       } catch (error) {
-        console.log(`❌ Failed to preload page ${page}:`, error)
+        // Silently fail preloading
       }
     }
   }, [searchCache])
@@ -173,7 +169,6 @@ function SearchPageContent() {
     const cacheAge = Date.now() - (cacheTime || 0)
 
     if (cachedResult && cacheAge < 10 * 60 * 1000) { // Extended to 10 minutes cache for better pagination performance
-      console.log('✅ Using cached search result')
       setResult(cachedResult)
       if (cachedResult.type === 'prefix' && cachedResult.result.pagination) {
         setPaginationInfo(cachedResult.result.pagination)
@@ -192,8 +187,6 @@ function SearchPageContent() {
       const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&type=${type}&lang=zh&page=${page}&limit=10`)
       const data = await response.json()
       const responseTime = Date.now() - startTime
-
-      console.log(`🚀 Search completed in ${responseTime}ms`)
 
       setResult(data)
 
@@ -1470,7 +1463,7 @@ function SearchPageContent() {
         {result?.type === 'domain' && renderDomainResult()}
         {result?.type === 'prefix' && renderPrefixResults()}
         {result?.type === 'suffix' && renderSuffixResult()}
-        
+
         {!result && (
           <div className="text-center py-20">
             <div className="space-y-4">

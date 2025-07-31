@@ -15,6 +15,93 @@ interface SearchAutocompleteProps {
 }
 
 /**
+ * 获取类型样式
+ */
+function getTypeStyles(type: string): string {
+  switch (type) {
+    case 'domain':
+      return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+    case 'tld':
+      return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+    case 'keyword':
+      return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+    default:
+      return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+  }
+}
+
+/**
+ * 获取类型图标
+ */
+function getTypeIcon(type: string): string {
+  switch (type) {
+    case 'domain':
+      return '🌐'
+    case 'tld':
+      return '🏷️'
+    case 'keyword':
+      return '🔍'
+    default:
+      return '📄'
+  }
+}
+
+/**
+ * 获取类型标签
+ */
+function getTypeLabel(type: string): string {
+  switch (type) {
+    case 'domain':
+      return '域名'
+    case 'tld':
+      return '后缀'
+    case 'keyword':
+      return '关键词'
+    default:
+      return '其他'
+  }
+}
+
+/**
+ * 获取类型描述
+ */
+function getTypeDescription(type: string): string {
+  switch (type) {
+    case 'domain':
+      return '点击查看域名详情'
+    case 'tld':
+      return '顶级域名后缀'
+    case 'keyword':
+      return '热门搜索关键词'
+    default:
+      return ''
+  }
+}
+
+/**
+ * 获取热门推荐 (无查询时显示)
+ */
+function getPopularRecommendations(maxOptions: number = 8): AutocompleteOption[] {
+  const recommendations: AutocompleteOption[] = [
+    // 热门域名后缀
+    { value: '.com', label: '.com - 商业域名', type: 'tld', score: 100 },
+    { value: '.net', label: '.net - 网络域名', type: 'tld', score: 90 },
+    { value: '.org', label: '.org - 组织域名', type: 'tld', score: 85 },
+    { value: '.cn', label: '.cn - 中国域名', type: 'tld', score: 80 },
+    { value: '.io', label: '.io - 科技域名', type: 'tld', score: 75 },
+    { value: '.ai', label: '.ai - 人工智能', type: 'tld', score: 70 },
+
+    // 热门关键词
+    { value: 'tech', label: 'tech - 科技相关', type: 'keyword', score: 65 },
+    { value: 'app', label: 'app - 应用程序', type: 'keyword', score: 60 },
+    { value: 'shop', label: 'shop - 购物商城', type: 'keyword', score: 55 },
+    { value: 'blog', label: 'blog - 博客网站', type: 'keyword', score: 50 }
+  ]
+
+  return recommendations.slice(0, maxOptions)
+}
+
+/**
  * 生成自动补全选项
  */
 function generateAutocompleteOptions(
@@ -22,56 +109,71 @@ function generateAutocompleteOptions(
   enableFuzzySearch: boolean = true,
   maxOptions: number = 8
 ): AutocompleteOption[] {
-  if (!query || query.length < 1) return []
+  if (!query || query.length < 1) {
+    // 无查询时返回热门推荐
+    return getPopularRecommendations(maxOptions)
+  }
 
   const options: AutocompleteOption[] = []
   const lowerQuery = query.toLowerCase()
 
-  // 域名补全
-  const domains = getPopularDomains()
-  const domainOptions: AutocompleteOption[] = domains
-    .filter(domain => domain.domain.toLowerCase().includes(lowerQuery))
-    .map(domain => ({
-      value: domain.domain,
-      label: domain.domain,
-      type: 'domain' as const,
-      score: domain.popularity
-    }))
-
-  // TLD补全
-  const tlds = getPopularTLDs()
-  const tldOptions: AutocompleteOption[] = []
-  
-  // 如果查询以点开头，匹配TLD
-  if (lowerQuery.startsWith('.')) {
-    const tldQuery = lowerQuery.substring(1)
-    tlds
-      .filter(tld => tld.tld.substring(1).toLowerCase().includes(tldQuery))
-      .forEach(tld => {
-        tldOptions.push({
-          value: tld.tld,
-          label: `${tld.tld} - ${tld.name}`,
-          type: 'tld',
-          score: tld.popularity
-        })
-      })
-  } else {
-    // 否则为前缀添加流行TLD
-    tlds.slice(0, 5).forEach(tld => {
-      tldOptions.push({
-        value: `${lowerQuery}${tld.tld}`,
-        label: `${query}${tld.tld}`,
+  // 1. 智能域名后缀建议 (优先级最高)
+  if (!lowerQuery.includes('.')) {
+    const popularTlds = ['.com', '.net', '.org', '.cn', '.io', '.ai', '.co']
+    popularTlds.forEach((tld, index) => {
+      options.push({
+        value: `${query}${tld}`,
+        label: `${query}${tld}`,
         type: 'domain',
-        score: tld.popularity,
+        score: 100 - index * 5, // 按流行度排序
         highlight: query
       })
     })
   }
 
-  // 关键词补全
+  // 2. 热门域名匹配
+  const domains = getPopularDomains()
+  const domainOptions: AutocompleteOption[] = domains
+    .filter(domain => {
+      const domainLower = domain.domain.toLowerCase()
+      return domainLower.startsWith(lowerQuery) || domainLower.includes(lowerQuery)
+    })
+    .slice(0, 3) // 限制数量
+    .map(domain => ({
+      value: domain.domain,
+      label: domain.domain,
+      type: 'domain' as const,
+      score: domain.popularity + (domain.domain.toLowerCase().startsWith(lowerQuery) ? 50 : 0) // 前缀匹配加分
+    }))
+
+  // 3. TLD补全 (当输入包含点时)
+  if (lowerQuery.includes('.')) {
+    const tlds = getPopularTLDs()
+    const tldOptions: AutocompleteOption[] = []
+
+    if (lowerQuery.startsWith('.')) {
+      // 直接搜索TLD
+      const tldQuery = lowerQuery.substring(1)
+      tlds
+        .filter(tld => tld.tld.substring(1).toLowerCase().includes(tldQuery))
+        .slice(0, 3)
+        .forEach(tld => {
+          tldOptions.push({
+            value: tld.tld,
+            label: `${tld.tld} - ${tld.name}`,
+            type: 'tld',
+            score: tld.popularity
+          })
+        })
+    }
+    options.push(...tldOptions)
+  }
+
+  // 4. 关键词补全
   const keywords = getPopularKeywords()
   const keywordOptions: AutocompleteOption[] = keywords
     .filter(keyword => keyword.keyword.toLowerCase().includes(lowerQuery))
+    .slice(0, 2) // 限制关键词数量
     .map(keyword => ({
       value: keyword.keyword,
       label: keyword.keyword,
@@ -80,7 +182,7 @@ function generateAutocompleteOptions(
     }))
 
   // 合并所有选项
-  options.push(...domainOptions, ...tldOptions, ...keywordOptions)
+  options.push(...domainOptions, ...keywordOptions)
 
   // 如果启用模糊搜索
   if (enableFuzzySearch && options.length < maxOptions) {
@@ -189,30 +291,37 @@ export function SearchAutocomplete({
   }
 
   return (
-    <div className={`space-y-1 ${className}`}>
-      <div className="px-3 py-2 text-xs font-medium text-muted-foreground border-b">
-        {t('search.autocomplete')}
+    <div className={`${className}`}>
+      <div className="px-4 py-2 text-xs font-medium text-muted-foreground bg-muted/30 border-b">
+        💡 智能建议
       </div>
-      <div className="space-y-1 p-1">
+      <div className="p-2 space-y-1">
         {options.map((option, index) => (
           <div
             key={`${option.type}-${option.value}-${index}`}
             onClick={() => handleSelect(option)}
-            className="flex items-center gap-2 px-2 py-2 rounded hover:bg-secondary cursor-pointer transition-colors group"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted/50 cursor-pointer transition-all duration-200 group hover:shadow-sm"
           >
-            {/* 类型图标 */}
-            <div className="flex-shrink-0 text-sm">
-              {getOptionTypeIcon(option.type)}
+            {/* 类型图标 (左侧) */}
+            <div className="flex-shrink-0">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${getTypeStyles(option.type)}`}>
+                {getTypeIcon(option.type)}
+              </div>
             </div>
 
             {/* 选项内容 */}
             <div className="flex-1 min-w-0">
-              <span 
-                className="text-sm font-medium truncate"
-                dangerouslySetInnerHTML={{ 
-                  __html: highlightMatch(option.label, option.highlight || query) 
+              <span
+                className="text-sm font-medium text-foreground group-hover:text-primary transition-colors"
+                dangerouslySetInnerHTML={{
+                  __html: highlightMatch(option.label, option.highlight || query)
                 }}
               />
+              {option.type === 'domain' && (
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {getTypeDescription(option.type)}
+                </div>
+              )}
             </div>
 
             {/* 类型标签 */}
