@@ -225,22 +225,13 @@ export async function GET(request: NextRequest) {
         }
       })
     } catch (error) {
-      // Fallback to simple check
-      const isAvailable = !['google.com', 'facebook.com', 'apple.com', 'microsoft.com'].includes(query)
+      // 返回错误信息，不使用虚假数据
       return NextResponse.json({
         query,
         type: 'domain',
-        result: {
-          domain: query,
-          is_available: isAvailable,
-          whois_info: isAvailable ? null : {
-            registrar: 'Example Registrar',
-            created_date: '2020-01-01',
-            expiry_date: '2025-01-01',
-            status: ['clientTransferProhibited']
-          }
-        }
-      })
+        error: 'Failed to query domain information. Please try again later.',
+        timestamp: new Date().toISOString()
+      }, { status: 503 })
     }
   }
   

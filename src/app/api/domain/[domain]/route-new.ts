@@ -173,3 +173,40 @@ export async function POST(
     )
   }
 }
+
+/**
+ * 健康检查端点
+ */
+export async function HEAD(
+  request: NextRequest,
+  { params }: { params: { domain: string } }
+) {
+  const domain = params.domain.toLowerCase().trim()
+  
+  // 基本域名验证
+  if (!domain || !domain.includes('.') || domain.startsWith('.') || domain.endsWith('.')) {
+    return new NextResponse(null, { status: 400 })
+  }
+
+  // 检查缓存是否存在
+  const cacheKey = CacheKeys.domain(domain)
+  const cachedResult = domainCache.get(cacheKey)
+  
+  if (cachedResult) {
+    return new NextResponse(null, { 
+      status: 200,
+      headers: {
+        'X-Cache-Status': 'HIT',
+        'X-Cache-Key': cacheKey
+      }
+    })
+  }
+
+  return new NextResponse(null, { 
+    status: 204,
+    headers: {
+      'X-Cache-Status': 'MISS',
+      'X-Cache-Key': cacheKey
+    }
+  })
+}
