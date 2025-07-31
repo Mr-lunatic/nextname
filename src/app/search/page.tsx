@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { SuffixResult } from '@/components/suffix-result'
 import { SearchResultsSkeleton, PriceComparisonSkeleton, WhoisSkeleton, SpinnerLoader } from '@/components/ui/loading-skeleton'
+import { StreamingSearchResults } from '@/components/streaming-search-results'
 
 // 安全导入可能有framer-motion依赖的组件
 let UnifiedSearchBox: any, EnhancedWhoisResult: any, OtherExtensionsCheck: any, CardSpotlight: any, BestNameSpotlight: any
@@ -819,6 +820,47 @@ function SearchPageContent() {
     if (!result?.result?.checked_tlds) return null
 
     const { prefix, checked_tlds, pagination } = result.result
+
+    // 为流式查询显示实时结果
+    const enableStreaming = process.env.NODE_ENV === 'production' || true // Enable streaming in all environments
+
+    if (enableStreaming && query && type === 'prefix') {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-8"
+        >
+          {/* Enhanced Header */}
+          <div className="glass-card p-6 rounded-2xl">
+            <div className="flex flex-col lg:flex-row gap-6 justify-between items-start">
+              <div className="space-y-2">
+                <h2 className="text-3xl font-bold text-gradient-premium">
+                  &quot;{prefix}&quot; 域名建议 (实时流式查询)
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  使用Server-Sent Events技术实时显示查询结果，无需等待所有域名查询完成
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* 流式搜索结果 */}
+          <StreamingSearchResults
+            query={query}
+            type={type}
+            page={currentPage}
+            limit={10}
+            onComplete={(streamResults) => {
+              console.log('Streaming search completed:', streamResults)
+              // 可以在这里更新统计或触发其他操作
+            }}
+          />
+        </motion.div>
+      )
+    }
+
+    // 原有的静态结果显示逻辑作为后备方案
 
 
 
