@@ -295,19 +295,35 @@ async function queryRDAP(domain: string): Promise<Partial<WhoisResult>> {
     }
   })
 
-  try {
-    // 使用Promise.any获取第一个成功的结果
-    const result = await Promise.any(promises)
-    return result
-  } catch (error) {
-    // 所有RDAP服务器都失败
-    throw new WhoisError(
-      `All RDAP servers failed for ${domain}`,
-      'SERVICE_UNAVAILABLE',
-      domain,
-      { servers, originalError: error }
-    )
-  }
+  // 使用Promise竞争模式获取第一个成功的结果
+  return new Promise(async (resolve, reject) => {
+    let completedCount = 0
+    let lastError: any = null
+    const errors: any[] = []
+
+    for (const promise of promises) {
+      promise
+        .then((result) => {
+          // 第一个成功的结果立即返回
+          resolve(result)
+        })
+        .catch((error) => {
+          errors.push(error)
+          lastError = error
+          completedCount++
+
+          // 如果所有Promise都失败了，抛出错误
+          if (completedCount === promises.length) {
+            reject(new WhoisError(
+              `All RDAP servers failed for ${domain}`,
+              'SERVICE_UNAVAILABLE',
+              domain,
+              { servers, errors, lastError }
+            ))
+          }
+        })
+    }
+  })
 }
 
 /**
