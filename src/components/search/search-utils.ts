@@ -149,29 +149,32 @@ export function getCoreFunctionSuggestions(): SearchSuggestion[] {
     {
       type: 'keyword' as SuggestionType,
       value: 'example.com',
-      label: '🌐 域名查询',
-      description: '输入完整域名，检查可用性和WHOIS信息',
+      label: '域名查询 - 检查可用性和WHOIS信息',
+      description: '',
       popular: true,
       category: 'core',
-      priority: 1000
+      priority: 1000,
+      icon: '🌐'
     },
     {
       type: 'keyword' as SuggestionType,
       value: 'mysite',
-      label: '🔤 前缀搜索',
-      description: '输入域名前缀，批量查询多个后缀的可注册性',
+      label: '前缀搜索 - 批量查询多个后缀',
+      description: '',
       popular: true,
       category: 'core',
-      priority: 999
+      priority: 999,
+      icon: '🔤'
     },
     {
       type: 'keyword' as SuggestionType,
       value: '.com',
-      label: '🏷️ 价格对比',
-      description: '输入域名后缀，对比各注册商的价格信息',
+      label: '价格对比 - 对比各注册商价格',
+      description: '',
       popular: true,
       category: 'core',
-      priority: 998
+      priority: 998,
+      icon: '🏷️'
     }
   ]
 }
@@ -187,45 +190,8 @@ export function generateSuggestions(
   const suggestions: SearchSuggestion[] = []
 
   if (!query) {
-    // 无查询时优先显示核心功能建议
+    // 无查询时只显示核心功能建议
     suggestions.push(...getCoreFunctionSuggestions())
-
-    // 然后显示热门建议
-    if (type === 'all' || type === 'domains') {
-      suggestions.push(...getPopularDomains().slice(0, 2).map(domain => ({
-        type: 'domain' as SuggestionType,
-        value: domain.domain,
-        label: domain.domain,
-        description: domain.description,
-        popular: true,
-        category: domain.category,
-        priority: domain.popularity
-      })))
-    }
-
-    if (type === 'all' || type === 'tlds') {
-      suggestions.push(...getPopularTLDs().slice(0, 2).map(tld => ({
-        type: 'tld' as SuggestionType,
-        value: tld.tld,
-        label: `${tld.tld} - ${tld.name}`,
-        description: tld.description,
-        popular: true,
-        category: tld.category,
-        priority: tld.popularity
-      })))
-    }
-
-    if (type === 'all' || type === 'keywords') {
-      suggestions.push(...getPopularKeywords().slice(0, 1).map(keyword => ({
-        type: 'keyword' as SuggestionType,
-        value: keyword.keyword,
-        label: keyword.keyword,
-        description: keyword.description,
-        popular: true,
-        category: keyword.category,
-        priority: keyword.popularity
-      })))
-    }
   } else {
     // 有查询时进行匹配
     const lowerQuery = query.toLowerCase()

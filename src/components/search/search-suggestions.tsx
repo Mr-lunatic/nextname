@@ -262,6 +262,31 @@ function SuggestionItem({
   showCategories: boolean
   t: (key: string) => string
 }) {
+  // 对于核心功能建议，使用特殊的显示方式
+  if (suggestion.category === 'core') {
+    return (
+      <div
+        onClick={() => onSelect(suggestion)}
+        className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary cursor-pointer transition-colors group"
+      >
+        {/* 图标 */}
+        <div className="flex-shrink-0 text-lg">
+          {suggestion.icon || getSuggestionIcon(suggestion.type, suggestion.popular)}
+        </div>
+
+        {/* 内容 */}
+        <div className="flex-1 min-w-0">
+          <span
+            className="text-sm font-medium text-foreground"
+            dangerouslySetInnerHTML={{
+              __html: highlightMatch(suggestion.label, query)
+            }}
+          />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div
       onClick={() => onSelect(suggestion)}
@@ -275,10 +300,10 @@ function SuggestionItem({
       {/* 内容 */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span 
+          <span
             className="font-medium truncate"
-            dangerouslySetInnerHTML={{ 
-              __html: highlightMatch(suggestion.label, query) 
+            dangerouslySetInnerHTML={{
+              __html: highlightMatch(suggestion.label, query)
             }}
           />
           {suggestion.popular && (
@@ -286,7 +311,7 @@ function SuggestionItem({
               {t('common.popular')}
             </span>
           )}
-          {showCategories && suggestion.category && (
+          {showCategories && suggestion.category && suggestion.category !== 'core' && (
             <span className={`text-xs px-2 py-0.5 rounded-full ${getCategoryColor(suggestion.category)}`}>
               {suggestion.category}
             </span>
@@ -297,13 +322,6 @@ function SuggestionItem({
             {suggestion.description}
           </p>
         )}
-      </div>
-
-      {/* 类型标识 */}
-      <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-        <span className="text-xs text-muted-foreground">
-          {getSuggestionTypeText(suggestion.type, t)}
-        </span>
       </div>
     </div>
   )

@@ -245,8 +245,8 @@ export function UnifiedSearchBox({
               <Search className="h-4 w-4 sm:h-4 sm:w-4 md:h-5 md:w-5" />
             </div>
 
-            {/* 内联自动补全 */}
-            {showAutocomplete && state.query && (
+            {/* 内联自动补全 - 暂时禁用以避免覆盖问题 */}
+            {false && showAutocomplete && state.query && (
               <div className="absolute left-9 sm:left-10 md:left-12 top-1/2 transform -translate-y-1/2 pointer-events-none">
                 <InlineAutocomplete
                   query={state.query}
@@ -304,7 +304,7 @@ export function UnifiedSearchBox({
             {showHistory && !state.query && (
               <CompactSearchHistory
                 onSelect={handleHistorySelect}
-                maxItems={5}
+                maxItems={10}
               />
             )}
 
