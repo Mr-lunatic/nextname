@@ -147,8 +147,8 @@ function generateAutocompleteOptions(
     }))
 
   // 3. TLD补全 (当输入包含点时)
+  const tlds = getPopularTLDs()
   if (lowerQuery.includes('.')) {
-    const tlds = getPopularTLDs()
     const tldOptions: AutocompleteOption[] = []
 
     if (lowerQuery.startsWith('.')) {
