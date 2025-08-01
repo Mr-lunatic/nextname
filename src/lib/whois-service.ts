@@ -595,6 +595,7 @@ async function queryWhoDatAPI(domain: string): Promise<Partial<WhoisResult>> {
       headers.Authorization = apiKey  // Who-Dat API直接使用key，不需要Bearer前缀
     }
 
+    console.log(`📡 Making request to: ${baseUrl}/${domain}`)
     const response = await fetch(`${baseUrl}/${domain}`, {
       method: 'GET',
       signal: controller.signal,
@@ -602,24 +603,41 @@ async function queryWhoDatAPI(domain: string): Promise<Partial<WhoisResult>> {
     })
 
     clearTimeout(timeout)
+    console.log(`📡 Response status: ${response.status} ${response.statusText}`)
 
     if (!response.ok) {
-      // 特殊处理：如果是404或500，可能是域名不存在
-      if (response.status === 404) {
-        return {
-          domain,
-          is_available: true,
-          query_method: 'whodat' as const,
-          last_update_of_whois_database: new Date().toISOString()
+      // 特殊处理：如果是404或500，可能是域名不存在，先检查响应内容
+      if (response.status === 404 || response.status === 500) {
+        const responseText = await response.text();
+        console.log(`📡 Response text for ${response.status}: ${responseText}`)
+        
+        // 检查是否返回了域名不存在的文本
+        if (responseText.includes('domain is not found') || 
+            responseText.includes('whoisparser:') ||
+            responseText.includes('No matching query') ||
+            responseText.includes('not found') ||
+            responseText.includes('No data found')) {
+          console.log(`✅ Who-Dat API: ${domain} is available (status ${response.status}, not found)`)
+          return {
+            domain,
+            is_available: true,
+            query_method: 'whodat' as const,
+            last_update_of_whois_database: new Date().toISOString()
+          }
         }
       }
       throw new Error(`Who-Dat API failed: ${response.status}`)
     }
 
     const responseText = await response.text()
+    console.log(`📡 Response text (${responseText.length} chars): ${responseText.substring(0, 200)}...`)
     
     // 检查是否返回了 "domain is not found" 文本响应
-    if (responseText.includes('domain is not found') || responseText.includes('whoisparser:')) {
+    if (responseText.includes('domain is not found') || 
+        responseText.includes('whoisparser:') ||
+        responseText.includes('No matching query') ||
+        responseText.includes('not found') ||
+        responseText.includes('No data found')) {
       console.log(`✅ Who-Dat API: ${domain} is available (not found)`)
       return {
         domain,
@@ -632,8 +650,24 @@ async function queryWhoDatAPI(domain: string): Promise<Partial<WhoisResult>> {
     let data
     try {
       data = JSON.parse(responseText)
+      console.log(`📡 Parsed JSON response successfully`)
     } catch (parseError) {
-      throw new Error(`Who-Dat API returned invalid JSON: ${responseText.substring(0, 100)}`)
+      // 如果不是JSON，可能是纯文本响应，尝试解析
+      console.warn(`Who-Dat API returned non-JSON response: ${responseText.substring(0, 200)}`)
+      
+      // 对于.cn等域名和其他文本响应，尝试解析纯文本WHOIS数据
+      // 不仅仅检查长度，也检查是否包含有意义的WHOIS信息或域名状态
+      if (responseText.length > 10 && 
+          (responseText.includes(':') || 
+           responseText.includes('whoisparser') || 
+           responseText.includes('domain') ||
+           !responseText.includes('error') && !responseText.includes('failed'))) {
+        // 尝试解析纯文本WHOIS数据
+        console.log(`📝 Parsing text WHOIS response for ${domain}: ${responseText.substring(0, 100)}`)
+        return parseTextWhoisResponse(responseText, domain)
+      }
+      
+      throw new Error(`Who-Dat API returned invalid response: ${responseText.substring(0, 100)}`)
     }
     console.log(`✅ Who-Dat API success for ${domain}`)
 
@@ -645,6 +679,115 @@ async function queryWhoDatAPI(domain: string): Promise<Partial<WhoisResult>> {
       `Who-Dat API query failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
       'SERVICE_UNAVAILABLE',
       domain
+    )
+  }
+}
+
+/**
+ * 解析Who-Dat API纯文本WHOIS响应（适用于.cn等域名）
+ */
+function parseTextWhoisResponse(textResponse: string, domain: string): Partial<WhoisResult> {
+  try {
+    const result: Partial<WhoisResult> = {
+      domain,
+      query_method: 'whodat' as const,
+      last_update_of_whois_database: new Date().toISOString(),
+      whois_raw: textResponse
+    }
+
+    const lines = textResponse.split('\n').map(line => line.trim())
+    
+    // 检查域名是否可用
+    const lowerText = textResponse.toLowerCase()
+    if (lowerText.includes('no matching query') ||
+        lowerText.includes('not found') ||
+        lowerText.includes('no data found') ||
+        lowerText.includes('domain not found') ||
+        lowerText.includes('没有匹配的查询结果') ||
+        lowerText.includes('未找到') ||
+        lowerText.includes('无匹配结果')) {
+      result.is_available = true
+      return result
+    }
+
+    // 域名已注册，设置为false
+    result.is_available = false
+
+    // 解析WHOIS信息
+    for (const line of lines) {
+      if (!line || line.startsWith('%') || line.startsWith('#')) continue
+      
+      const colonIndex = line.indexOf(':')
+      if (colonIndex === -1) continue
+      
+      const key = line.substring(0, colonIndex).trim().toLowerCase()
+      const value = line.substring(colonIndex + 1).trim()
+      
+      if (!value) continue
+
+      // 注册商信息
+      if (key.includes('registrar') || key.includes('注册商') || key.includes('sponsor')) {
+        if (!/^\d+$/.test(value) && value.length > 2) {
+          result.registrar = value
+        }
+      }
+      // 创建时间
+      else if (key.includes('registration time') || key.includes('registration date') || 
+               key.includes('created') || key.includes('注册时间') || key.includes('created date')) {
+        result.created_date = value
+      }
+      // 到期时间
+      else if (key.includes('expiration time') || key.includes('expiration date') || 
+               key.includes('expires') || key.includes('到期时间') || key.includes('expiry date')) {
+        result.expiry_date = value
+      }
+      // 更新时间
+      else if (key.includes('updated') || key.includes('更新时间') || key.includes('last updated')) {
+        result.updated_date = value
+      }
+      // 域名状态
+      else if (key.includes('domain status') || key.includes('status') || key.includes('域名状态')) {
+        if (!result.status) result.status = []
+        const statuses = value.split(/[,;]/).map(s => s.trim()).filter(Boolean)
+        result.status.push(...statuses)
+      }
+      // 名称服务器
+      else if (key.includes('name server') || key.includes('nserver') || key.includes('dns') || 
+               key.includes('域名服务器') || key.includes('nameserver')) {
+        if (!result.name_servers) result.name_servers = []
+        const servers = value.split(/[,;\s]/).map(s => s.trim()).filter(Boolean)
+        result.name_servers.push(...servers)
+      }
+      // DNSSEC
+      else if (key.includes('dnssec')) {
+        const dnssecLower = value.toLowerCase()
+        if (dnssecLower.includes('signed') || dnssecLower === 'yes') {
+          result.dnssec = 'signedDelegation'
+        } else if (dnssecLower.includes('unsigned') || dnssecLower === 'no') {
+          result.dnssec = 'unsigned'
+        } else {
+          result.dnssec = value
+        }
+      }
+    }
+
+    // 去重名称服务器
+    if (result.name_servers) {
+      result.name_servers = [...new Set(result.name_servers)]
+    }
+    
+    // 去重状态
+    if (result.status) {
+      result.status = [...new Set(result.status)]
+    }
+
+    return result
+  } catch (error) {
+    throw new WhoisError(
+      `Failed to parse text WHOIS response: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      'PARSE_ERROR',
+      domain,
+      { textResponse: textResponse.substring(0, 500) }
     )
   }
 }
@@ -938,68 +1081,76 @@ export async function queryWhois(domain: string): Promise<WhoisResult> {
   const normalizedDomain = domain.toLowerCase().trim()
   console.log(`🔍 Starting WHOIS query for ${normalizedDomain}`)
 
-  try {
-    // 第一优先级：RDAP协议
-    console.log(`📡 Trying RDAP protocol for ${normalizedDomain}`)
-    const rdapResult = await queryRDAP(normalizedDomain)
-
-    const queryTime = Date.now() - startTime
-    console.log(`✅ RDAP query successful for ${normalizedDomain} (${queryTime}ms)`)
-
-    return {
-      ...rdapResult,
-      domain: normalizedDomain,
-      query_time_ms: queryTime
-    } as WhoisResult
-  } catch (rdapError) {
-    console.warn(`❌ RDAP failed for ${normalizedDomain}:`, rdapError instanceof Error ? rdapError.message : rdapError)
-
+  // 对于已知没有RDAP支持的TLD，直接跳过RDAP查询
+  const tld = getTLD(normalizedDomain)
+  const skipRDAP = ['cn', 'ru', 'xn--p1ai', 'xn--j1amh'].includes(tld) // 添加更多不支持RDAP的TLD
+  
+  if (!skipRDAP) {
     try {
-      // 第二优先级：Who-Dat API
-      console.log(`📡 Trying Who-Dat API for ${normalizedDomain}`)
-      const whodatResult = await queryWhoDatAPI(normalizedDomain)
+      // 第一优先级：RDAP协议
+      console.log(`📡 Trying RDAP protocol for ${normalizedDomain}`)
+      const rdapResult = await queryRDAP(normalizedDomain)
 
       const queryTime = Date.now() - startTime
-      console.log(`✅ Who-Dat API query successful for ${normalizedDomain} (${queryTime}ms)`)
+      console.log(`✅ RDAP query successful for ${normalizedDomain} (${queryTime}ms)`)
 
       return {
-        ...whodatResult,
+        ...rdapResult,
         domain: normalizedDomain,
         query_time_ms: queryTime
       } as WhoisResult
-    } catch (whodatError) {
-      console.warn(`❌ Who-Dat API failed for ${normalizedDomain}:`, whodatError instanceof Error ? whodatError.message : whodatError)
+    } catch (rdapError) {
+      console.warn(`❌ RDAP failed for ${normalizedDomain}:`, rdapError instanceof Error ? rdapError.message : rdapError)
+    }
+  } else {
+    console.log(`⏭️ Skipping RDAP for ${normalizedDomain} (${tld} TLD not supported)`)
+  }
 
-      try {
-        // 第三优先级：WHO.CX API
-        console.log(`📡 Trying WHO.CX API for ${normalizedDomain}`)
-        const whocxResult = await queryWhoCxAPI(normalizedDomain)
+  try {
+    // 第二优先级：Who-Dat API
+    console.log(`📡 Trying Who-Dat API for ${normalizedDomain}`)
+    const whodatResult = await queryWhoDatAPI(normalizedDomain)
 
-        const queryTime = Date.now() - startTime
-        console.log(`✅ WHO.CX API query successful for ${normalizedDomain} (${queryTime}ms)`)
+    const queryTime = Date.now() - startTime
+    console.log(`✅ Who-Dat API query successful for ${normalizedDomain} (${queryTime}ms)`)
 
-        return {
-          ...whocxResult,
-          domain: normalizedDomain,
-          query_time_ms: queryTime
-        } as WhoisResult
-      } catch (whocxError) {
-        console.error(`❌ All WHOIS methods failed for ${normalizedDomain}`)
+    return {
+      ...whodatResult,
+      domain: normalizedDomain,
+      query_time_ms: queryTime
+    } as WhoisResult
+  } catch (whodatError) {
+    console.warn(`❌ Who-Dat API failed for ${normalizedDomain}:`, whodatError instanceof Error ? whodatError.message : whodatError)
 
-        // 所有方法都失败，抛出详细错误
-        const queryTime = Date.now() - startTime
-        throw new WhoisError(
-          `All WHOIS query methods failed for ${normalizedDomain}. Please try again later.`,
-          'SERVICE_UNAVAILABLE',
-          normalizedDomain,
-          {
-            rdapError: rdapError instanceof Error ? rdapError.message : rdapError,
-            whoDatError: whodatError instanceof Error ? whodatError.message : whodatError,
-            whocxError: whocxError instanceof Error ? whocxError.message : whocxError,
-            queryTime
-          }
-        )
-      }
+    try {
+      // 第三优先级：WHO.CX API
+      console.log(`📡 Trying WHO.CX API for ${normalizedDomain}`)
+      const whocxResult = await queryWhoCxAPI(normalizedDomain)
+
+      const queryTime = Date.now() - startTime
+      console.log(`✅ WHO.CX API query successful for ${normalizedDomain} (${queryTime}ms)`)
+
+      return {
+        ...whocxResult,
+        domain: normalizedDomain,
+        query_time_ms: queryTime
+      } as WhoisResult
+    } catch (whocxError) {
+      console.error(`❌ All WHOIS methods failed for ${normalizedDomain}`)
+
+      // 所有方法都失败，抛出详细错误
+      const queryTime = Date.now() - startTime
+      throw new WhoisError(
+        `All WHOIS query methods failed for ${normalizedDomain}. Please try again later.`,
+        'SERVICE_UNAVAILABLE',
+        normalizedDomain,
+        {
+          rdapError: skipRDAP ? 'Skipped (TLD not supported)' : rdapError instanceof Error ? rdapError.message : rdapError,
+          whoDatError: whodatError instanceof Error ? whodatError.message : whodatError,
+          whocxError: whocxError instanceof Error ? whocxError.message : whocxError,
+          queryTime
+        }
+      )
     }
   }
 }
