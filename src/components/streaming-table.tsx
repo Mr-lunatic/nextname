@@ -223,7 +223,7 @@ export function StreamingSearchTable({
   // 应用筛选和排序
   const filteredResults = dataSource.filter((item: any) => {
     const tldString = item.tld
-    const matchesTextFilter = tldString && tldString.toLowerCase().includes(filter.toLowerCase())
+    const matchesTextFilter = tldString && typeof tldString === 'string' && tldString.toLowerCase().includes(filter.toLowerCase())
 
     let matchesAvailabilityFilter = true
     if (availabilityFilter === 'available') {
