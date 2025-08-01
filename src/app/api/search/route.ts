@@ -125,7 +125,7 @@ async function getTopRegistrars(tld: string) {
     const response = await fetch(`${baseURL}/api/pricing?domain=${encodeURIComponent(tld)}&order=new&pageSize=3`);
 
     if (!response.ok) {
-      console.warn(`Failed to fetch pricing for ${tld}, falling back to static data`);
+      console.warn(`Failed to fetch pricing for ${tld}, status: ${response.status}, falling back to static data`);
       // 回退到静态数据
       const pricing = registrarPricing[tld as keyof typeof registrarPricing]
       if (!pricing) return []
@@ -134,22 +134,32 @@ async function getTopRegistrars(tld: string) {
     }
 
     const data = await response.json();
+    console.log(`🔍 Search API: Pricing response for ${tld}:`, JSON.stringify(data).substring(0, 200));
 
-    if (data.pricing && Array.isArray(data.pricing)) {
+    // 检查智能数据源API的响应格式
+    if (data.pricing && Array.isArray(data.pricing) && data.pricing.length > 0) {
       // 转换为搜索结果需要的格式
-      return data.pricing.map((item: any) => ({
+      const registrars = data.pricing.slice(0, 3).map((item: any) => ({
         registrar: item.registrar,
-        registrarCode: item.registrarCode,
-        registrationPrice: item.registrationPrice,
-        renewalPrice: item.renewalPrice,
-        transferPrice: item.transferPrice,
+        registrarCode: item.registrarCode || item.registrar?.toLowerCase(),
+        registrationPrice: item.registrationPrice || item.new || item.price,
+        renewalPrice: item.renewalPrice || item.renew || item.renewPrice,
+        transferPrice: item.transferPrice || item.transfer || item.transferPrice,
         currency: item.currency || 'USD',
         features: item.features || [],
         rating: item.rating || 4.0
       }));
+      
+      console.log(`✅ Search API: Using smart pricing data for ${tld} (${registrars.length} registrars)`);
+      return registrars;
     }
 
-    return [];
+    console.warn(`Invalid pricing data format for ${tld}, falling back to static data`);
+    // 回退到静态数据
+    const pricing = registrarPricing[tld as keyof typeof registrarPricing]
+    if (!pricing) return []
+    const sortedPricing = [...pricing].sort((a, b) => a.registrationPrice - b.registrationPrice)
+    return sortedPricing.slice(0, 3)
   } catch (error) {
     console.error(`Error fetching pricing for ${tld}:`, error);
     // 回退到静态数据

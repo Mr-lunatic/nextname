@@ -10,31 +10,68 @@ async function getTopRegistrars(tld: string) {
     const response = await fetch(`${baseURL}/api/pricing?domain=${encodeURIComponent(tld)}&order=new&pageSize=3`);
 
     if (!response.ok) {
-      console.warn(`Failed to fetch pricing for ${tld}, falling back to static data`);
-      return []
+      console.warn(`Failed to fetch pricing for ${tld}, status: ${response.status}`);
+      return getStaticFallbackPricing(tld);
     }
 
     const data = await response.json();
+    console.log(`🔍 Pricing API response for ${tld}:`, JSON.stringify(data).substring(0, 200));
 
-    if (data.pricing && Array.isArray(data.pricing)) {
+    // 检查智能数据源API的响应格式
+    if (data.pricing && Array.isArray(data.pricing) && data.pricing.length > 0) {
       // 转换为搜索结果需要的格式
-      return data.pricing.map((item: any) => ({
+      const registrars = data.pricing.slice(0, 3).map((item: any) => ({
         registrar: item.registrar,
-        registrarCode: item.registrarCode,
-        registrationPrice: item.registrationPrice,
-        renewalPrice: item.renewalPrice,
-        transferPrice: item.transferPrice,
+        registrarCode: item.registrarCode || item.registrar?.toLowerCase(),
+        registrationPrice: item.registrationPrice || item.new || item.price,
+        renewalPrice: item.renewalPrice || item.renew || item.renewPrice,
+        transferPrice: item.transferPrice || item.transfer || item.transferPrice,
         currency: item.currency || 'USD',
         features: item.features || [],
         rating: item.rating || 4.0
       }));
+      
+      console.log(`✅ Using smart pricing data for ${tld} (${registrars.length} registrars)`);
+      return registrars;
     }
 
-    return [];
+    // 如果API返回格式不正确，使用静态数据
+    console.warn(`Invalid pricing data format for ${tld}, falling back to static data`);
+    return getStaticFallbackPricing(tld);
   } catch (error) {
     console.error(`Error fetching pricing for ${tld}:`, error);
-    return []
+    return getStaticFallbackPricing(tld);
   }
+}
+
+// 静态兜底数据函数
+function getStaticFallbackPricing(tld: string) {
+  const staticPricing: { [key: string]: any[] } = {
+    '.com': [
+      { registrar: 'Cloudflare', registrarCode: 'cloudflare', registrationPrice: 8.57, renewalPrice: 8.57, transferPrice: 8.57, currency: 'USD', rating: 4.8 },
+      { registrar: 'Porkbun', registrarCode: 'porkbun', registrationPrice: 9.13, renewalPrice: 11.98, transferPrice: 9.13, currency: 'USD', rating: 4.6 },
+      { registrar: 'Namecheap', registrarCode: 'namecheap', registrationPrice: 8.88, renewalPrice: 13.98, transferPrice: 8.98, currency: 'USD', rating: 4.5 }
+    ],
+    '.net': [
+      { registrar: 'Cloudflare', registrarCode: 'cloudflare', registrationPrice: 9.68, renewalPrice: 9.68, transferPrice: 9.68, currency: 'USD', rating: 4.8 },
+      { registrar: 'Namecheap', registrarCode: 'namecheap', registrationPrice: 12.98, renewalPrice: 14.98, transferPrice: 12.98, currency: 'USD', rating: 4.5 },
+      { registrar: 'GoDaddy', registrarCode: 'godaddy', registrationPrice: 14.99, renewalPrice: 19.99, transferPrice: 10.99, currency: 'USD', rating: 4.1 }
+    ],
+    '.org': [
+      { registrar: 'Porkbun', registrarCode: 'porkbun', registrationPrice: 8.67, renewalPrice: 10.12, transferPrice: 8.67, currency: 'USD', rating: 4.6 },
+      { registrar: 'Namecheap', registrarCode: 'namecheap', registrationPrice: 12.98, renewalPrice: 14.98, transferPrice: 12.98, currency: 'USD', rating: 4.5 },
+      { registrar: 'GoDaddy', registrarCode: 'godaddy', registrationPrice: 13.99, renewalPrice: 18.99, transferPrice: 9.99, currency: 'USD', rating: 4.1 }
+    ]
+  };
+
+  const fallbackData = staticPricing[tld] || [
+    { registrar: 'Cloudflare', registrarCode: 'cloudflare', registrationPrice: 15.00, renewalPrice: 15.00, transferPrice: 15.00, currency: 'USD', rating: 4.8 },
+    { registrar: 'Namecheap', registrarCode: 'namecheap', registrationPrice: 18.00, renewalPrice: 22.00, transferPrice: 18.00, currency: 'USD', rating: 4.5 },
+    { registrar: 'GoDaddy', registrarCode: 'godaddy', registrationPrice: 20.00, renewalPrice: 25.00, transferPrice: 15.00, currency: 'USD', rating: 4.1 }
+  ];
+
+  console.log(`📋 Using static fallback pricing for ${tld}`);
+  return fallbackData;
 }
 
 function getEstimatedPrice(tld: string): number {
