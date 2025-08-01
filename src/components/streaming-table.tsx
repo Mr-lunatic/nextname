@@ -137,11 +137,12 @@ export function StreamingSearchTable({
               tld: streamEvent.data.tld,
               is_available: null,
               error: streamEvent.data.error,
-              market_share: 0,
-              category: 'generic',
-              popularity: 50,
-              top_registrars: [],
-              query_time_ms: streamEvent.data.query_time_ms
+              market_share: streamEvent.data.market_share || 0,
+              category: streamEvent.data.category || 'generic',
+              popularity: streamEvent.data.popularity || 50,
+              top_registrars: streamEvent.data.top_registrars || [],
+              query_time_ms: streamEvent.data.query_time_ms,
+              estimated_price: streamEvent.data.estimated_price
             }
 
             resultsMapRef.current.set(errorResult.domain, errorResult)
@@ -206,7 +207,7 @@ export function StreamingSearchTable({
   const useStreamResults = streamResults.length > 0 || streamComplete
   const dataSource = useStreamResults ? streamResults : fallbackData.map(item => ({
     domain: item.domain,
-    tld: getTldString(item),
+    tld: item.tld || getTldString(item),
     is_available: item.is_available,
     registrar: item.registrar,
     expiry_date: item.expiry_date,
@@ -215,7 +216,7 @@ export function StreamingSearchTable({
     category: item.category,
     popularity: item.popularity,
     top_registrars: item.top_registrars || [],
-    query_time_ms: item.response_time,
+    query_time_ms: item.response_time || item.query_time_ms,
     error: item.error
   }))
 

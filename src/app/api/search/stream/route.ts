@@ -2,6 +2,62 @@ import { NextRequest } from 'next/server'
 import { getAllSupportedTLDs } from '@/lib/tld-data'
 import { queryWhois } from '@/lib/whois-service'
 
+// 从搜索API导入注册商和价格函数
+async function getTopRegistrars(tld: string) {
+  try {
+    // 调用智能数据源的pricing API
+    const baseURL = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const response = await fetch(`${baseURL}/api/pricing?domain=${encodeURIComponent(tld)}&order=new&pageSize=3`);
+
+    if (!response.ok) {
+      console.warn(`Failed to fetch pricing for ${tld}, falling back to static data`);
+      return []
+    }
+
+    const data = await response.json();
+
+    if (data.pricing && Array.isArray(data.pricing)) {
+      // 转换为搜索结果需要的格式
+      return data.pricing.map((item: any) => ({
+        registrar: item.registrar,
+        registrarCode: item.registrarCode,
+        registrationPrice: item.registrationPrice,
+        renewalPrice: item.renewalPrice,
+        transferPrice: item.transferPrice,
+        currency: item.currency || 'USD',
+        features: item.features || [],
+        rating: item.rating || 4.0
+      }));
+    }
+
+    return [];
+  } catch (error) {
+    console.error(`Error fetching pricing for ${tld}:`, error);
+    return []
+  }
+}
+
+function getEstimatedPrice(tld: string): number {
+  // Return realistic pricing based on TLD
+  const prices: { [key: string]: number } = {
+    '.com': 12,
+    '.net': 14,
+    '.org': 13,
+    '.io': 65,
+    '.ai': 90,
+    '.dev': 18,
+    '.app': 20,
+    '.me': 20,
+    '.cc': 25,
+    '.tv': 35,
+    '.tech': 15,
+    '.online': 8,
+    '.site': 10,
+    '.website': 12
+  }
+  return prices[tld] || 25
+}
+
 // Configure Edge Runtime for Cloudflare Pages
 export const runtime = 'edge'
 
@@ -102,6 +158,9 @@ export async function GET(request: NextRequest) {
             const whoisResult = await queryWhois(domain)
             const queryTime = Date.now() - startTime
             
+            // 获取注册商价格数据
+            const topRegistrars = await getTopRegistrars(tld.tld)
+            
             // 发送查询结果
             const resultEvent = {
               type: 'query_result',
@@ -116,12 +175,17 @@ export async function GET(request: NextRequest) {
                 query_time_ms: queryTime,
                 market_share: tld.marketShare || 0,
                 category: tld.category || 'generic',
-                popularity: tld.popularity || 50
+                popularity: tld.popularity || 50,
+                top_registrars: topRegistrars, // 添加注册商数据
+                estimated_price: whoisResult.is_available ? getEstimatedPrice(tld.tld) : null
               }
             }
             controller.enqueue(encoder.encode(`data: ${JSON.stringify(resultEvent)}\n\n`))
             
           } catch (error) {
+            // 获取注册商数据即使在错误情况下也要提供
+            const topRegistrars = await getTopRegistrars(tld.tld)
+            
             // 发送查询错误
             const errorEvent = {
               type: 'query_error',
@@ -130,7 +194,12 @@ export async function GET(request: NextRequest) {
                 domain,
                 tld: tld.tld,
                 error: error instanceof Error ? error.message : 'Unknown error',
-                query_time_ms: Date.now() - startTime
+                query_time_ms: Date.now() - startTime,
+                market_share: tld.marketShare || 0,
+                category: tld.category || 'generic',
+                popularity: tld.popularity || 50,
+                top_registrars: topRegistrars, // 即使错误也提供注册商数据
+                estimated_price: getEstimatedPrice(tld.tld)
               }
             }
             controller.enqueue(encoder.encode(`data: ${JSON.stringify(errorEvent)}\n\n`))
