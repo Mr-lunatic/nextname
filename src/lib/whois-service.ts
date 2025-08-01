@@ -773,12 +773,12 @@ function parseTextWhoisResponse(textResponse: string, domain: string): Partial<W
 
     // 去重名称服务器
     if (result.name_servers) {
-      result.name_servers = [...new Set(result.name_servers)]
+      result.name_servers = Array.from(new Set(result.name_servers))
     }
     
     // 去重状态
     if (result.status) {
-      result.status = [...new Set(result.status)]
+      result.status = Array.from(new Set(result.status))
     }
 
     return result
@@ -1085,6 +1085,8 @@ export async function queryWhois(domain: string): Promise<WhoisResult> {
   const tld = getTLD(normalizedDomain)
   const skipRDAP = ['cn', 'ru', 'xn--p1ai', 'xn--j1amh'].includes(tld) // 添加更多不支持RDAP的TLD
   
+  let rdapError: any = null
+  
   if (!skipRDAP) {
     try {
       // 第一优先级：RDAP协议
@@ -1099,8 +1101,9 @@ export async function queryWhois(domain: string): Promise<WhoisResult> {
         domain: normalizedDomain,
         query_time_ms: queryTime
       } as WhoisResult
-    } catch (rdapError) {
-      console.warn(`❌ RDAP failed for ${normalizedDomain}:`, rdapError instanceof Error ? rdapError.message : rdapError)
+    } catch (error) {
+      rdapError = error
+      console.warn(`❌ RDAP failed for ${normalizedDomain}:`, error instanceof Error ? error.message : error)
     }
   } else {
     console.log(`⏭️ Skipping RDAP for ${normalizedDomain} (${tld} TLD not supported)`)
