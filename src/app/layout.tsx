@@ -196,6 +196,15 @@ export default async function RootLayout({
             </Script>
           </>
         )}
+
+        {/* 52yunying 统计脚本 */}
+        <Script
+          src="https://tj.52yunying.com/tracker.js"
+          data-website-id="cmdsuojfl0001d3x0om9h3n60"
+          strategy="afterInteractive"
+          async
+          defer
+        />
         <ErrorBoundary>
           <ThemeProvider
             attribute="class"
